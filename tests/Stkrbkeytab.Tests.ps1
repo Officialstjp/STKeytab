@@ -108,7 +108,7 @@ Describe 'Keytab write/read roundtrip' {
       $parsed | ForEach-Object { $_.Kvno } | Select-Object -Unique | Should -Be @(7)
       ($parsed | Where-Object EtypeId -eq 18).KeyLength | Should -Be 32
       ($parsed | Where-Object EtypeId -eq 18).RawKey | Should -Be $key18
-      ($parsed | Select-Object -First 1).TimestampUtc.ToString('o') | Should -Be $fixed
+      ($parsed | Select-Object -First 1).TimestampUtc | Should -Be $fixed
     }
     It 'Read-Keytab rejects invalid header' {
       $bad = Join-Path $TestOutDir 'bad.keytab'
@@ -292,10 +292,11 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
       $fixed = [datetime]::SpecifyKind((Get-Date '2021-02-03T04:05:06Z'), 'Utc')
       $out = Join-Path $TestOutDir 'fixed.keytab'
       $json = Join-Path $TestOutDir 'fixed.json'
-      $null = New-Keytab -SuppressWarnings -SamAccountName 'svc-app' -Type User -Domain 'ex.com' -OutputPath $out -JsonSummaryPath $json -FixedTimestampUtc $fixed -Confirm:$false
+      $r = New-Keytab -SuppressWarnings -SamAccountName 'svc-app' -Type User -Domain 'ex.com' -OutputPath $out -JsonSummaryPath $json -FixedTimestampUtc $fixed -PassThru -Confirm:$false
       $parsed = Read-Keytab -Path $out
-      ($parsed | Select-Object -First 1).TimestampUtc.ToString('o') | Should -Be '2021-02-03T04:05:06.0000000Z'
-      ((Get-Content -Raw -LiteralPath $json | ConvertFrom-Json).GeneratedAtUtc) | Should -Be '2021-02-03T04:05:06.0000000Z'
+      ($parsed | Select-Object -First 1).TimestampUtc | Should -Be $fixed
+      # no 
+      ((Get-Content -Raw -LiteralPath $json | ConvertFrom-Json).GeneratedAtUtc) | Should -Be $fixed
     }
   }
 }
@@ -365,3 +366,4 @@ Describe 'Protect/Unprotect roundtrip (Windows only)' -Skip:(-not $onWindows) {
     Test-Path $dpapi | Should -BeTrue
   }
 }
+

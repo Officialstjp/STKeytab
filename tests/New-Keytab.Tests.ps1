@@ -17,6 +17,11 @@ Import-Module -Name "$modulePath" -Force -ErrorAction Stop
 $global:TestOutDir = Join-Path $PSScriptRoot 'output'
 New-Item -ItemType Directory -Path $global:TestOutDir -Force | Out-Null
 
+# clear all files in the test directory
+try { Get-ChildItem -Path $TestOutDir -File | Remove-Item -Force } catch {
+  Write-Warning "Failed to clear test output directory: $_"
+}
+
 function global:New-MockAccount {
     param(
         [int]$Kvno = 7,

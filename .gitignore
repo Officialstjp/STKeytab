@@ -1,1 +1,6 @@
 Archive/
+tests/output/
+.vscode/
+STkrbKeytab.code-workspace
+StkrbKeytab_ArchitectureV1.md
+.github/

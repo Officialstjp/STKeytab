@@ -17,8 +17,14 @@ High/Critical (krbtgt, DC) require explicit acknowledgement.
 ========================================================
 
 
-.VERSION
-  Architecture V1 implementation (Phase 1+2+3 core).
+.Change Log
+  Date        Version       Notes
+  10.08.2025  0.1.0         Initial release, New-ComputerKeytab POC
+  15.08.2025  1.0.0         V1 update with new features, Generalized Keytab Creation, 
+                            generalized writer, `Read-Keytab`, `Merge-Keytab`, extended `Test-Keytab`
+                            justification, high-impact warnings, DPAPI protect option, reproducible timestamp flag
+
+
 #>
 $script:ErrorActionPreference = 'Stop'
 
@@ -699,15 +705,15 @@ function Get-KrbtgtPrincipalDescriptor {
 # ---------------------------------------------------------------------- #
 
 function Write-UInt16BE([IO.BinaryWriter]$binaryWriter,[int]$Value) { 
-    $BinaryWriter.Write([byte]($Value -shr 8))
-    $BinaryWriter.Write([byte]($Value -band 0xFF))
+  [byte[]]$b = [BitConverter]::GetBytes([uint16]$Value)
+  if ([BitConverter]::IsLittleEndian) { [Array]::Reverse($b) }
+  $binaryWriter.Write($b,0,2)
 }
 
 function Write-UInt32BE([IO.BinaryWriter]$binaryWriter,[System.UInt32]$Value) {
-    $BinaryWriter.Write([byte](($Value -shr 24) -band 0xFF))
-    $BinaryWriter.Write([byte](($Value -shr 16) -band 0xFF))
-    $BinaryWriter.Write([byte](($Value -shr 8)  -band 0xFF))
-    $BinaryWriter.Write([byte]($Value           -band 0xFF))
+  [byte[]]$b = [BitConverter]::GetBytes([uint32]$Value)
+  if ([BitConverter]::IsLittleEndian) { [Array]::Reverse($b) }
+  $binaryWriter.Write($b,0,4)
 }
 
 function Write-Int32BE([IO.BinaryWriter]$BinaryWriter,[int]$Value) {
@@ -716,16 +722,18 @@ function Write-Int32BE([IO.BinaryWriter]$BinaryWriter,[int]$Value) {
 
 function ReadUInt16([byte[]]$bytes,[ref]$i) {
   $idx = [int]$i.Value
-  $val = ($bytes[$idx] -shl 8) -bor $bytes[$idx+1]
+  [byte[]]$b = $bytes[$idx..($idx+1)]
+  if ([BitConverter]::IsLittleEndian) { [Array]::Reverse($b) }
   $i.Value = $idx + 2
-  return $val
+  return [uint16]([BitConverter]::ToUInt16($b,0))
 }
 
 function ReadUInt32([byte[]]$bytes,[ref]$i) {
   $idx = [int]$i.Value
-  $val = ($bytes[$idx] -shl 24) -bor ($bytes[$idx+1] -shl 16) -bor ($bytes[$idx+2] -shl 8) -bor $bytes[$idx+3]
+  [byte[]]$b = $bytes[$idx..($idx+3)]
+  if ([BitConverter]::IsLittleEndian) { [Array]::Reverse($b) }
   $i.Value = $idx + 4
-  return [uint32]$val
+  return [uint32]([BitConverter]::ToUInt32($b,0))
 }
 
 
@@ -802,7 +810,6 @@ function New-KeytabFile {
     if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) {
       $tsArg = @{ Timestamp = $timestampSec }
     }
-    Write-Host "[KT] Timestamp in new Keytab: `nTsArg: $($tsArg.Timestamp) `nTimestampSec: $timestampSec `nFixedTimestampUtc: $fixedTimestampUtc"
 
     foreach ($keySet in $KeySets | Sort-Object Kvno) {
       foreach ($etype in ($keySet.Keys.Keys | Sort-Object)) {
@@ -891,9 +898,6 @@ function Read-Keytab {
     $nameType  = ReadUInt32 $entry $iref
     $timestamp = ReadUInt32 $entry $iref
 
-    Write-Host "Timestamp parsed from file (unix): $($timestamp)"
-    Write-Host "Timestamp parsed from file (datetime): $([DateTimeOffset]::FromUnixTimeSeconds([int]$timestamp).UtcDateTime)"
-
     # kvno8 (1 byte)
     $idx   = [int]$iref.Value
     $kvno8 = [int]$entry[$idx]
@@ -936,7 +940,6 @@ function Read-Keytab {
       RawKey     = $rawKey
     })
   }
-  Write-Host "[KT] Parsed timestamp: $($list | ForEach-Object { $_.TimestampUtc })"
   $list
 }
 
@@ -1077,7 +1080,7 @@ function New-PrincipalKeytabInternal {
     $finalPath = New-KeytabFile -Path $OutputPath -PrincipalDescriptors $principalDescriptors -KeySets $keySets -EtypeFilter $selection.Selected -RestrictAcl:$RestrictAcl
   }
 
-  Write-Verbose "Keytab written: $finalPath"
+  Write-Host "Keytab written: $finalPath"
   # Summary
   if (-not $JsonSummaryPath) { $JsonSummaryPath = [IO.Path]::ChangeExtension($finalPath,'.json') }
   if ($Summary -or $PassThru) {
@@ -1175,7 +1178,6 @@ function New-Keytab {
   )
   #Get-RequiredModule -Name ActiveDirectory
   #Get-RequiredModule -Name DSInternals
-  Write-Host "[KT] Beginning keytab creation..."
 
   if (-not $Credential -and $EnvFile) { $Credential = Get-CredentialFromEnv -EnvFile $EnvFile }
 
@@ -1188,7 +1190,6 @@ function New-Keytab {
     elseif ($SamAccountName -match '\$$') { $type = 'Computer' }
     else { $type = 'User' }
   }
-  Write-Host "[KT] Determined principal type: $type"
 
   switch ($type) {
     'Krbtgt' {
