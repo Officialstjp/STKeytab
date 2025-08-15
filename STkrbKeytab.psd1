@@ -10,12 +10,12 @@
     PowerShellVersion = '5.1'
 
     Description = 'Generate MIT keytabs for Windows computer accounts (read-only, DCSync-based) + helpers.'
-    
-    FunctionsToExport = @('New-Keytab', 'Test-Keytab', 'Merge-Keytab', 'Read-Keytab')
+
+    FunctionsToExport = @('New-Keytab', 'Test-Keytab', 'Merge-Keytab', 'Read-Keytab', 'Protect-Keytab', 'Unprotect-Keytab')
     CmdletsToExport   = @()
     VariablesToExport = @()
     AliasesToExport   = @()
-
+  
     PrivateData = @{
         PSData = @{
             Tags = @('Kerberos', 'Keytab', 'DSInternals', 'STCrypt')

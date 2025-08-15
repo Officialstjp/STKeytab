@@ -100,9 +100,13 @@ function Get-CredentialFromEnv {
       if ($kv.Count -eq 2) { $pairs[$kv[0].Trim()] = $kv[1].Trim() }
     }
 
-    $u = $pairs['STCRYPT_DSYNC_USERNAME']; $p = $pairs['STCRYPT_DCSYNC_PASSWORD']
+    $u = $pairs['STCRYPT_DCSYNC_USERNAME']
+    $p = $pairs['STCRYPT_DCSYNC_PASSWORD']
+    if (-not $u) { $u = $pairs['STCRYPT_DSYNC_USERNAME'] }     # legacy typo support
+    if (-not $p) { $p = $pairs['STCRYPT_DSYNC_PASSWORD'] }     # legacy typo support
+
     if (-not $u -or -not $p) { 
-      throw "Env file missing STCRYPT_DSYNC_USERNAME / STCRYPT_DCSYNC_PASSWORD." 
+      throw "Env file missing STCRYPT_DCSYNC_USERNAME/STCRYPT_DCSYNC_PASSWORD (or legacy STCRYPT_DSYNC_USERNAME/STCRYPT_DSYNC_PASSWORD)."
     }
 
     $sec = ConvertTo-SecureString $p -AsPlainText -Force
@@ -156,18 +160,18 @@ function Resolve-EtypeSelection {
   $available = [System.Collections.Generic.HashSet[int]]::new()
   $AvailableIds | Foreach-Object { [void]$available.Add($_) }
   
-  $included         = New-Object System.Collections.Generic.List[int]
-  $missing          = New-Object System.Collections.Generic.List[int]
-  $unkownIncluded   = New-Object System.Collections.Generic.List[object]
-  $excluded         = New-Object System.Collections.Generic.List[int]
-  $unknownExcluded  = New-Object System.Collections.Generic.List[object]
+  $included          = New-Object System.Collections.Generic.List[int]
+  $missing           = New-Object System.Collections.Generic.List[int]
+  $unknownIncluded   = New-Object System.Collections.Generic.List[object]
+  $excluded          = New-Object System.Collections.Generic.List[int]
+  $unknownExcluded   = New-Object System.Collections.Generic.List[object]
 
   if ($Include) {
     foreach ($raw in $Include) {
       $id = Get-EtypeIdFromInput $raw
       if ($null -ne $id) {
         if ($available.Contains($id)) { $included.Add($id) } else { $missing.Add($id) }
-      } else { $unkownIncluded.Add($raw) }
+      } else { $unknownIncluded.Add($raw) }
     }
   }
 
@@ -189,8 +193,8 @@ function Resolve-EtypeSelection {
   [pscustomobject]@{
     Selected       = ([int[]]$selected | Sort-Object -Unique)
     Missing        = $missing
-    UnknownInclude = $unkownIncluded
-    UnknownExclude = $unkownExcluded
+    UnknownInclude = $unknownIncluded
+    UnknownExclude = $unknownExcluded
   }
 }
 # ---------------------------------------------------------------------- #
@@ -393,9 +397,10 @@ function Get-ReplicatedAccount {
   $repl = @{
     SamAccountName = $SamAccountName
     Domain         = $netbios
+    # Many mocks (and some environments) expect -Server; default to DomainFQDN when not supplied
+    Server         = ($Server ? $Server : $DomainFQDN)
   }
 
-  if ($Server) { $repl.Server = $Server }
   if ($Credential) { $repl.Credential = $Credential }
   try {
     Get-ADReplAccount @repl -ErrorAction Stop
@@ -432,10 +437,14 @@ function Get-KerberosKeyMaterialFromAccount {
   # Get current KVNO (msDS-KeyVersionNumber)
   try {
     if ($principalType -eq 'Computer') {
-       $obj = Get-ADComputer -Identity $SamAccountName.TrimEnd('$') -Properties DistinguishedName, msDS-KeyVersionNumber -Server $Server -ErrorAction Stop
-       $kvAttr = $obj.'msDS-KeyVersionNumber'
+      $params = @{ Identity = $SamAccountName.TrimEnd('$'); Properties = 'DistinguishedName','msDS-KeyVersionNumber'; ErrorAction = 'Stop' }
+      if ($Server) { $params.Server = $Server }
+      $obj = Get-ADComputer @params
+      $kvAttr = $obj.'msDS-KeyVersionNumber'
     } else {
-      $obj = Get-ADObject -Identity $Account.DistinguishedName -Properties DistinguishedName, msDS-KeyVersionNumber -Server $Server -ErrorAction Stop
+      $params = @{ Identity = $Account.DistinguishedName; Properties = 'DistinguishedName','msDS-KeyVersionNumber'; ErrorAction = 'Stop' }
+      if ($Server) { $params.Server = $Server }
+      $obj = Get-ADObject @params
       $kvAttr = $obj.'msDS-KeyVersionNumber'
     }
     if ($kvAttr) { $kvno = [int]$kvAttr; $diag.Add("Resolved KVNO=$kvno from msDS-KeyVersionNumber") }
@@ -512,53 +521,55 @@ function Get-KerberosKeyMaterialFromAccount {
     }
   } elseif ($Account.PSObject.Properties.Name -contains 'KerberosKeys' -and $Account.KerberosKeys) {
     # legacy
-      $etypeMapLocal = @{}
-      foreach ($k in $Account.KerberosKeys) {
-        if (-not $k) { continue }
-        $etype = $k.EncryptionType
-        $bytes = $k.key
-        $id = Get-EtypeIdFromInput $etype
-        if ($null -ne $id -and -not $etypeMapLocal.ContainsKey($id)) { $etypeMapLocal[$id] = $bytes}
-      }
-      & $addKeySet $kvno $etypeMapLocal 'KerberosKeys'
-    } else {
-      $diag.Add("No recognizable Kerberos credential structure present.")
+    $etypeMapLocal = @{}
+    foreach ($k in $Account.KerberosKeys) {
+      if (-not $k) { continue }
+      $etype = $k.EncryptionType
+      $bytes = $k.key
+      $id = Get-EtypeIdFromInput $etype
+      if ($null -ne $id -and -not $etypeMapLocal.ContainsKey($id)) { $etypeMapLocal[$id] = $bytes}
     }
+    & $addKeySet $kvno $etypeMapLocal 'KerberosKeys'
+  } else {
+    $diag.Add("No recognizable Kerberos credential structure present.")
+  }
 
-    if ($keySets.Count -eq 0) {
-      throw "No Kerberos key material extracted for '$SamAccountName'."
-    }
+  if ($keySets.Count -eq 0) {
+    throw "No Kerberos key material extracted for '$SamAccountName'."
+  }
 
-    if ($keySets.Count -eq 0)  {
-      throw "No Kerberos key material extracted for '$SamAccountName'."
-    }
+  if ($keySets.Count -eq 0)  {
+    throw "No Kerberos key material extracted for '$SamAccountName'."
+  }
 
-    # Deduplicate KeySets by (Kvno, Etype)
-    $dedup = @{}
-    foreach ($ks in $keySets) {
-      $kKey = "$($ks.Kvno)"
-      if (-not $dedup.ContainsKey($kKey)) {
-        $dedup[$kKey] = @{}
-      }
-      foreach ($etype in $ks.Keys.Keys) {
-        if (-not $dedup[$kKey].ContainsKey($etype)) {
-          $dedup[$kKey][$etype] = $ks.Keys[$etype]
-        }
+  # Deduplicate KeySets by (Kvno, Etype)
+  $dedup = @{}
+  foreach ($ks in $keySets) {
+    $kKey = "$($ks.Kvno)"
+    if (-not $dedup.ContainsKey($kKey)) {
+      $dedup[$kKey] = @{}
+    }
+    foreach ($etype in $ks.Keys.Keys) {
+      if (-not $dedup[$kKey].ContainsKey($etype)) {
+        $dedup[$kKey][$etype] = $ks.Keys[$etype]
       }
     }
-    $finalSets = New-Object System.Collections.Generic.List[object]
-    foreach ($kvKey in ($dedup.Keys | Sort-Object {[int]$_})) {
-      $finalSets.Add([pscustomobject]@{
-      Kvno        = [int]$kvKey
-      Keys        = $dedup[$kvKey]
-      Source      = 'Merged'
-      RetrievedAt = (Get-Date).ToUniversalTime()
-    })
+  }
+  $finalSets = New-Object System.Collections.Generic.List[object]
+  foreach ($kvKey in ($dedup.Keys | Sort-Object {[int]$_})) {
+    $finalSets.Add([pscustomobject]@{
+    Kvno        = [int]$kvKey
+    Keys        = $dedup[$kvKey]
+    Source      = 'Merged'
+    RetrievedAt = (Get-Date).ToUniversalTime() })
   }
   $isDC = $false
   try {
     $dn = $Account.DistinguishedName
-    if ($dn -and $dn -like '*CN=Domain Controllers*') { $isDC = $true }
+    if ($dn) {
+      $upperDn = $dn.ToUpperInvariant()
+      if ($upperDn -like '*OU=DOMAIN CONTROLLERS*' -or $upperDn -like '*CN=DOMAIN CONTROLLERS*') { $isDC = $true }
+    }
   } catch {}
 
   [pscustomobject]@{
@@ -709,6 +720,7 @@ function ReadUInt16([byte[]]$bytes,[ref]$i) {
   $i.Value = $idx + 2
   return $val
 }
+
 function ReadUInt32([byte[]]$bytes,[ref]$i) {
   $idx = [int]$i.Value
   $val = ($bytes[$idx] -shl 24) -bor ($bytes[$idx+1] -shl 16) -bor ($bytes[$idx+2] -shl 8) -bor $bytes[$idx+3]
@@ -728,8 +740,6 @@ function New-KeytabEntry {
 
   $enc = [Text.Encoding]::ASCII
   $realmBytes = $enc.GetBytes($PrincipalDescriptor.Realm)
-  $compBytes =  @()
-  foreach ($comp in $PrincipalDescriptor.Components) { $compBytes += ,@($enc.GetBytes($comp)) }
 
   $memStream    = New-Object IO.MemoryStream
   $binaryWriter = New-Object IO.BinaryWriter($memStream)
@@ -738,8 +748,10 @@ function New-KeytabEntry {
   # realm
   Write-UInt16BE $binaryWriter $realmBytes.Length; $BinaryWriter.Write($realmBytes)
   #components
-  foreach ($compbyte in $compBytes) {
-    Write-UInt16BE $binaryWriter $compbyte.Length; $BinaryWriter.Write($compbyte)
+  foreach ($comp in $PrincipalDescriptor.Components) {
+    [byte[]]$compBytes = $enc.GetBytes($comp)
+    Write-UInt16BE $binaryWriter $compBytes.Length
+    $binaryWriter.Write($compBytes)
   }
 
   Write-UInt32BE $binaryWriter ([uint32]$PrincipalDescriptor.NameType)
@@ -750,6 +762,7 @@ function New-KeytabEntry {
   $binaryWriter.Write($Key)
   # 32 bit kvno extension
   Write-UInt32BE $binaryWriter ([uint32]$Kvno)
+
   $binaryWriter.Flush()
   $memStream.ToArray()
 }
@@ -762,7 +775,8 @@ function New-KeytabFile {
     [Parameter(Mandatory)][object[]]$PrincipalDescriptors,
     [Parameter(Mandatory)][object[]]$KeySets, # list of {Kvno: Keys}
     [int[]]$EtypeFilter,
-    [switch]$RestrictAcl
+    [switch]$RestrictAcl,
+    [datetime]$FixedTimestampUtc
   )
 
   $full = if ([IO.Path]::IsPathRooted($Path)) { [IO.Path]::GetFullPath($Path) } else { [IO.Path]::GetFullPath((Join-Path (Get-Location) $Path)) }
@@ -774,21 +788,35 @@ function New-KeytabFile {
   $entryCount = 0
 
   try {
-    # header
-    $binaryWriter.Write([byte]0x05); $binaryWriter.Write([byte]0x02)
+    # keytab v2 header
+    $binaryWriter.Write([byte]0x05)
+    $binaryWriter.Write([byte]0x02)
+    $tsArg = @{}
+    $timestampSec =
+      if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) {
+        [int][DateTimeOffset]::new(($FixedTimestampUtc.ToUniversalTime())).ToUnixTimeSeconds()
+      } else {
+        [int][DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+      }
+
+    if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) {
+      $tsArg = @{ Timestamp = $timestampSec }
+    }
+    Write-Host "[KT] Timestamp in new Keytab: `nTsArg: $($tsArg.Timestamp) `nTimestampSec: $timestampSec `nFixedTimestampUtc: $fixedTimestampUtc"
 
     foreach ($keySet in $KeySets | Sort-Object Kvno) {
       foreach ($etype in ($keySet.Keys.Keys | Sort-Object)) {
         if ($EtypeFilter -and ($EtypeFilter -notcontains $etype)) { continue }
         [byte[]]$bytes = $keySet.Keys[$etype]
         foreach ($pd in $PrincipalDescriptors) {
-          [byte[]]$entryBytes = New-KeytabEntry -PrincipalDescriptor $pd -EncryptionType $etype -Key $bytes -Kvno $keySet.Kvno
+          [byte[]]$entryBytes = New-KeytabEntry -PrincipalDescriptor $pd -EncryptionType $etype -Key $bytes -Kvno $keySet.Kvno @tsArg
           Write-Int32BE $binaryWriter $entryBytes.Length
           $binaryWriter.Write($entryBytes, 0, $entryBytes.Length)
           $entryCount++
         }
       }
     }
+    
     $binaryWriter.Flush(); 
     Write-Verbose "[Keytab] entries=$entryCount length=$($memStream.Length) file=$tmp"
   } finally {
@@ -800,7 +828,6 @@ function New-KeytabFile {
   if ($RestrictAcl) { Set-UserOnlyAcl -Path $full }
   $full
 }
-
 
 function Read-Keytab {
   [CmdletBinding()]
@@ -826,6 +853,7 @@ function Read-Keytab {
       ($bytes[$pos+2]    -shl 8)    -bor
       ($bytes[$pos+3])
     )
+
     $pos += 4
     if ($entryLength -lt 0) { $entryLength = -$entryLength } # MIT quirk
     if ($entryLength -lt 0) { throw "Invalid entry length at position $pos in '$Path'" }
@@ -833,41 +861,67 @@ function Read-Keytab {
       $misMatchLength = $entryLength - ($bytes.Length - $pos)
       throw "Declared entry exceeds file length by $misMatchLength bytes at position $pos in '$Path'" 
     }
+
     $entry = $bytes[$pos..($pos+$entryLength-1)]
     $pos += $entryLength
 
-    $idx = 0
-    $iref = [ref]$idx
-    $compCount = ReadUInt16 $entry $iref
-      $realmLength = ReadUInt16 $entry $iref
-      $realm = [Text.Encoding]::ASCII.GetString($entry[$idx..($idx+$realmLength-1)]); $idx+=$realmLength
-      $components = @()
-      for ($c=0;$c -lt $compCount;$c++) {
-        $l = ReadUInt16 $entry $iref
-        $components += ,([Text.Encoding]::ASCII.GetString($entry[$idx..($idx+$l-1)])); $idx+=$l
-      }
+    # Use a single cursor ($iref.Value) for all reads to avoid desync
+    $index = 0
+    $iref  = [ref]$index
 
-    $nameType = ReadUInt32 $entry $iref
+    # compCount, realm length, realm
+    $compCount   = ReadUInt16 $entry $iref
+    $realmLength = ReadUInt16 $entry $iref
+    $idx         = [int]$iref.Value
+    [byte[]]$realmBytesSlice = $entry[$idx..($idx+$realmLength-1)]
+    $realm       = [Text.Encoding]::ASCII.GetString($realmBytesSlice)
+    $iref.Value  = $idx + $realmLength
+
+    # components (repeat compCount times)
+    $components = @()
+    for ($c = 0; $c -lt $compCount; $c++) {
+    $len = ReadUInt16 $entry $iref
+    $idx = [int]$iref.Value
+    [byte[]]$compSlice = $entry[$idx..($idx+$len-1)]
+    $components += ,([Text.Encoding]::ASCII.GetString($compSlice))
+      $iref.Value  = $idx + $len
+    }
+
+    # nameType, timestamp
+    $nameType  = ReadUInt32 $entry $iref
     $timestamp = ReadUInt32 $entry $iref
-    # Align index with current reference position before reading raw byte fields
-    $idx = [int]$iref.Value
-    $kvno8 = $entry[$idx]; $idx++
+
+    Write-Host "Timestamp parsed from file (unix): $($timestamp)"
+    Write-Host "Timestamp parsed from file (datetime): $([DateTimeOffset]::FromUnixTimeSeconds([int]$timestamp).UtcDateTime)"
+
+    # kvno8 (1 byte)
+    $idx   = [int]$iref.Value
+    $kvno8 = [int]$entry[$idx]
+    $idx++
     $iref.Value = $idx
-    $etype = ReadUInt16 $entry $iref
+        
+    # etype (UInt16), keyLength (UInt16), key bytes
+    $etype     = ReadUInt16 $entry $iref
     $keyLength = ReadUInt16 $entry $iref
-    $idx = [int]$iref.Value
-    $keyBytes = $entry[$idx..($idx+$keyLength-1)]
+    $idx       = [int]$iref.Value
+    $keyBytes  = $entry[$idx..($idx+$keyLength-1)]
     $iref.Value = $idx + $keyLength
+
+    # optional kvno32 (UInt32); prefer over kvno8 if present and non-zero
     $kvno32 = $null
-    if ($iref.Value + 4 -le $entry.Length) { $kvno32 = ReadUInt32 $entry $iref }
-    $kvnoEffective = if ($kvno32 -and $kvno32 -ne 0) { [int]$kvno32 } else { [int]$kvno8 }
+    if ($iref.Value + 4 -le $entry.Length) {
+      $kvno32 = ReadUInt32 $entry $iref
+    }
+    $kvnoEffective = if ($kvno32 -and $kvno32 -ne 0) { [int]$kvno32 } else { $kvno8 }
+
+    # build display values and add entry
     $keyHexFull = ($keyBytes | ForEach-Object { $_.ToString('x2') }) -join ''
     $keyDisplay = if ($RevealKeys) {
       if ($keyHexFull.Length -gt $MaxKeyHex) { $keyHexFull.Substring(0,$MaxKeyHex) + '...' } else { $keyHexFull }
     } else {
-      if ($keyHexFull.Length -le 16) { $keyHexFull }
-      else { $keyHexFull.Substring(0,8) + '...'+ $keyHexFull.Substring($keyHexFull.Length-8,8) }
+      if ($keyHexFull.Length -le 16) { $keyHexFull } else { $keyHexFull.Substring(0,8) + '...' + $keyHexFull.Substring($keyHexFull.Length-8,8) }
     }
+
     $rawKey = if ($RevealKeys) { $keyBytes } else { $null }
     $list.Add([pscustomobject]@{
       Realm      = $realm
@@ -882,6 +936,7 @@ function Read-Keytab {
       RawKey     = $rawKey
     })
   }
+  Write-Host "[KT] Parsed timestamp: $($list | ForEach-Object { $_.TimestampUtc })"
   $list
 }
 
@@ -903,9 +958,13 @@ function Set-UserOnlyAcl {
   )
 
   try {
-    $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
-    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($sid,'FullControl','ContainerInherit,ObjectInherit','None','Allow')
-    $acl = New-Object System.Security.AccessControl.FileSecurity
+  $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+  $isDir = $false
+  try { $isDir = (Get-Item -LiteralPath $Path -Force).PSIsContainer } catch {}
+  $inheritFlags = if ($isDir) { 'ContainerInherit, ObjectInherit' } else { 'None' }
+  $propFlags    = 'None'
+  $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($sid,'FullControl',$inheritFlags,$propFlags,'Allow')
+  $acl = New-Object System.Security.AccessControl.FileSecurity
     $acl.SetOwner($sid)
     $acl.SetAccessRuleProtection($true,$false)
     $acl.AddAccessRule($rule)
@@ -957,7 +1016,8 @@ function New-PrincipalKeytabInternal {
     [switch]$IncludeOlderKvno,
     [object[]]$PrincipalDescriptorsOverride,
     [switch]$VerboseDiagnostics,
-    [switch]$SuppressWarnings
+    [switch]$SuppressWarnings,
+    [datetime]$FixedTimestampUtc
   )
 
   if (-not $OutputPath) {
@@ -980,8 +1040,8 @@ function New-PrincipalKeytabInternal {
     $wanted = @()
     foreach ($keySet in $keySets) {
       if ($keySet.Kvno -eq $keySets[0].Kvno) { $wanted += $keySet; continue }
-  if ($IncludeOldKvno   -and $keySet.Kvno -eq ($keySets[0].Kvno - 1)) { $wanted += $keySet; continue }
-  if ($IncludeOlderKvno -and $keySet.Kvno -eq ($keySets[0].Kvno - 2)) { $wanted += $keySet; continue }
+      if ($IncludeOldKvno   -and $keySet.Kvno -eq ($keySets[0].Kvno - 1)) { $wanted += $keySet; continue }
+      if ($IncludeOlderKvno -and $keySet.Kvno -eq ($keySets[0].Kvno - 2)) { $wanted += $keySet; continue }
     }
     $keySets = $wanted
     if ($keySets.Count -eq 0) { throw "No key sets selected for krbtgt after KVNO filtering" }
@@ -1011,7 +1071,11 @@ function New-PrincipalKeytabInternal {
   if ($IsKrbtgt -and -not $PSBoundParameters.ContainsKey('IncludeOldKvno')) {
     Write-Verbose "krbtgt: only current KVNO included (use -IncludeOldKvno / -IncludeOlderKvno to extend)."
   }
-  $finalPath = New-KeytabFile -Path $OutputPath -PrincipalDescriptors $principalDescriptors -KeySets $keySets -EtypeFilter $selection.Selected -RestrictAcl:$RestrictAcl
+  if ($PSBoundParameters.ContainsKey('FixedTimestampUtc')) {
+    $finalPath = New-KeytabFile -Path $OutputPath -PrincipalDescriptors $principalDescriptors -KeySets $keySets -EtypeFilter $selection.Selected -RestrictAcl:$RestrictAcl -FixedTimestampUtc $FixedTimestampUtc
+  } else {
+    $finalPath = New-KeytabFile -Path $OutputPath -PrincipalDescriptors $principalDescriptors -KeySets $keySets -EtypeFilter $selection.Selected -RestrictAcl:$RestrictAcl
+  }
 
   Write-Verbose "Keytab written: $finalPath"
   # Summary
@@ -1019,6 +1083,7 @@ function New-PrincipalKeytabInternal {
   if ($Summary -or $PassThru) {
     $etypeNames = @($selection.Selected | ForEach-Object { Get-EtypeNameFromId $_ })
     $kvnos = @($keySets | Select-Object -ExpandProperty Kvno | Sort-Object -Unique)
+    $generatedAt = if ($PSBoundParameters.ContainsKey('FixedTimestampUtc')) { $FixedTimestampUtc.ToUniversalTime().ToString('o') } else { (Get-Date).ToUniversalTime().ToString('o') }
     $summaryObj = [ordered]@{
       SamAccountName   = $SamAccountName
       PrincipalType    = $material.PrincipalType
@@ -1031,7 +1096,7 @@ function New-PrincipalKeytabInternal {
       PrincipalCount   = $principalDescriptors.Count
       Principals       = @($principalDescriptors | ForEach-Object { $_.Display })
       OutputPath       = (Resolve-Path -LiteralPath $finalPath).Path
-      GeneratedAtUtc   = (Get-Date).ToUniversalTime().ToString('o')
+      GeneratedAtUtc   = $generatedAt
       Justification    = $Justification
       IncludeOldKvno   = [bool]$IncludeOldKvno
       IncludeOlderKvno = [bool]$IncludeOlderKvno
@@ -1098,6 +1163,7 @@ function New-Keytab {
     [switch]$AcknowledgeRisk,
     [switch]$VerboseDiagnostics,
     [switch]$SuppressWarnings,
+    [datetime]$FixedTimestampUtc,
 
     # Computer-only extras
     [Parameter(ParameterSetName='Auto')]
@@ -1107,19 +1173,22 @@ function New-Keytab {
     [Parameter(ParameterSetName='Computer')]
     [string[]]$AdditionalSpn
   )
-  Get-RequiredModule -Name ActiveDirectory
-  Get-RequiredModule -Name DSInternals
+  #Get-RequiredModule -Name ActiveDirectory
+  #Get-RequiredModule -Name DSInternals
+  Write-Host "[KT] Beginning keytab creation..."
 
   if (-not $Credential -and $EnvFile) { $Credential = Get-CredentialFromEnv -EnvFile $EnvFile }
 
-  $type = $PSCmdlet.ParameterSetName
+  if (-not $fixedTimestampUtc ) { $fixedTimestampUtc = [datetime]::UtcNow }
 
+  $type = $PSCmdlet.ParameterSetName
   $norm = $SamAccountName.ToUpperInvariant()
   if ($type -eq 'Auto') {
     if ($norm -eq 'KRBTGT') { $type = 'Krbtgt' }
     elseif ($SamAccountName -match '\$$') { $type = 'Computer' }
     else { $type = 'User' }
   }
+  Write-Host "[KT] Determined principal type: $type"
 
   switch ($type) {
     'Krbtgt' {
@@ -1129,7 +1198,8 @@ function New-Keytab {
         return New-PrincipalKeytabInternal -SamAccountName 'krbtgt' -Domain $Domain -Server $Server -Credential $Credential `
                                            -OutputPath $OutputPath -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype -IsKrbtgt `
                                            -IncludeOldKvno:$IncludeOldKvno -IncludeOlderKvno:$IncludeOlderKvno -RestrictAcl:$RestrictAcl -Force:$Force `
-                                           -JsonSummaryPath $JsonSummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification -VerboseDiagnostics:$VerboseDiagnostics
+                                           -JsonSummaryPath $JsonSummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
+                                           -VerboseDiagnostics:$VerboseDiagnostics -FixedTimestampUtc $FixedTimestampUtc
       }
     }
     'Computer' {
@@ -1153,7 +1223,7 @@ function New-Keytab {
         return New-PrincipalKeytabInternal -SamAccountName ("{0}$" -f $compName) -Domain $domainFqdn -Server $Server -Credential $Credential `
                                            -OutputPath $OutputPath -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype -RestrictAcl:$RestrictAcl -Force:$Force `
                                            -JsonSummaryPath $JsonSummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
-                                           -PrincipalDescriptorsOverride $desc -VerboseDiagnostics:$VerboseDiagnostics
+                                           -PrincipalDescriptorsOverride $desc -VerboseDiagnostics:$VerboseDiagnostics -FixedTimestampUtc $FixedTimestampUtc
       }
     }
     'User' {
@@ -1163,7 +1233,7 @@ function New-Keytab {
         return New-PrincipalKeytabInternal -SamAccountName $userName -Domain $Domain -Server $Server -Credential $Credential `
                                            -OutputPath $OutputPath -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype `
                                            -RestrictAcl:$RestrictAcl -Force:$Force -JsonSummaryPath $JsonSummaryPath -PassThru:$PassThru `
-                                           -Summary:$Summary -Justification $Justification -VerboseDiagnostics:$VerboseDiagnostics
+                                           -Summary:$Summary -Justification $Justification -VerboseDiagnostics:$VerboseDiagnostics -FixedTimestampUtc $FixedTimestampUtc
       }
     }
   }
@@ -1277,12 +1347,103 @@ function Test-Keytab {
   }
 }
 
-#endregion
-  
-#region Export Members
+function Protect-Keytab {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)][string]$Path,
+    [string]$OutputPath,
+    [Validateset('CurrentUser','LocalMachine')][string]$Scope = 'CurrentUser',
+    [string]$Entropy,
+    [switch]$Force,
+    [switch]$DeletePlaintext,
+    [switch]$RestrictAcl
+  )
+
+  if (-not (Test-Path -LiteralPath $Path)) { throw "File not found: $Path" }
+  if (-not $OutputPath) { $OutputPath = "$Path.dpapi" }
+  if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) {
+    throw "Output file '$OutputPath' already exists. Use -Force to overwrite."
+  }
+
+  $bytes = [IO.File]::ReadAllBytes($Path)
+  $entropyBytes = if ($Entropy) { [Text.Encoding]::UTF8.GetBytes($Entropy) } else { $null }
+  $scopeEnum = if ($Scope -eq 'LocalMachine') { 
+    [System.Security.Cryptography.DataProtectionScope]::LocalMachine 
+  } else { 
+    [System.Security.Cryptography.DataProtectionScope]::CurrentUser 
+  }
+
+  try {
+    $protected = [System.Security.Cryptography.ProtectedData]::Protect($bytes, $entropyBytes, $scopeEnum)
+    [IO.File]::WriteAllBytes($OutputPath, $protected)
+    if ($RestrictAcl) { Set-UserOnlyAcl -Path $OutputPath }
+  } finally {
+    if ($bytes) { [Array]::Clear($bytes, 0, $bytes.Length) }
+    if ($protected) { [Array]::Clear($protected, 0, $protected.Length) }
+    if ($entropyBytes) { [Array]::Clear($entropyBytes, 0, $entropyBytes.Length) }
+  }
+
+  if ($DeletePlainText) {
+    try { Remove-Item -LiteralPath $Path -Force } catch { Write-Warning "Failed to delete plaintext '$Path': $($_.Exception.Message)" }
+  }
+  $OutputPath
+}
+
+function Unprotect-Keytab {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)][string]$Path,
+    [string]$OutputPath,
+    [ValidateSet('CurrentUser','LocalMachine')][string]$Scope = 'CurrentUser',
+    [string]$Entropy,
+    [switch]$Force,
+    [switch]$RestrictAcl
+  )
+  if (-not (Test-Path -LiteralPath $Path)) { throw "File not found: $Path" }
+  if (-not $OutputPath) {
+    if ($Path -like '*.dpapi') { $OutputPath = $Path.Substring(0, $Path.Length - 6) } else { $OutputPath = "$Path.unprotected.keytab" }
+  }
+  if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) {
+    throw "Output file '$OutputPath' already exists. Use -Force to overwrite."
+  }
+
+  $bytes = [IO.File]::ReadAllBytes($Path)
+  $entropyBytes = if ($Entropy) { [Text.Encoding]::UTF8.GetBytes($Entropy) } else { $null }
+  $scopeEnum = if ($Scope -eq 'LocalMachine') {
+    [System.Security.Cryptography.DataProtectionScope]::LocalMachine
+  } else {
+    [System.Security.Cryptography.DataProtectionScope]::CurrentUser
+  }
+
+  try {
+    $plain = [System.Security.Cryptography.ProtectedData]::Unprotect($bytes, $entropyBytes, $scopeEnum)
+    [IO.File]::WriteAllBytes($OutputPath, $plain)
+    if ($RestrictAcl) { Set-UserOnlyAcl -Path $OutputPath }
+  } finally {
+    if ($bytes) { [Array]::Clear($bytes, 0, $bytes.Length) }
+    if ($plain) { [Array]::Clear($plain, 0, $plain.Length) }
+    if ($entropyBytes) { [Array]::Clear($entropyBytes, 0, $entropyBytes.Length) }
+  }
+  $OutputPath
+}
+
 Export-ModuleMember -Function `
   New-Keytab, `
   Merge-Keytab, `
   Test-Keytab, `
-  Read-Keytab
+  Read-Keytab, `
+  # Dev / Unit Testing
+  Protect-Keytab, `
+  Unprotect-Keytab, `
+  Get-EtypeIdFromInput, `
+  Get-EtypeNameFromId, `
+  Resolve-EtypeSelection, `
+  New-PrincipalDescriptor, `
+  Write-SecurityWarning, `
+  Select-CombinedEtypes, `
+  Set-UserOnlyAcl, `
+  Resolve-DomainContext, `
+  ConvertTo-NetBIOSIfFqdn, `
+  Get-KerberosKeyMaterialFromAccount, `
+  New-KeytabFile
 #endregion
