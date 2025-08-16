@@ -12,7 +12,7 @@
 
 Set-StrictMode -Version Latest
 
-$modulePath = Resolve-Path "$PSScriptRoot\..\STkrbKeytab.psm1"
+$modulePath = Resolve-Path "$PSScriptRoot\..\STkrbKeytab.psd1"
 Import-Module -Name "$modulePath" -Force -ErrorAction Stop
 $global:TestOutDir = Join-Path $PSScriptRoot 'output'
 New-Item -ItemType Directory -Path $global:TestOutDir -Force | Out-Null

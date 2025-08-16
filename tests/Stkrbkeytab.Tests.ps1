@@ -43,13 +43,35 @@
 - Integration tests: Protect/Unprotect (Windows-only)
   - Protect-Keytab with entropy; verify .dpapi file exists.
   - Unprotect-Keytab; verify unprotected bytes equal original; cleanup.
+
+.TIPS
+Follow structure:
+Describe 'Something' {
+  It 'does something' {
+    # Arrange
+    # Act
+    # Assert
+  }
+}
+
+Public functions are imported at startup.
+To use private functions from the module:
+Describe 'Something' {
+  InModuleScope $ModuleName {
+    It 'does something' {
+      # Arrange
+      # Act
+      # Assert
+    }
+  }
+}
 #>
 # filepath: tests/STkrbKeytab.Tests.ps1
 # Pester v5 tests for STkrbKeytab.psm1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$modulePath = Resolve-Path "$PSScriptRoot\..\STkrbKeytab.psm1"
+$modulePath = Resolve-Path "$PSScriptRoot\..\STkrbKeytab.psd1"
 $moduleName = 'STkrbKeytab'
 $TestOutDir = Join-Path $PSScriptRoot 'output'
 Import-Module -Name "$modulePath" -Force -ErrorAction Stop
@@ -62,29 +84,32 @@ try { Get-ChildItem -Path $TestOutDir -File | Remove-Item -Force } catch {
 }
 
 Describe 'Etype mapping and selection helpers' {
-  It 'Get-EtypeIdFromInput maps int/string/name and returns $null for unknown' {
-    Get-EtypeIdFromInput 18 | Should -Be 18
-    Get-EtypeIdFromInput '18' | Should -Be 18
-    Get-EtypeIdFromInput 'AES256_CTS_HMAC_SHA1_96' | Should -Be 18
-    Get-EtypeIdFromInput 'nonexistent' | Should -BeNullOrEmpty
-  }
-  It 'Get-EtypeNameFromId resolves known and unknown ids' {
-    Get-EtypeNameFromId 18 | Should -Be 'AES256_CTS_HMAC_SHA1_96'
-    Get-EtypeNameFromId 4095 | Should -Be 'ETYPE_4095'
-  }
-  It 'Resolve-EtypeSelection handles include/exclude/missing/unknown' {
-    $avail = @(18,17,23)
-    $sel = Resolve-EtypeSelection -AvailableIds $avail -Include @('18','AES128_CTS_HMAC_SHA1_96') -Exclude @(23,'bad')
-    $sel.Selected | Sort-Object | Should -Be @(17,18)
-    $sel.Missing | Sort-Object | Should -Be @()
-    $sel.UnknownExclude | Should -Contain 'bad'
-    $sel.UnknownInclude | Should -Be @()
-    # Missing case
-    $sel2 = Resolve-EtypeSelection -AvailableIds $avail -Include @(26,18)
-    $sel2.Selected | Sort-Object | Should -Be @(18)
-    $sel2.Missing | Should -Contain 26
+  InModuleScope $ModuleName {
+    It 'Get-EtypeIdFromInput maps int/string/name and returns $null for unknown' {
+      Get-EtypeIdFromInput 18 | Should -Be 18
+      Get-EtypeIdFromInput '18' | Should -Be 18
+      Get-EtypeIdFromInput 'AES256_CTS_HMAC_SHA1_96' | Should -Be 18
+      Get-EtypeIdFromInput 'nonexistent' | Should -BeNullOrEmpty
+    }
+    It 'Get-EtypeNameFromId resolves known and unknown ids' {
+      Get-EtypeNameFromId 18 | Should -Be 'AES256_CTS_HMAC_SHA1_96'
+      Get-EtypeNameFromId 4095 | Should -Be 'ETYPE_4095'
+    }
+    It 'Resolve-EtypeSelection handles include/exclude/missing/unknown' {
+      $avail = @(18,17,23)
+      $sel = Resolve-EtypeSelection -AvailableIds $avail -Include @('18','AES128_CTS_HMAC_SHA1_96') -Exclude @(23,'bad')
+      $sel.Selected | Sort-Object | Should -Be @(17,18)
+      $sel.Missing | Sort-Object | Should -Be @()
+      $sel.UnknownExclude | Should -Contain 'bad'
+      $sel.UnknownInclude | Should -Be @()
+      # Missing case
+      $sel2 = Resolve-EtypeSelection -AvailableIds $avail -Include @(26,18)
+      $sel2.Selected | Sort-Object | Should -Be @(18)
+      $sel2.Missing | Should -Contain 26
+    }
   }
 }
+  
 
 Describe 'Keytab write/read roundtrip' {
   InModuleScope $ModuleName {
