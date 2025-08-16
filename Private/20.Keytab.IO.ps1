@@ -58,7 +58,7 @@ function New-KeytabEntry {
   $enc = [Text.Encoding]::ASCII
   $realmBytes = $enc.GetBytes($PrincipalDescriptor.Realm)
 
-  $memStream    = New-Object IO.MemoryStream
+  $memStream    = New-Object IO.MemoryStream # write in memory first, then to disk when done
   $binaryWriter = New-Object IO.BinaryWriter($memStream)
 
   Write-UInt16BE $binaryWriter $PrincipalDescriptor.Components.Count

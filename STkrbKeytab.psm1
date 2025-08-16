@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+This module provides functions for managing Kerberos keytabs.
+
+.CHANGE LOG
+Date       Auth           Ver       Change
+---------- -------------- -------- ------------------------------------------------
+10.08.     Stjp           1.0      Initial version
+16.08.     Stjp           1.1      Refactor, Add New-Keytab, New-KeytabFromPassword, Read-Keytab, Test-Keytab, Merge-Keytab, Protect-Keytab / Unprotect-Keytab
+
+#>
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
