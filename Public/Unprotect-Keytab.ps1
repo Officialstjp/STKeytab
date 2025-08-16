@@ -16,6 +16,7 @@ function Unprotect-Keytab {
     [switch]$Force,
     [switch]$RestrictAcl
   )
+  
   if (-not (Test-Path -LiteralPath $Path)) { throw "File not found: $Path" }
   if (-not $OutputPath) {
     if ($Path -like '*.dpapi') { $OutputPath = $Path.Substring(0, $Path.Length - 6) } else { $OutputPath = "$Path.unprotected.keytab" }

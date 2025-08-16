@@ -11,6 +11,7 @@ function Test-Keytab {
     [Parameter(Mandatory)][string]$Path,
     [switch]$Detailed
   )
+  
   if (-not (Test-Path -LiteralPath $Path)) { throw "File not found: $Path" }
   $result = @{
     IsValid = $false

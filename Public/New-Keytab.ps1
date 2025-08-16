@@ -39,8 +39,8 @@ function New-Keytab {
     [switch]$IncludeOlderKvno,
     [switch]$AcknowledgeRisk,
     [switch]$VerboseDiagnostics,
-  [switch]$SuppressWarnings,
-  [datetime]$FixedTimestampUtc,
+    [switch]$SuppressWarnings,
+    [datetime]$FixedTimestampUtc,
 
     # Computer-only extras
     [Parameter(ParameterSetName='Auto')]
@@ -55,8 +55,6 @@ function New-Keytab {
 
   if (-not $Credential -and $EnvFile) { $Credential = Get-CredentialFromEnv -EnvFile $EnvFile }
 
-  # Don't auto-populate FixedTimestampUtc; determinism only when explicitly provided.
-
   $type = $PSCmdlet.ParameterSetName
   $norm = $SamAccountName.ToUpperInvariant()
   if ($type -eq 'Auto') {
@@ -70,14 +68,14 @@ function New-Keytab {
       if (-not $AcknowledgeRisk) { throw "Extraction of krbtgt is High/Critical impact. Re-run with -AcknowledgeRisk after justification review." }
       if ($PSCmdlet.ShouldProcess('krbtgt',"Create krbtgt keytab (multi-KVNO possible)")) {
         if (-not $SuppressWarnings.IsPresent) { try { Write-SecurityWarning -RiskLevel 'krbtgt' -SamAccountName 'krbtgt' | Out-Null } catch {} }
-  $extra = @{}
-  if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { $extra.FixedTimestampUtc = $FixedTimestampUtc }
-  return New-PrincipalKeytabInternal -SamAccountName 'krbtgt' -Domain $Domain -Server $Server -Credential $Credential `
-                                           -OutputPath $OutputPath -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype -IsKrbtgt `
-                                           -IncludeOldKvno:$IncludeOldKvno -IncludeOlderKvno:$IncludeOlderKvno -RestrictAcl:$RestrictAcl -Force:$Force `
-                                           -JsonSummaryPath $JsonSummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
-             -VerboseDiagnostics:$VerboseDiagnostics @extra
-      }
+        $extra = @{}
+        if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { $extra.FixedTimestampUtc = $FixedTimestampUtc }
+        return New-PrincipalKeytabInternal -SamAccountName 'krbtgt' -Domain $Domain -Server $Server -Credential $Credential `
+                                                -OutputPath $OutputPath -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype -IsKrbtgt `
+                                                -IncludeOldKvno:$IncludeOldKvno -IncludeOlderKvno:$IncludeOlderKvno -RestrictAcl:$RestrictAcl -Force:$Force `
+                                                -JsonSummaryPath $JsonSummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
+                  -VerboseDiagnostics:$VerboseDiagnostics @extra
+            }
     }
     'Computer' {
       $domainFqdn = Resolve-DomainContext -Domain $Domain

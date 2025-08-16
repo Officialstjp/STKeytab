@@ -80,26 +80,26 @@ function Invoke-PBKDF2HmacSha1 {
     $offset         = 0
     $hmac           = [System.Security.Cryptography.HMACSHA1]::new($PasswordBytes)
     try {
-        for ($i = 1; $i -le $blocks; $i++) {
-            $iterBytes = ConvertTo-BigEndianUint32Bytes -Value $i
-            $msg = New-Object byte[] ($SaltBytes.Length +4)
-            [Array]::Copy($SaltBytes, 0, $msg, 0, $SaltBytes.Length)
-            [Array]::Copy($iterBytes, 0, $msg, $SaltBytes.Length, 4)
-            $curIter = $hmac.ComputeHash($msg) 
-            $curIterHash = [byte[]]$curIter.Clone()
-            for ($j = 2; $j -le $Iterations; $j++) {
-                $curIter = $hmac.ComputeHash($curIter)
-                for ($k = 0; $k -lt $curIterHash.Length; $k++) { 
-                    $curIterHash[$k] = $curIterHash[$k] -bxor $curIter[$k] 
+        for ($i = 1; $i -le $blocks; $i++) {                                # for every block
+            $iterBytes = ConvertTo-BigEndianUint32Bytes -Value $i           # Block index (1-based)
+            $msg = New-Object byte[] ($SaltBytes.Length +4)                 # Salt + Block index
+            [Array]::Copy($SaltBytes, 0, $msg, 0, $SaltBytes.Length)        # Copy SaltBytes to <msg>
+            [Array]::Copy($iterBytes, 0, $msg, $SaltBytes.Length, 4)        # Copy Block index to <msg>
+            $curIter = $hmac.ComputeHash($msg)                              # Compute initial hash
+            $curIterHash = [byte[]]$curIter.Clone()                         # Clone initial hash
+            for ($j = 2; $j -le $Iterations; $j++) {                        # for each iteration
+                $curIter = $hmac.ComputeHash($curIter)                      # Compute subsequent hash
+                for ($k = 0; $k -lt $curIterHash.Length; $k++) {            # for each byte in the hash
+                    $curIterHash[$k] = $curIterHash[$k] -bxor $curIter[$k]  # XOR with current iteration
                 }
             }
-            $cpyBytes = [Math]::Min($hashLength, $DerivedKeyLength - $offset) 
-            [Array]::Copy($curIterHash, 0, $derivedKey, $offset, $cpyBytes)
+            $cpyBytes = [Math]::Min($hashLength, $DerivedKeyLength - $offset)   # copy bytes of current block
+            [Array]::Copy($curIterHash, 0, $derivedKey, $offset, $cpyBytes)     # to <derivedKey>
             $offset += $cpyBytes
-            [Array]::Clear($msg, 0, $msg.Length)
-            [Array]::Clear($iterBytes, 0, $iterBytes.Length)
-            [Array]::Clear($curIterHash, 0, $curIterHash.Length)
-            [Array]::Clear($curIter, 0, $curIter.Length)
+            [Array]::Clear($msg, 0, $msg.Length)                                # Clear message buffer
+            [Array]::Clear($iterBytes, 0, $iterBytes.Length)                    # Clear iteration bytes
+            [Array]::Clear($curIterHash, 0, $curIterHash.Length)                # Clear current iteration hash
+            [Array]::Clear($curIter, 0, $curIter.Length)                        # Clear current iteration
         }
     } finally { try { $hmac.Dispose() } catch {} }
     [Array]::Clear($PasswordBytes, 0, $PasswordBytes.Length)
