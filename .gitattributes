@@ -1,0 +1,57 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# PowerShell files should always have CRLF line endings
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+
+# Windows-specific files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Unix-specific files
+*.sh text eol=lf
+*.bash text eol=lf
+
+# YAML and JSON should use LF (common practice)
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+
+# Markdown files
+*.md text eol=crlf
+
+# Configuration files
+*.config text eol=crlf
+*.conf text eol=lf
+*.cfg text eol=crlf
+
+# Git files
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# Binary files (never modify)
+*.keytab binary
+*.dpapi binary
+*.exe binary
+*.dll binary
+*.zip binary
+*.7z binary
+*.tar binary
+*.gz binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+
+# Archive attributes for GitHub
+Archive/ export-ignore
+temp/ export-ignore
+tests/output/ export-ignore
+.vscode/ export-ignore
+.github/instructions/ export-ignore
+*.code-workspace export-ignore

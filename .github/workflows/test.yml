@@ -1,0 +1,46 @@
+name: Test STkrbKeytab
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell modules
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+
+      - name: Run Pester tests
+        run: |
+          Import-Module Pester
+          $config = New-PesterConfiguration
+          $config.Run.Path = "tests"
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = "TestResults.xml"
+          $config.Output.Verbosity = 'Detailed'
+          Invoke-Pester -Configuration $config
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: TestResults.xml
+
+      - name: Run PSScriptAnalyzer
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning
+          if ($results) {
+            $results | Format-Table -AutoSize
+            Write-Error "PSScriptAnalyzer found $($results.Count) issues"
+          } else {
+            Write-Host "PSScriptAnalyzer: No issues found" -ForegroundColor Green
+          }
