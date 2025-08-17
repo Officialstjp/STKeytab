@@ -6,7 +6,18 @@
   CompatiblePSEditions = @('Desktop','Core')
   Author            = 'Stefan Ploch'
   Description       = 'Kerberos keytab toolkit (replication + password S2K), writer/parser/merge, DPAPI.'
-  FunctionsToExport = '*'
+  FunctionsToExport = @(
+    'Compare-Keytab', 
+    'ConvertFrom-KeytabJson', 
+    'ConvertTo-KeytabJson',
+    'Merge-Keytab',
+    'New-Keytab',
+    'New-KeytabFromPassword',
+    'Protect-Keytab',
+    'Read-Keytab',
+    'Test-Keytab',
+    'Unprotect-Keytab'
+  )
   CmdletsToExport   = @()
   AliasesToExport   = @()
   PrivateData = @{

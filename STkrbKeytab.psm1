@@ -7,6 +7,7 @@ Date       Auth           Ver       Change
 ---------- -------------- -------- ------------------------------------------------
 10.08.     Stjp           1.0      Initial version
 16.08.     Stjp           1.1      Refactor, Add New-Keytab, New-KeytabFromPassword, Read-Keytab, Test-Keytab, Merge-Keytab, Protect-Keytab / Unprotect-Keytab
+17.08.     Stjp           1.2      Add Compare-Keytab, ConvertTo-KeytabJson, ConvertFrom-KeytabJson
 
 #>
 
