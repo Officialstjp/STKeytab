@@ -58,7 +58,7 @@ Describe 'New-KeytabFromPassword -write/read determinism' {
                                             -Password $sec -IncludeEtype 18,17 -Kvno 3 -Iterations 4096 `
                                             -OutputPath $out -Force -FixedTimestampUtc $fixed -Summary -Passthru
             Test-Path -LiteralPath $res.OutputPath | Should -Be $true
-            $parsed = Read-Keytab -Path $res.OutputPathgit
+            $parsed = Read-Keytab -Path $res.OutputPath
             ($parsed | Select-Object -ExpandProperty EtypeId | Sort-Object Unique) | Should -Be @(17,18)
         }
     }
