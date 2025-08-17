@@ -26,18 +26,18 @@ if (-not (Test-Path $TestOutDir)) { New-Item -ItemType Directory -Path $TestOutD
 Describe 'New-KeytabFromPassword - PBKDF2 custom vs Rfc2898DeriveBytes' {
     InModuleScope $ModuleName {
         It 'matches Rfc2898 for AES128 and AES256' {
-            $pwd = 'Pr4t3rSt*rn'
+            $passwd = 'Pr4t3rSt*rn'
             $salt = [Text.Encoding]::UTF8.GetBytes('EXAMPLE.COMuser') # MIT-style salt for user@example.com
             $iter = 4096
 
             # custom
-            $key128 = Invoke-PBKDF2HmacSha1 -PasswordBytes ([Text.Encoding]::UTF8.GetBytes($pwd)) -SaltBytes $salt -Iterations $iter -DerivedKeyLength 16
-            $key256 = Invoke-PBKDF2HmacSha1 -PasswordBytes ([Text.Encoding]::UTF8.GetBytes($pwd)) -SaltBytes $salt -Iterations $iter -DerivedKeyLength 32
+            $key128 = Invoke-PBKDF2HmacSha1 -PasswordBytes ([Text.Encoding]::UTF8.GetBytes($passwd)) -SaltBytes $salt -Iterations $iter -DerivedKeyLength 16
+            $key256 = Invoke-PBKDF2HmacSha1 -PasswordBytes ([Text.Encoding]::UTF8.GetBytes($passwd)) -SaltBytes $salt -Iterations $iter -DerivedKeyLength 32
 
             # Rfc2898DeriveBytes
-            $p1 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes ($pwd, $salt, $iter, [System.Security.Cryptography.HashAlgorithmName]::SHA1)
+            $p1 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes ($passwd, $salt, $iter, [System.Security.Cryptography.HashAlgorithmName]::SHA1)
             $ref128 = $p1.GetBytes(16)
-            $p1 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes ($pwd, $salt, $iter, [System.Security.Cryptography.HashAlgorithmName]::SHA1)
+            $p1 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes ($passwd, $salt, $iter, [System.Security.Cryptography.HashAlgorithmName]::SHA1)
             $ref256 = $p1.GetBytes(32)
 
             # Validate
@@ -65,7 +65,7 @@ Describe 'New-KeytabFromPassword - salt policy' {
 Describe 'New-KeytabFromPassword -write/read determinism' {
     InModuleScope $ModuleName {
         It 'produces a readably keytab with fixed timestamp' {
-            $out = Join-Path $TestOutDir 'pwd-user.keytab'
+            $out = Join-Path $TestOutDir 'passwd-user.keytab'
             Remove-Item -LiteralPath $out -Force -ErrorAction SilentlyContinue
             $fixed = [datetime]::Parse('2020-01-01T00:00:00Z')
             $sec = ConvertTo-SecureString 'P@ssw0rd!' -AsPlainText -Force

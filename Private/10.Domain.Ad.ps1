@@ -105,7 +105,6 @@ function Get-KerberosKeyMaterialFromAccount {
     param(
         [Parameter(Mandatory)][object]$Account,
         [Parameter(Mandatory)][string]$SamAccountName,
-        [Parameter(Mandatory)][string]$DomainFqdn,
         [string]$Server,
         [switch]$IsKrbtgt
     )
