@@ -20,8 +20,8 @@ foreach ($folder in $folders) {
         Severity = 'Warning'
         }
 
-        if (Test-Path ".\Utils\PSScriptAnalyzerSettings.psd1") {
-        $analyzerParams.Settings = ".\Utils\PSScriptAnalyzerSettings.psd1"
+        if (Test-Path ".\CI\PSScriptAnalyzerSettings.psd1") {
+            $analyzerParams.Settings = ".\CI\PSScriptAnalyzerSettings.psd1"
         }
 
         $results = Invoke-ScriptAnalyzer @analyzerParams
