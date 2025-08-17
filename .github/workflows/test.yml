@@ -37,10 +37,52 @@ jobs:
 
       - name: Run PSScriptAnalyzer
         run: |
-          $results = Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning
-          if ($results) {
-            $results | Format-Table -AutoSize
-            Write-Error "PSScriptAnalyzer found $($results.Count) issues"
+          Write-Host "=== PSScriptAnalyzer Analysis ===" -ForegroundColor Cyan
+
+          $allIssues = @()
+          $folders = @(
+            @{ Path = "Public"; Name = "Public Functions" },
+            @{ Path = "Private"; Name = "Private Functions" },
+            @{ Path = "tests"; Name = "Test Files" },
+            @{ Path = "STkrbKeytab.psm1"; Name = "Module Manifest" },
+            @{ Path = "STkrbKeytab.psd1"; Name = "Module Data" }
+          )
+
+          foreach ($folder in $folders) {
+            if (Test-Path $folder.Path) {
+              Write-Host "`n--- Analyzing $($folder.Name) ---" -ForegroundColor Yellow
+              $results = Invoke-ScriptAnalyzer -Path $folder.Path -Recurse -Severity Warning
+
+              if ($results) {
+                Write-Host "Found $($results.Count) issue(s):" -ForegroundColor Red
+                $results | Format-Table -Property Severity, RuleName, ScriptName, Line, Message -AutoSize
+                $allIssues += $results
+              } else {
+                Write-Host "✓ No issues found" -ForegroundColor Green
+              }
+            } else {
+              Write-Host "⚠ Path not found: $($folder.Path)" -ForegroundColor DarkYellow
+            }
+          }
+
+          Write-Host "`n=== Summary ===" -ForegroundColor Cyan
+          if ($allIssues.Count -gt 0) {
+            Write-Host "Total issues found: $($allIssues.Count)" -ForegroundColor Red
+
+            # Group by severity
+            $bySeverity = $allIssues | Group-Object Severity
+            foreach ($group in $bySeverity) {
+              Write-Host "  $($group.Name): $($group.Count)" -ForegroundColor Yellow
+            }
+
+            # Group by rule
+            Write-Host "`nTop issues by rule:" -ForegroundColor Yellow
+            $byRule = $allIssues | Group-Object RuleName | Sort-Object Count -Descending | Select-Object -First 5
+            foreach ($rule in $byRule) {
+              Write-Host "  $($rule.Name): $($rule.Count)" -ForegroundColor White
+            }
+
+            Write-Error "PSScriptAnalyzer found $($allIssues.Count) total issues"
           } else {
-            Write-Host "PSScriptAnalyzer: No issues found" -ForegroundColor Green
+            Write-Host "✓ All scans completed successfully - no issues found!" -ForegroundColor Green
           }

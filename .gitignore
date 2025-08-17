@@ -1,7 +1,23 @@
-Archive/
-tests/output/
+# Workspace
+.github/instructions/
 .vscode/
 STkrbKeytab.code-workspace
-StkrbKeytab_ArchitectureV1.md
-.github/
+
+# Tests
+tests/output/
+testResults.xml
+TestResults*.xml
+benchmark-results.csv
+
+# Archive, not needed in the repo
+Archive/
+
+# Temporary files
 temp/
+
+# Sensitive artifacts that shouldn't be committed
+*.keytab
+*.dpapi
+
+# PowerShell Gallery publish artifacts
+*.nupkg
