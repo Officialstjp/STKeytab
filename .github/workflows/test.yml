@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
 
   sign-module:
     name: Sign Module
-    runs-on: windows-latest
+    runs-on: self-hosted
     needs: test
     if: github.event_name != 'pull_request'
     steps:
