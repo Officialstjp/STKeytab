@@ -1,4 +1,4 @@
-name: Test STkrbKeytab
+name: Sign & Test STkrbKeytab
 on:
   push:
     branches: [ main, develop ]
@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,6 +24,7 @@ jobs:
           $config = New-PesterConfiguration
           $config.Run.Path = "tests"
           $config.TestResult.Enabled = $true
+          $config.TestResult.OutputFormat = "NUnitXml"
           $config.TestResult.OutputPath = "TestResults.xml"
           $config.Output.Verbosity = 'Detailed'
           Invoke-Pester -Configuration $config
@@ -37,75 +38,58 @@ jobs:
 
       - name: Run PSScriptAnalyzer
         run: |
-          Write-Host "=== PSScriptAnalyzer Analysis ===" -ForegroundColor Cyan
+          .\CI\Run-PSScriptAnalyzer.ps1
 
-          $allIssues = @()
-          $folders = @(
-            @{ Path = "Public"; Name = "Public Functions" },
-            @{ Path = "Private"; Name = "Private Functions" },
-            @{ Path = "tests"; Name = "Test Files" },
-            @{ Path = "STkrbKeytab.psm1"; Name = "Module Manifest" },
-            @{ Path = "STkrbKeytab.psd1"; Name = "Module Data" }
-          )
+  sign-module:
+    name: Sign Module
+    runs-on: windows-latest
+    needs: test
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-          foreach ($folder in $folders) {
-            if (Test-Path $folder.Path) {
-              Write-Host "`n--- Analyzing $($folder.Name) ---" -ForegroundColor Yellow
-
-              # Use settings file if it exists
-              $analyzerParams = @{
-                Path = $folder.Path
-                Recurse = $true
-                Severity = 'Warning'
-              }
-
-              if (Test-Path "PSScriptAnalyzerSettings.psd1") {
-                $analyzerParams.Settings = "PSScriptAnalyzerSettings.psd1"
-              }
-
-              $results = Invoke-ScriptAnalyzer @analyzerParams
-
-              if ($results) {
-                Write-Host "Found $($results.Count) issue(s):" -ForegroundColor Red
-
-                # Show detailed results with full messages
-                foreach ($issue in $results) {
-                  Write-Host "" # Empty line for readability
-                  Write-Host "[$($issue.Severity)] $($issue.RuleName)" -ForegroundColor Red
-                  Write-Host "  File: $($issue.ScriptName):$($issue.Line)" -ForegroundColor Yellow
-                  Write-Host "  Message: $($issue.Message)" -ForegroundColor White
-                  if ($issue.SuggestedCorrections) {
-                    Write-Host "  Suggestion: $($issue.SuggestedCorrections[0].Description)" -ForegroundColor Cyan
-                  }
-                }
-
-                $allIssues += $results
-              } else {
-                Write-Host "✓ No issues found" -ForegroundColor Green
-              }
-            } else {
-              Write-Host "⚠ Path not found: $($folder.Path)" -ForegroundColor DarkYellow
-            }
+      - name: Import signing certificate
+        env:
+          SIGNING_CERTIFICATE: ${{ secrets.SIGNING_CERTIFICATE }}
+          SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        run: |
+          if (-not $env:SIGNING_CERTIFICATE) {
+              Write-Warning "[~] No signing certificate provided. Module will be unsigned."
+              Add-Content -Path $env:GITHUB_ENV -Value "SKIP_SIGNING=true"
+              exit 0
           }
 
-          Write-Host "`n=== Summary ===" -ForegroundColor Cyan
-          if ($allIssues.Count -gt 0) {
-            Write-Host "Total issues found: $($allIssues.Count)" -ForegroundColor Red
+          $thumb = .\CI\Import-SigningCert.ps1 -SIGNING_CERTIFICATE $SIGNING_CERTIFICATE -SIGNING_CERT_PASSWORD $SIGNING_CERT_PASSWORD
+          # Store thumbprint for signing step
+          Add-Content -Path $env:GITHUB_ENV -Value "CERT_THUMBPRINT=$thumb"
 
-            # Group by severity
-            $bySeverity = $allIssues | Group-Object Severity
-            foreach ($group in $bySeverity) {
-              Write-Host "  $($group.Name): $($group.Count)" -ForegroundColor Yellow
-            }
+      - name: Sign PowerShell files
+        if: env.SKIP_SIGNING != 'true'
+        run: |
+          .\CI\Sign-Module.ps1  -CertificateThumbprint $env:CERT_THUMBPRINT -Verify
 
-            # Group by rule
-            Write-Host "`nTop issues by rule:" -ForegroundColor Yellow
-            $byRule = $allIssues | Group-Object RuleName | Sort-Object Count -Descending | Select-Object -First 5
-            foreach ($rule in $byRule) {
-              Write-Host "  $($rule.Name): $($rule.Count)" -ForegroundColor White
-            }
+          # Verify all files are signed
+          $psFiles = Get-ChildItem -Recurse -Include "*.ps1", "*.psm1", "*.psd1" | Where-Object {
+            $_.FullName -notmatch '\\tests\\' -and $_.FullName -notmatch '\\temp\\' -and $_.Name -ne 'Sign-Module.ps1'
+          }
 
-            Write-Error "PSScriptAnalyzer found $($allIssues.Count) total issues"
+          $unsigned = $psFiles | Where-Object {
+            $sig = Get-AuthenticodeSignature -FilePath $_.FullName
+            $sig.Status -ne 'Valid'
+          }
+
+          if ($unsigned) {
+            Write-Error "[!] Found unsigned files: $($unsigned.Name -join ', ')"
           } else {
-            Write-Host "✓ All scans completed successfully - no issues found!" -ForegroundColor Green
+            Write-Host "[+] All $($psFiles.Count) PowerShell files are properly signed" -ForegroundColor Green
           }
+
+      - name: Test signed module
+        if: env.SKIP_SIGNING != 'true'
+        shell: pwsh
+        run: |
+          # Quick smoke test of signed module
+          Import-Module .\STkrbKeytab.psd1 -Force
+          $commands = Get-Command -Module STkrbKeytab
+          Write-Host "[+] Signed module loaded successfully with $($commands.Count) commands" -ForegroundColor Green

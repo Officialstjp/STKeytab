@@ -13,8 +13,8 @@ Copyright (c) 2025 Stefan Ploch
   Author            = 'Stefan Ploch'
   Description       = 'Kerberos keytab toolkit for AD: replication-safe extraction, password S2K (AES), robust writer/parser, compare/JSON, and DPAPI protect/unprotect.'
   FunctionsToExport = @(
-    'Compare-Keytab', 
-    'ConvertFrom-KeytabJson', 
+    'Compare-Keytab',
+    'ConvertFrom-KeytabJson',
     'ConvertTo-KeytabJson',
     'Merge-Keytab',
     'New-Keytab',

@@ -14,7 +14,7 @@ Date       Auth           Ver       Change
 10.08.25   Stjp           1.0      Initial version
 16.08.25   Stjp           1.1      Refactor, Add New-Keytab, New-KeytabFromPassword, Read-Keytab, Test-Keytab, Merge-Keytab, Protect-Keytab / Unprotect-Keytab
 17.08.25   Stjp           1.2      Add Compare-Keytab, ConvertTo-KeytabJson, ConvertFrom-KeytabJson
-17.08.25   Stjp           1.2.1    Add headers across all functions, parameter descriptions and Valuefrompipeline support, 
+17.08.25   Stjp           1.2.1    Add headers across all functions, parameter descriptions and Valuefrompipeline support,
                                    begin - process - end structure for all public functions
 #>
 
@@ -24,20 +24,20 @@ $here = $PSScriptRoot
 
 # Private first (sorted; allow 00., 10., … prefixes)
 Get-ChildItem "$here/Private" -Filter *.ps1 | Sort-Object Name |
-  ForEach-Object { 
+  ForEach-Object {
     try {
-      . (Join-Path $here "Private/$($_.Name)") 
+      . (Join-Path $here "Private/$($_.Name)")
     } catch {
       Write-Error "Failed to dot-source Private/$($_.Name): $_"
     }
   }
-  
+
 
 # Public next
 $pub = Get-ChildItem "$here/Public" -Filter *.ps1 | Sort-Object Name
 foreach ($file in $pub ){
   try {
-    . (Join-Path $here "Public/$($file.Name)") 
+    . (Join-Path $here "Public/$($file.Name)")
   } catch {
     Write-Error "Failed to dot-source Public/$($file.Name): $_"
   }
@@ -46,4 +46,3 @@ foreach ($file in $pub ){
 
 # Export public only (filename == function name)
 Export-ModuleMember -Function $pub.BaseName
-
