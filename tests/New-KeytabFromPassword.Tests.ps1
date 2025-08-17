@@ -1,4 +1,19 @@
-# Validates: PBKDF2 equivalence, salt casing policy, and deterministic keytab write/red.
+<#
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+<#
+    .SYNOPSIS
+    Pester tests for the New-KeytabFromPassword cmdlet.
+
+    .DESCRIPTION
+    These tests validate:
+    - PBKDF2 equivalence with Rfc2898DeriveBytes
+    - Salt casing policy
+    - Deterministic keytab write/read behavior
+#>
+
 
 $modulePath = Resolve-Path "$PSScriptRoot\..\STkrbKeytab.psd1"
 $moduleName = 'STkrbKeytab'
@@ -35,8 +50,8 @@ Describe 'New-KeytabFromPassword - PBKDF2 custom vs Rfc2898DeriveBytes' {
 Describe 'New-KeytabFromPassword - salt policy' {
     InModuleScope $ModuleName {
         It 'Windows compatibility uppercases realm and lowercases service/host' {
-            $princDesc = [pscustomobject]@{ 
-                Components=@('HTTP','WebSrv01') 
+            $princDesc = [pscustomobject]@{
+                Components=@('HTTP','WebSrv01')
                 Realm='example.com'
                 NameType=3
             }

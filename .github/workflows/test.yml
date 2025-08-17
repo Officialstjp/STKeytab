@@ -51,11 +51,34 @@ jobs:
           foreach ($folder in $folders) {
             if (Test-Path $folder.Path) {
               Write-Host "`n--- Analyzing $($folder.Name) ---" -ForegroundColor Yellow
-              $results = Invoke-ScriptAnalyzer -Path $folder.Path -Recurse -Severity Warning
+
+              # Use settings file if it exists
+              $analyzerParams = @{
+                Path = $folder.Path
+                Recurse = $true
+                Severity = 'Warning'
+              }
+
+              if (Test-Path "PSScriptAnalyzerSettings.psd1") {
+                $analyzerParams.Settings = "PSScriptAnalyzerSettings.psd1"
+              }
+
+              $results = Invoke-ScriptAnalyzer @analyzerParams
 
               if ($results) {
                 Write-Host "Found $($results.Count) issue(s):" -ForegroundColor Red
-                $results | Format-Table -Property Severity, RuleName, ScriptName, Line, Message -AutoSize
+
+                # Show detailed results with full messages
+                foreach ($issue in $results) {
+                  Write-Host "" # Empty line for readability
+                  Write-Host "[$($issue.Severity)] $($issue.RuleName)" -ForegroundColor Red
+                  Write-Host "  File: $($issue.ScriptName):$($issue.Line)" -ForegroundColor Yellow
+                  Write-Host "  Message: $($issue.Message)" -ForegroundColor White
+                  if ($issue.SuggestedCorrections) {
+                    Write-Host "  Suggestion: $($issue.SuggestedCorrections[0].Description)" -ForegroundColor Cyan
+                  }
+                }
+
                 $allIssues += $results
               } else {
                 Write-Host "✓ No issues found" -ForegroundColor Green

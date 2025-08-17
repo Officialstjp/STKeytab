@@ -1,6 +1,11 @@
 <#
-.SYNOPSIS
-dedicated Unit tests for the Set-UserOnlyAcl helper
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+<#
+    .SYNOPSIS
+    dedicated Unit tests for the Set-UserOnlyAcl helper
 
 #>
 
@@ -31,7 +36,7 @@ Describe 'Set-UserOnlyAcl'{
                 $aces.IsInherited               | Should -Be "False"
                 $aces.InheritanceFlags          | Should -Be "None"
                 $aces.PropagationFlags          | Should -Be "None"
-                
+
             } finally { Remove-Item $tmp.FullName -Force -ErrorAction SilentlyContinue }
         }
     }

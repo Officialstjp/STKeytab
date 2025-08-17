@@ -1,6 +1,11 @@
 <#
-.SYNOPSIS
-Unit tests for Compare-Convert-Keytab.ps1 functions.
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+<#
+    .SYNOPSIS
+    Unit tests for Compare-Convert-Keytab.ps1 functions.
 
 #>
 
@@ -27,21 +32,21 @@ Mock Get-RequiredModule { return $true } -ModuleName STkrbKeytab
 
 Describe 'Compare-Keytab' {
     BeforeEach {
-        Mock Get-ADReplAccount { 
-            New-MockAccount 
+        Mock Get-ADReplAccount {
+            New-MockAccount
         } -ModuleName STkrbKeytab
 
-        Mock Get-ADComputer { 
-            [pscustomobject]@{ 
-                servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com') 
-                'msDS-KeyVersionNumber' = 7 
-            } 
+        Mock Get-ADComputer {
+            [pscustomobject]@{
+                servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com')
+                'msDS-KeyVersionNumber' = 7
+            }
         } -ModuleName STkrbKeytab -ParameterFilter { ($Identity -like '*WEB01*') -or ($SamAccountName -like '*WEB01*') }
 
         # Fallback for second keytab files
-        Mock Get-ADReplAccount { 
-            New-MockAccount -Kvno 8 
-        } -ModuleName STkrbKeytab 
+        Mock Get-ADReplAccount {
+            New-MockAccount -Kvno 8
+        } -ModuleName STkrbKeytab
 
         Mock Get-AdComputer {
             [pscustomobject]@{

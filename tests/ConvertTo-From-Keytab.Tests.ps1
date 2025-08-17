@@ -1,6 +1,11 @@
 <#
-.SYNOPSIS
-Unit tests for ConvertTo- and ConvertFrom-KeytabJson functions.
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+<#
+    .SYNOPSIS
+    Unit tests for ConvertTo- and ConvertFrom-KeytabJson functions.
 #>
 
 Set-StrictMode -Version Latest

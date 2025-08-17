@@ -1,11 +1,17 @@
+<#
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+
 @{
   RootModule        = 'STkrbKeytab.psm1'
-  ModuleVersion     = '1.1.0'
+  ModuleVersion     = '1.2.0'
   GUID              = 'c5a6e3a4-c5a6-7b8e-9a0b-f1d9e3f4e5b1'
   PowerShellVersion = '5.1'
   CompatiblePSEditions = @('Desktop','Core')
   Author            = 'Stefan Ploch'
-  Description       = 'Kerberos keytab toolkit (replication + password S2K), writer/parser/merge, DPAPI.'
+  Description       = 'Kerberos keytab toolkit for AD: replication-safe extraction, password S2K (AES), robust writer/parser, compare/JSON, and DPAPI protect/unprotect.'
   FunctionsToExport = @(
     'Compare-Keytab', 
     'ConvertFrom-KeytabJson', 
@@ -22,9 +28,10 @@
   AliasesToExport   = @()
   PrivateData = @{
     PSData = @{
-      Tags        = @('Kerberos','Keytab','ActiveDirectory','Security')
-      ProjectUri  = 'https://example.invalid/STCrypt'
-      ReleaseNotes= 'Initial preview.'
+      Tags        = @('Kerberos','Keytab','ActiveDirectory','Security','DPAPI','AES')
+      ProjectUri  = 'https://github.com/Officialstjp/STkrbKeytab'
+      LicenseUri  = 'https://github.com/Officialstjp/STkrbKeytab/blob/main/LICENSE'
+      ReleaseNotes= 'v1.2.0: Added password-based keytab generation (AES PBKDF2), Compare-Keytab and ConvertTo/From-KeytabJson; parser hardening; DPAPI polish; deterministic outputs via -FixedTimestampUtc.'
     }
   }
 }

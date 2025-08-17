@@ -1,13 +1,21 @@
 <#
-        Pester tests updated for the consolidated New-Keytab cmdlet.
-        These tests mock AD/DCSync calls and validate:
-            - Header & structural integrity via Test-Keytab
-            - Include / Exclude etype filtering
-            - Principal collection for Computer type (IncludeShortHost, AdditionalSpn)
-            - JSON summary contents
-            - Force / WhatIf behaviors
-            - Warning on unknown/missing requested etypes
-            - Corrupted header detection
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+<#
+    .SYNOPSIS
+    Pester tests updated for the consolidated New-Keytab cmdlet.
+
+    .DESCRIPTION
+    These tests mock AD/DCSync calls and validate:
+    - Header & structural integrity via Test-Keytab
+    - Include / Exclude etype filtering
+    - Principal collection for Computer type (IncludeShortHost, AdditionalSpn)
+    - JSON summary contents
+    - Force / WhatIf behaviors
+    - Warning on unknown/missing requested etypes
+    - Corrupted header detection
  #>
 
 Set-StrictMode -Version Latest
@@ -39,11 +47,11 @@ Mock Get-RequiredModule { return $true } -ModuleName STkrbKeytab
 Describe 'New-Keytab (Computer) basic header' {
     BeforeEach {
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STkrbKeytab
-        Mock Get-ADComputer { 
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } 
+        Mock Get-ADComputer {
+            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
         } -ModuleName STkrbKeytab
     }
-    
+
     It 'writes a keytab with correct 0x0502 header' {
         $out = Join-Path $global:TestOutDir ("ktest_header.keytab")
         try {
@@ -58,7 +66,7 @@ Describe 'New-Keytab (Computer) basic header' {
             if (Test-Path $json) { Remove-Item $json -Force }
         }
     }
-    
+
     It 'detects a corrupted header' {
         $out = Join-Path $global:TestOutDir ("ktest_corrupt.keytab")
         try {
@@ -76,11 +84,11 @@ Describe 'New-Keytab (Computer) basic header' {
 Describe 'Principal handling' {
     BeforeEach {
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STkrbKeytab
-        Mock Get-ADComputer { 
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } 
+        Mock Get-ADComputer {
+            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
         } -ModuleName STkrbKeytab
     }
-    
+
     It 'includes short host variants when -IncludeShortHost specified' {
         $out = Join-Path $global:TestOutDir ("ktest_short.keytab")
         try {
@@ -102,11 +110,11 @@ Describe 'Principal handling' {
 Describe 'Encryption type filtering' {
     BeforeEach {
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STkrbKeytab
-        Mock Get-ADComputer { 
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } 
+        Mock Get-ADComputer {
+            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
         } -ModuleName STkrbKeytab
     }
-    
+
     It 'filters to only requested encryption types' {
         $out = Join-Path $global:TestOutDir ("ktest_filter_include.keytab")
         try {
@@ -120,7 +128,7 @@ Describe 'Encryption type filtering' {
             if (Test-Path $json) { Remove-Item $json -Force }
         }
     }
-    
+
     It 'excludes unwanted encryption types' {
         $out = Join-Path $global:TestOutDir ("ktest_filter_exclude.keytab")
         try {
@@ -134,7 +142,7 @@ Describe 'Encryption type filtering' {
             if (Test-Path $json) { Remove-Item $json -Force }
         }
     }
-    
+
     It 'warns when requested etype is not available' {
         $out = Join-Path $global:TestOutDir ("ktest_warn.keytab")
         try {
@@ -152,17 +160,17 @@ Describe 'Encryption type filtering' {
 Describe 'Advanced options' {
     BeforeEach {
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STkrbKeytab
-        Mock Get-ADComputer { 
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } 
+        Mock Get-ADComputer {
+            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
         } -ModuleName STkrbKeytab
     }
-    
+
     It 'respects -WhatIf without creating files' {
         $out = Join-Path $global:TestOutDir ("ktest_whatif.keytab")
         New-Keytab -SuppressWarnings -SamAccountName 'WEB01$' -Type Computer -Domain contoso.com -Server dc01.contoso.com -OutputPath $out -WhatIf -Confirm:$false | Out-Null
         Test-Path $out | Should -BeFalse
     }
-    
+
     It 'creates JSON summary when requested' {
         $out = Join-Path $global:TestOutDir ("ktest_summary.keytab")
         try {
@@ -182,8 +190,8 @@ Describe 'Advanced options' {
 Describe 'Etype filtering' {
     BeforeEach {
         Mock Get-ADComputer { [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } } -ModuleName STkrbKeytab
-        Mock Get-ADReplAccount { 
-            New-MockAccount -Etypes @{ 'AES256_CTS_HMAC_SHA1_96' = (1..32); 'AES128_CTS_HMAC_SHA1_96' = (1..16); 'ARCFOUR_HMAC' = (1..16) } 
+        Mock Get-ADReplAccount {
+            New-MockAccount -Etypes @{ 'AES256_CTS_HMAC_SHA1_96' = (1..32); 'AES128_CTS_HMAC_SHA1_96' = (1..16); 'ARCFOUR_HMAC' = (1..16) }
         } -ModuleName STkrbKeytab
     }
     It 'includes only requested etypes via -IncludeEtype' {
@@ -224,8 +232,8 @@ Describe 'Etype filtering' {
 
 Describe 'Kvno & summary' {
     BeforeEach {
-        Mock Get-ADComputer { 
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 4 } 
+        Mock Get-ADComputer {
+            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 4 }
         } -ModuleName STkrbKeytab
         Mock Get-ADReplAccount { New-MockAccount -Kvno 4 } -ModuleName STkrbKeytab
     }
@@ -248,8 +256,8 @@ Describe 'Kvno & summary' {
 
 Describe 'Force & WhatIf behavior' {
     BeforeEach {
-        Mock Get-ADComputer { 
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } 
+        Mock Get-ADComputer {
+            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
         } -ModuleName STkrbKeytab
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STkrbKeytab
     }
@@ -279,8 +287,8 @@ Describe 'Force & WhatIf behavior' {
 
 Describe 'PassThru object contract' {
     BeforeEach {
-        Mock Get-ADComputer { 
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } 
+        Mock Get-ADComputer {
+            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
         } -ModuleName STkrbKeytab
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STkrbKeytab
     }

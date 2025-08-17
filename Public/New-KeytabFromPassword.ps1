@@ -1,33 +1,105 @@
 <#
-.SYNOPSIS
-Generate a keytab from a password using MIT/Heimdal/Windows salt policies (AES oly)
-
-.DESCRIPTION
-Derives AES keys (etype 17/18) via PBKDF2-HMACSHA1 and writes a MIT v0x0502 keytab.
-Defaults to AES-only, safe salt policy and supports deterministic timestamps for tests.
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
 #>
+
+
 function New-KeytabFromPassword {
+    <#
+        .SYNOPSIS
+        Generate a keytab from a password using MIT/Heimdal/Windows salt policies (AES only).
+
+        .DESCRIPTION
+        Derives AES keys (etype 17/18) via PBKDF2-HMACSHA1 and writes a MIT v0x0502 keytab.
+        Defaults to AES-only, safe salt policy and supports deterministic timestamps for tests.
+
+        .PARAMETER Realm
+        Kerberos realm (usually the AD domain in uppercase) (Pos 1).
+
+        .PARAMETER SamAccountName
+        Account name when deriving a user or computer principal (use Principal for service names) (Pos 2).
+
+        .PARAMETER Principal
+        Full principal (e.g., http/web01.contoso.com@CONTOSO.COM) for service principals (Pos 2).
+
+        .PARAMETER Password
+        SecureString password to derive keys from. Alternatively use -Credential (Pos 3).
+
+        .PARAMETER Credential
+        PSCredential; the password part is used if -Password not provided.
+
+        .PARAMETER Compatibility
+        Salt policy for string-to-key: MIT, Heimdal, or Windows (Pos 4).
+
+        .PARAMETER IncludeEtype
+        Encryption types to include. Defaults to AES-256 and AES-128 (18,17) (Pos 5).
+
+        .PARAMETER ExcludeEtype
+        Encryption types to exclude from selection (Pos 6).
+
+        .PARAMETER OutputPath
+        Path to write the generated keytab (Pos 7).
+
+        .PARAMETER JsonSummaryPath
+        Path to write a JSON summary; defaults next to OutputPath when -Summary or -PassThru is specified (Pos 8).
+
+        .PARAMETER Kvno
+        Key Version Number to stamp into entries (default 1) (Pos 9).
+
+        .PARAMETER Iterations
+        PBKDF2 iteration count (default 4096) (Pos 10).
+
+        .PARAMETER RestrictAcl
+        Apply a user-only ACL on outputs.
+
+        .PARAMETER Force
+        Overwrite OutputPath if it exists.
+
+        .PARAMETER Summary
+        Emit a JSON summary file.
+
+        .PARAMETER PassThru
+        Return a summary object in addition to writing files.
+
+        .PARAMETER FixedTimestampUtc
+        Use a fixed timestamp for deterministic output.
+
+        .INPUTS
+        None. Parameters are bound by name.
+
+        .OUTPUTS
+        System.String (OutputPath) or summary object when -PassThru.
+
+        .EXAMPLE
+        New-KeytabFromPassword -Realm CONTOSO.COM -SamAccountName user1 -Password (Read-Host -AsSecureString) -OutputPath .\user1.keytab
+        Generate a user keytab from a password with default AES types.
+
+        .EXAMPLE
+        New-KeytabFromPassword -Realm CONTOSO.COM -Principal http/web01.contoso.com@CONTOSO.COM -Credential (Get-Credential) -IncludeEtype 18 -Kvno 3 -OutputPath .\http.keytab
+        Generate a service keytab with AES-256 only and KVNO 3.
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'User')]
     param(
         # Identity
-        [Parameter(ParameterSetName='User', Mandatory)][string]$SamAccountName,
-        [Parameter(ParameterSetName='Principal', Mandatory)][string]$Principal,
-        [Parameter(Mandatory)][string]$Realm,
+        [Parameter(Mandatory, Position=0)][string]$Realm,
+        [Parameter(ParameterSetName='User', Mandatory, Position=1)][string]$SamAccountName,
+        [Parameter(ParameterSetName='Principal', Mandatory, Position=1)][string]$Principal,
 
         # Secret
-        [Parameter(ParameterSetName='User', Mandatory)][SecureString]$Password,
+        [Parameter(ParameterSetName='User', Position=2)][SecureString]$Password,
         [Parameter(ParameterSetName='User')][pscredential]$Credential,
 
         # Options
-        [Alias('Comp')][ValidateSet('MIT','Heimdal','Windows')][string]$Compatibility = 'MIT',
-        [object[]]$IncludeEtype,
-        [object[]]$ExcludeEtype,
-        [int]$Kvno = 1,
-        [int]$Iterations = 4096,
-        [string]$OutputPath,
+        [Parameter(Position=3)][Alias('Comp')][ValidateSet('MIT','Heimdal','Windows')][string]$Compatibility = 'MIT',
+        [Parameter(Position=4)][object[]]$IncludeEtype,
+        [Parameter(Position=5)][object[]]$ExcludeEtype,
+        [Parameter(Position=6)][string]$OutputPath,
+        [Parameter(Position=7)][string]$JsonSummaryPath,
+        [Parameter(Position=8)][int]$Kvno = 1,
+        [Parameter(Position=9)][int]$Iterations = 4096,
+
         [switch]$RestrictAcl,
         [switch]$Force,
-        [string]$JsonSummaryPath,
         [switch]$Summary,
         [switch]$PassThru,
         [datetime]$FixedTimestampUtc
@@ -45,7 +117,7 @@ function New-KeytabFromPassword {
         if ($Iterations -lt 1) { throw "Iterations must be at least 1." }
 
         # Principal descriptor
-        $princDesc = 
+        $princDesc =
             if ($PSCmdlet.ParameterSetName -eq 'Principal') {
                 if ($Principal -notmatch '@') { throw "Principal must include realm (e.g. user@<realm>)"}
                 $split = $Principal.Split('@',2)
@@ -77,7 +149,7 @@ function New-KeytabFromPassword {
                 }
             }
 
-        # Etype selection 
+        # Etype selection
         $available = @(17,18)
         $selection = Resolve-EtypeSelection -AvailableIds $available -Include $IncludeEtype -Exclude $ExcludeEtype
         if ($selection.Selected.Count -eq 0) { throw "No Encryption types selected."}
@@ -106,7 +178,7 @@ function New-KeytabFromPassword {
 
         $keySet = [pscustomobject]@{
             Kvno        =  [int]$Kvno
-            Keys        = $keys    
+            Keys        = $keys
             Source      = "PasswordS2K:$Compatibility/PBDKDF2-SHA1($Iterations)"
             RetrievedAt = (Get-Date).ToUniversalTime()
         }

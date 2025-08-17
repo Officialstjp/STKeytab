@@ -1,20 +1,34 @@
-# AES S2K for MIT/Heimdal/Windows salt policies using custom PDKDF2-HMACSHA1.
+<#
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
 
-# salt normalization for compatibility flavors
+
+#region AES S2K for MIT/Heimdal/Windows salt policies
+# ---------------------------------------------------------------------- #
+#                   AES S2K for MIT/Heimdal/Windows salt policies
+#                       using custom PDKDF2-HMACSHA1.
+#
+# ---------------------------------------------------------------------- #
+
 function Normalize-PrincipalForSalt {
+    <#
+        .SYNOPSIS
+        Normalize a principal descriptor for use as a salt in key derivation.
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][ValidateSet('MIT','Heimdal','Windows')] [string]$Compatibility,
         [Parameter(Mandatory)][object]$PrincipalDescriptor # { Components, Realm, NameType }
     )
 
-    $realm = if ($Compatibility -eq 'Windows') { 
-        $PrincipalDescriptor.Realm.ToUpperInvariant() 
-    } else { 
-        $PrincipalDescriptor.Realm 
+    $realm = if ($Compatibility -eq 'Windows') {
+        $PrincipalDescriptor.Realm.ToUpperInvariant()
+    } else {
+        $PrincipalDescriptor.Realm
     }
     $components = [string[]]$PrincipalDescriptor.Components.Clone()
-    
+
     # KRB_NT_SRV_HST (3): lowercase service and host for Windows flavor
     if ($Compatibility -eq 'Windows' -and $PrincipalDescriptor.NameType -eq 3) {
         if ($components.Count -ge 1) { $components[0] = $components[0].ToLowerInvariant() }
@@ -29,6 +43,10 @@ function Normalize-PrincipalForSalt {
 }
 
 function Get-DefaultSalt {
+    <#
+    .SYNOPSIS
+    Get the default salt for a given principal descriptor and compatibility.
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][ValidateSet('Mit','Heimdal','Windows')] [string]$Compatibility,
@@ -41,6 +59,10 @@ function Get-DefaultSalt {
 }
 
 function Get-AesKeyLengthForEtype {
+    <#
+    .SYNOPSIS
+    Get the AES key length for a given encryption type (Etype).
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][int]$Etype
@@ -53,6 +75,10 @@ function Get-AesKeyLengthForEtype {
 }
 
 function ConvertTo-BigEndianUint32Bytes {
+    <#
+    .SYNOPSIS
+    Convert a 32-bit unsigned integer to a big-endian byte array.
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][uint32]$Value
@@ -64,6 +90,10 @@ function ConvertTo-BigEndianUint32Bytes {
 }
 
 function Invoke-PBKDF2HmacSha1 {
+    <#
+    .SYNOPSIS
+    Invoke PBKDF2-HMAC-SHA1 key derivation.
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][byte[]]$PasswordBytes,
@@ -101,12 +131,18 @@ function Invoke-PBKDF2HmacSha1 {
             [Array]::Clear($curIterHash, 0, $curIterHash.Length)                # Clear current iteration hash
             [Array]::Clear($curIter, 0, $curIter.Length)                        # Clear current iteration
         }
-    } finally { try { $hmac.Dispose() } catch {} }
+    } finally { try { $hmac.Dispose() } catch {
+        Write-Verbose "Failed to dispose HMAC object."
+    } }
     [Array]::Clear($PasswordBytes, 0, $PasswordBytes.Length)
     $derivedKey
 }
 
 function ConvertFrom-SecureStringToPlain {
+    <#
+    .SYNOPSIS
+    Convert a SecureString to a plain text string.
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][SecureString]$Secure
@@ -118,6 +154,10 @@ function ConvertFrom-SecureStringToPlain {
 }
 
 function Derive-AesKeyWithPbkdf2 {
+    <#
+    .SYNOPSIS
+    Derive an AES key using PBKDF2 with HMAC-SHA1.
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][int]$Etype,
@@ -125,12 +165,12 @@ function Derive-AesKeyWithPbkdf2 {
         [Parameter(Mandatory)][byte[]]$SaltBytes,
         [int]$Iterations = 4096
     )
-    
+
     $keyLength = Get-AesKeyLengthForEtype -Etype $Etype
     $passBytes = [Text.Encoding]::UTF8.GetBytes($PasswordPlain)
     $saltLocal = [byte[]]$SaltBytes.Clone()
 
-    try { 
+    try {
         Invoke-PBKDF2HmacSha1 -PasswordBytes $passBytes -SaltBytes $saltLocal -Iterations $Iterations -DerivedKeyLength $keyLength
     }
     finally {
@@ -138,3 +178,4 @@ function Derive-AesKeyWithPbkdf2 {
         if ($passBytes) { [Array]::Clear($passBytes, 0, $passBytes.Length)}
     }
 }
+#endregion

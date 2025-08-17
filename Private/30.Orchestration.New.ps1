@@ -1,4 +1,9 @@
-#region Core Creation Orchestration
+<#
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+
 # ---------------------------------------------------------------------- #
 #
 #                      Core Creation Orchestration

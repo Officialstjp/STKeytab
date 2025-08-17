@@ -1,59 +1,109 @@
+<#
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+
 function ConvertFrom-KeytabJson {
     <#
-    .SYNOPSIS
-    Convert canonical JSON back into a keytab file (requires key bytes).
+        .SYNOPSIS
+        Convert canonical JSON back into a keytab file (requires key bytes).
+
+        .DESCRIPTION
+        Reads canonical JSON as produced by ConvertTo-KeytabJson -RevealKeys and reconstructs
+        a MIT v0x0502 keytab. Requires key bytes to be present in JSON. Can restrict ACL on
+        output and support deterministic timestamps for reproducible builds.
+
+        .PARAMETER JsonPath
+        Path to the canonical JSON file.
+
+        .PARAMETER OutputPath
+        Output keytab path to write.
+
+        .PARAMETER Force
+        Overwrite OutputPath if it exists.
+
+        .PARAMETER FixedTimestampUtc
+        Use a fixed timestamp for written entries for deterministic output.
+
+        .PARAMETER RestrictAcl
+        Apply a user-only ACL on the output file.
+
+        .INPUTS
+        System.String (file path) or objects with FilePath/FullName properties.
+
+        .OUTPUTS
+        System.String. Returns the OutputPath written.
+
+        .EXAMPLE
+        ConvertFrom-KeytabJson -JsonPath .\entry.json -OutputPath .\out.keytab -Force
+        Reconstruct a keytab from JSON, overwriting the destination if present.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory)][string]$JsonPath,
-        [Parameter(Mandatory)][string]$OutputPath,
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=0)]
+        [Alias('FullName','FilePath')]
+        [string]$JsonPath,
+
+        [Parameter(Mandatory)]
+        [Alias('OutFile', 'Out')]
+        [string]$OutputPath,
+
         [switch]$Force,
         [datetime]$FixedTimestampUtc,
         [switch]$RestrictAcl
     )
-
-    $entries = Get-Content -LiteralPath $JsonPath -Raw | ConvertFrom-Json
-    if (-not $entries) { throw "No entries found in JSON '$jsonPath'."}
-
-    # Group into principal descriptors and key sets
-    $byPrincipal = $entries | Group-Object { '{0}|{1}|{2}' -f $_.Realm, ($_.Components -join '/'), $_.NameType }
-    $principalDescriptors = @()
-    $keySetsByPrincipal = @()
-
-    foreach ($g in $byPrincipal) {
-        $first = $g.Group[0]
-        $princDesc = [pscustomobject]@{
-            Components    = @($first.Components)
-            Realm         = $first.Realm
-            NameType      = [int]$first.NameType
-            Display       = ('{0}@{1}' -f ($first.Components -join '/'), $first.Realm)
-        }
-        $principalDescriptors += $princDesc
-        
-        $kvGroups = $g.Group | Group-Object Kvno
-        $keySetSets = foreach ($kv in $kvGroups) {
-            $keys = @{}
-            foreach ($entry in $kv.Group)  {
-                if ($null -eq $entry.Key) { throw "Key bytes missing in JSON; cannot rebuild keytab."}
-                $keys[[int]$entry.Etype] = [byte[]]$entry.Key
-            }
-            [pscustomobject]@{ 
-                Kvno        = [int]$kv.Name
-                Keys        = $keys
-                Source      = 'Json' 
-                RetrievedAt = (Get-Date).ToUniversalTime()
-            }
-        }
-        $keySetsByPrincipal += $keySetSets
+    begin {
+        if (-not (Test-Path -LiteralPath $JsonPath)) { throw "File not found: $JsonPath" }
+        if (-not $OutputPath) { $OutputPath = "$JsonPath.keytab" }
     }
+    process {
+        $entries = Get-Content -LiteralPath $JsonPath -Raw | ConvertFrom-Json
+        if (-not $entries) { throw "No entries found in JSON '$jsonPath'."}
 
-    if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) { throw "Output exists. Use -force to overwrite"}
+        # Group into principal descriptors and key sets
+        $byPrincipal = $entries | Group-Object { '{0}|{1}|{2}' -f $_.Realm, ($_.Components -join '/'), $_.NameType }
+        $principalDescriptors = @()
+        $keySetsByPrincipal = @()
 
-    $tsArg = @{} 
-    if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { 
-        $tsArg.FixedTimestampUtc = $FixedTimestampUtc 
+        foreach ($g in $byPrincipal) {
+            $first = $g.Group[0]
+            $princDesc = [pscustomobject]@{
+                Components    = @($first.Components)
+                Realm         = $first.Realm
+                NameType      = [int]$first.NameType
+                Display       = ('{0}@{1}' -f ($first.Components -join '/'), $first.Realm)
+            }
+            $principalDescriptors += $princDesc
+
+            $kvGroups = $g.Group | Group-Object Kvno
+            $keySetSets = foreach ($kv in $kvGroups) {
+                $keys = @{}
+                foreach ($entry in $kv.Group)  {
+                    if ($null -eq $entry.Key) { throw "Key bytes missing in JSON; cannot rebuild keytab."}
+                    $keys[[int]$entry.Etype] = [byte[]]$entry.Key
+                }
+                [pscustomobject]@{
+                    Kvno        = [int]$kv.Name
+                    Keys        = $keys
+                    Source      = 'Json'
+                    RetrievedAt = (Get-Date).ToUniversalTime()
+                }
+            }
+            $keySetsByPrincipal += $keySetSets
+        }
+
+        if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) { throw "Output exists. Use -force to overwrite"}
+
+        $tsArg = @{}
+        if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) {
+            $tsArg.FixedTimestampUtc = $FixedTimestampUtc
+        }
+        if ($PSCmdlet.ShouldProcess($OutputPath, "Write keytab from JSON")) {
+            New-KeytabFile -Path $OutputPath -PrincipalDescriptors $principalDescriptors -KeySets ($keySetsByPrincipal | Select-Object -First 1) -RestrictAcl:$RestrictAcl @tsArg
+        }
     }
-    if ($PSCmdlet.ShouldProcess($OutputPath, "Write keytab from JSON")) {
-        New-KeytabFile -Path $OutputPath -PrincipalDescriptors $principalDescriptors -KeySets ($keySetsByPrincipal | Select-Object -First 1) -RestrictAcl:$RestrictAcl @tsArg
+    end {
+        return $OutputPath
     }
 }
