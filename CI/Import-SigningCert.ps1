@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)]
     [string]$Password,
 
-    [string]$Subject = "*STkrbKeytab*"
+    [string]$Subject = "*Stjp*"
 )
 
 try {

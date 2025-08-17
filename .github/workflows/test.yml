@@ -60,7 +60,7 @@ jobs:
               exit 0
           }
 
-          $thumb = .\CI\Import-SigningCert.ps1 -SIGNING_CERTIFICATE $SIGNING_CERTIFICATE -SIGNING_CERT_PASSWORD $SIGNING_CERT_PASSWORD
+          $thumb = .\CI\Import-SigningCert.ps1 -CertificateBase64 $SIGNING_CERTIFICATE -Password $SIGNING_CERT_PASSWORD
           # Store thumbprint for signing step
           Add-Content -Path $env:GITHUB_ENV -Value "CERT_THUMBPRINT=$thumb"
 
