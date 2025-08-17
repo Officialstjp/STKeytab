@@ -55,7 +55,7 @@ function New-PrincipalKeytabInternal {
 	$realm = $DomainFQDN.ToUpperInvariant()
 
 	$acct = Get-ReplicatedAccount -SamAccountName $SamAccountName -DomainFQDN $domainFQDN -Server $Server -Credential $Credential
-	$material = Get-KerberosKeyMaterialFromAccount -Account $acct -SamAccountName $SamAccountName -DomainFQDN $domainFQDN -Server $Server -IsKrbtgt:$IsKrbtgt
+	$material = Get-KerberosKeyMaterialFromAccount -Account $acct -SamAccountName $SamAccountName -Server $Server -IsKrbtgt:$IsKrbtgt
 	if ($VerboseDiagnostics) { $material.Diagnostics | ForEach-Object { Write-Verbose $_ } }
 
 	# Filter Kvno sets if krbtgt and old kvnos when explicitly requested

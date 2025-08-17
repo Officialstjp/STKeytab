@@ -246,7 +246,7 @@ Describe 'Key material extraction (mocked AD/DSInternals)' {
                 }
             }
             }
-            $res = Get-KerberosKeyMaterialFromAccount -Account $account -SamAccountName 'krbtgt' -DomainFqdn 'example.com' -IsKrbtgt
+            $res = Get-KerberosKeyMaterialFromAccount -Account $account -SamAccountName 'krbtgt' -IsKrbtgt
             $res.PrincipalType | Should -Be 'Krbtgt'
             ($res.KeySets | Sort-Object Kvno | Select-Object -ExpandProperty Kvno) | Should -Be @(7,8,9)
             ($res.KeySets | Where-Object Kvno -eq 9).Keys.Keys | Should -Contain 18
@@ -263,7 +263,7 @@ Describe 'Key material extraction (mocked AD/DSInternals)' {
                 DistinguishedName = 'CN=PC1,OU=Domain Controllers,DC=e,DC=f'
                 KerberosKeys = $kerbKeys
             }
-            $res = Get-KerberosKeyMaterialFromAccount -Account $account -SamAccountName 'PC1$' -DomainFqdn 'ef.local'
+            $res = Get-KerberosKeyMaterialFromAccount -Account $account -SamAccountName 'PC1$'
             $res.PrincipalType | Should -Be 'Computer'
             $res.KeySets.Count | Should -Be 1
             $res.KeySets[0].Keys.Keys | Sort-Object | Should -Be @(17,18)
