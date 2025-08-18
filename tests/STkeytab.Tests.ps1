@@ -5,7 +5,7 @@ Copyright (c) 2025 Stefan Ploch
 
 <#
     .SYNOPSIS
-    Unit tests for the STkrbKeytab module.
+    Unit tests for the STKeytab module.
 
     .DESCRIPTION
     - Unit tests: mapping and selection helpers
@@ -83,8 +83,8 @@ Copyright (c) 2025 Stefan Ploch
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$modulePath = Resolve-Path "$PSScriptRoot\..\STkrbKeytab.psd1"
-$moduleName = 'STkrbKeytab'
+$modulePath = Resolve-Path "$PSScriptRoot\..\STKeytab.psd1"
+$moduleName = 'STKeytab'
 $TestOutDir = Join-Path $PSScriptRoot 'output'
 Import-Module -Name "$modulePath" -Force -ErrorAction Stop
 
@@ -227,8 +227,8 @@ Describe 'Key material extraction (mocked AD/DSInternals)' {
     InModuleScope $ModuleName {
         BeforeEach {
             # default KVNO from AD
-            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 9; DistinguishedName = 'CN=User,DC=x,DC=y' } } -ModuleName STkrbKeytab
-            Mock Get-ADComputer { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 12; DistinguishedName = 'CN=PC,OU=Domain Controllers,DC=x,DC=y' } } -ModuleName STkrbKeytab
+            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 9; DistinguishedName = 'CN=User,DC=x,DC=y' } } -ModuleName STKeytab
+            Mock Get-ADComputer { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 12; DistinguishedName = 'CN=PC,OU=Domain Controllers,DC=x,DC=y' } } -ModuleName STKeytab
         }
 
         It 'Extracts KerberosNew groups and maps kvno for krbtgt' {
@@ -275,7 +275,7 @@ Describe 'Key material extraction (mocked AD/DSInternals)' {
 Describe 'New-Keytab orchestration (mocked dependencies)' {
     InModuleScope $ModuleName {
         BeforeEach {
-            Mock Get-RequiredModule { } -ModuleName STkrbKeytab # avoid touching actual modules
+            Mock Get-RequiredModule { } -ModuleName STKeytab # avoid touching actual modules
             # Fake account with KerberosNew current only
             $script:fakeEntry = [pscustomobject]@{ Key = (11..42 | ForEach-Object {[byte]$_}); KeyType = 18 }
             $script:fakeAcct = [pscustomobject]@{
@@ -290,10 +290,10 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
                 }
             }
 
-            Mock Get-ADReplAccount { $script:fakeAcct } -ModuleName STkrbKeytab
-            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 3; DistinguishedName = 'CN=User,DC=ex,DC=com' } } -ModuleName STkrbKeytab
-            Mock Get-ADComputer { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 4; DistinguishedName = 'CN=PC,OU=Computers,DC=ex,DC=com'; servicePrincipalName = @('host/pc.ex.com','cifs/pc.ex.com') } } -ModuleName STkrbKeytab
-            Mock Get-ADDomain { [pscustomobject]@{ DNSRoot='ex.com'; NetBIOSName='EX' } } -ModuleName STkrbKeytab
+            Mock Get-ADReplAccount { $script:fakeAcct } -ModuleName STKeytab
+            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 3; DistinguishedName = 'CN=User,DC=ex,DC=com' } } -ModuleName STKeytab
+            Mock Get-ADComputer { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 4; DistinguishedName = 'CN=PC,OU=Computers,DC=ex,DC=com'; servicePrincipalName = @('host/pc.ex.com','cifs/pc.ex.com') } } -ModuleName STKeytab
+            Mock Get-ADDomain { [pscustomobject]@{ DNSRoot='ex.com'; NetBIOSName='EX' } } -ModuleName STKeytab
         }
 
         It 'Creates user keytab and summary' {
@@ -316,7 +316,7 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
         }
 
         It 'Creates krbtgt keytab with IncludeOldKvno when acknowledged' {
-            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 5; DistinguishedName = 'CN=krbtgt,DC=ex,DC=com' } } -ModuleName STkrbKeytab
+            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 5; DistinguishedName = 'CN=krbtgt,DC=ex,DC=com' } } -ModuleName STKeytab
             $old = [pscustomobject]@{ Key = (51..82 | ForEach-Object {[byte]$_}); KeyType = 18 }
             $acct = [pscustomobject]@{
                 DistinguishedName = 'CN=krbtgt,DC=ex,DC=com'
@@ -329,7 +329,7 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
                     }
                 }
             }
-            Mock Get-ADReplAccount { $acct } -ModuleName STkrbKeytab
+            Mock Get-ADReplAccount { $acct } -ModuleName STKeytab
             $out = Join-Path $TestOutDir 'krbtgt.keytab'
             $r = New-Keytab -SuppressWarnings -SamAccountName 'krbtgt' -Type Krbtgt -Domain 'ex.com' -OutputPath $out -IncludeOldKvno -AcknowledgeRisk -Confirm:$false
             Test-Path $out | Should -BeTrue

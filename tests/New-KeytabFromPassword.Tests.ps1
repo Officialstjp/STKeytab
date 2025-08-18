@@ -15,8 +15,8 @@ Copyright (c) 2025 Stefan Ploch
 #>
 
 
-$modulePath = Resolve-Path "$PSScriptRoot\..\STkrbKeytab.psd1"
-$moduleName = 'STkrbKeytab'
+$modulePath = Resolve-Path "$PSScriptRoot\..\STKeytab.psd1"
+$moduleName = 'STKeytab'
 $TestOutDir = Join-Path $PSScriptRoot 'output'
 Import-Module -Name "$modulePath" -Force -ErrorAction Stop
 

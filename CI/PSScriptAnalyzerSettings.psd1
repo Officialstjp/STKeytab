@@ -4,7 +4,7 @@ Copyright (c) 2025 Stefan Ploch
 #>
 
 @{
-    # PSScriptAnalyzer settings for STkrbKeytab module
+    # PSScriptAnalyzer settings for STKeytab module
 
     IncludeDefaultRules = $true
 

@@ -1,7 +1,7 @@
 # Workspace
 .github/instructions/
 .vscode/
-STkrbKeytab.code-workspace
+STKeytab.code-workspace
 
 # Tests
 tests/output/

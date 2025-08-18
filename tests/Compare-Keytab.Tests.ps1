@@ -11,7 +11,7 @@ Copyright (c) 2025 Stefan Ploch
 
 Set-StrictMode -Version Latest
 
-$modulePath = Resolve-Path "$PSScriptRoot\..\STkrbKeytab.psm1"
+$modulePath = Resolve-Path "$PSScriptRoot\..\STKeytab.psm1"
 Import-Module -Name "$modulePath" -Force -ErrorAction Stop
 $global:TestOutDir = Join-Path $PSScriptRoot 'output'
 New-Item -ItemType Directory -Path $global:TestOutDir -Force | Out-Null
@@ -28,32 +28,32 @@ function global:New-MockAccount {
     [pscustomobject]@{ KeyVersionNumber = $Kvno; KerberosKeys = $keys; DistinguishedName = 'CN=WEB01,OU=Servers,DC=contoso,DC=com' }
 }
 
-Mock Get-RequiredModule { return $true } -ModuleName STkrbKeytab
+Mock Get-RequiredModule { return $true } -ModuleName STKeytab
 
 Describe 'Compare-Keytab' {
     BeforeEach {
         Mock Get-ADReplAccount {
             New-MockAccount
-        } -ModuleName STkrbKeytab
+        } -ModuleName STKeytab
 
         Mock Get-ADComputer {
             [pscustomobject]@{
                 servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com')
                 'msDS-KeyVersionNumber' = 7
             }
-        } -ModuleName STkrbKeytab -ParameterFilter { ($Identity -like '*WEB01*') -or ($SamAccountName -like '*WEB01*') }
+        } -ModuleName STKeytab -ParameterFilter { ($Identity -like '*WEB01*') -or ($SamAccountName -like '*WEB01*') }
 
         # Fallback for second keytab files
         Mock Get-ADReplAccount {
             New-MockAccount -Kvno 8
-        } -ModuleName STkrbKeytab
+        } -ModuleName STKeytab
 
         Mock Get-AdComputer {
             [pscustomobject]@{
                 servicePrincipalName = @('host/sql02.contoso.com','cifs/sql02.contoso.com')
                 'msDS-KeyVersionNumber' = 8
             }
-        } -ModuleName STkrbKeytab
+        } -ModuleName STKeytab
     }
 
     It 'Evaluates two identical keytab files as equal' {

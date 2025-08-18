@@ -5,8 +5,8 @@ $folders = @(
     @{ Path = "Public"; Name = "Public Functions" },
     @{ Path = "Private"; Name = "Private Functions" },
     @{ Path = "tests"; Name = "Test Files" },
-    @{ Path = "STkrbKeytab.psm1"; Name = "Module Manifest" },
-    @{ Path = "STkrbKeytab.psd1"; Name = "Module Data" }
+    @{ Path = "STKeytab.psm1"; Name = "Module Manifest" },
+    @{ Path = "STKeytab.psd1"; Name = "Module Data" }
 )
 
 foreach ($folder in $folders) {

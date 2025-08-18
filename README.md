@@ -1,4 +1,4 @@
-## STkrbKeytab
+## STKeytab
 
 A focused PowerShell toolkit for generating and working with MIT keytabs (0x0502) using replication-based key extraction. The module favors safe defaults, deterministic outputs when requested, and minimal dependencies.
 
@@ -14,7 +14,7 @@ Supports Powershell versions 5.1 and 7+
 
 ### Import
 ```powershell
-Import-Module "$PWD\STkrbKeytab\STkrbKeytab.psd1" -Force
+Import-Module "$PWD\STKeytab\STKeytab.psd1" -Force
 ```
 
 ### Commands

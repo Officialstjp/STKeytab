@@ -1,4 +1,4 @@
-name: Sign & Test STkrbKeytab
+name: Sign & Test STKeytab
 on:
   push:
     branches: [ main, develop ]
@@ -27,6 +27,8 @@ jobs:
           $config.TestResult.OutputFormat = "NUnitXml"
           $config.TestResult.OutputPath = "TestResults.xml"
           $config.Output.Verbosity = 'Detailed'
+
+          Write-Host "[+] Running Pester tests..." -ForegroundColor Cyan
           Invoke-Pester -Configuration $config
 
       - name: Upload test results
@@ -38,6 +40,7 @@ jobs:
 
       - name: Run PSScriptAnalyzer
         run: |
+          Write-Host "[+] Running PSScriptAnalyzer..." -ForegroundColor Cyan
           .\CI\Run-PSScriptAnalyzer.ps1
 
   sign-module:
@@ -67,29 +70,119 @@ jobs:
       - name: Sign PowerShell files
         if: env.SKIP_SIGNING != 'true'
         run: |
-          .\CI\Sign-Module.ps1 -CertificateThumbprint $env:CERT_THUMBPRINT -Verify -ModulePath .\
+          try {
+            Write-Host "[+] Starting module signing process..." -ForegroundColor Cyan
 
-          # Verify all files are signed
-          $psFiles = Get-ChildItem -Recurse -Include "*.ps1", "*.psm1", "*.psd1" | Where-Object {
-            $_.FullName -notmatch '\\tests\\' -and $_.FullName -notmatch '\\temp\\' -and $_.Name -ne 'Sign-Module.ps1'
+            .\CI\Sign-Module.ps1 -CertificateThumbprint $env:CERT_THUMBPRINT -Verify -ModulePath .\
+
+            # Comprehensive verification
+            $psFiles = Get-ChildItem -Recurse -Include "*.ps1", "*.psm1", "*.psd1" | Where-Object {
+              $_.FullName -notmatch '\\tests\\' -and $_.FullName -notmatch '\\temp\\' -and $_.Name -ne 'Sign-Module.ps1' -and $_.FullName -notmatch '\\CI\\'
+            }
+
+            $signatureResults = @()
+            foreach ($file in $psFiles) {
+              $sig = Get-AuthenticodeSignature -FilePath $file.FullName
+              $signatureResults += [PSCustomObject]@{
+                File = $file.Name
+                Status = $sig.Status
+                StatusMessage = $sig.StatusMessage
+                SignerCertificate = $sig.SignerCertificate.Subject
+              }
+            }
+
+            $unsigned = $signatureResults | Where-Object { $_.Status -ne 'Valid' }
+
+            if ($unsigned) {
+              Write-Host "[!] Signature verification failures:" -ForegroundColor Red
+              $unsigned | Format-Table -AutoSize | Out-Host
+              Write-Error "Found $($unsigned.Count) files with invalid signatures"
+            } else {
+              Write-Host "[+] All $($psFiles.Count) PowerShell files are properly signed" -ForegroundColor Green
+              $signatureResults | Format-Table -AutoSize | Out-Host
+            }
+          }
+          catch {
+            Write-Error "[!!] Signing process failed: $($_.Exception.Message)"
+            Write-Host $_.ScriptStackTrace
+            exit 1
           }
 
-          $unsigned = $psFiles | Where-Object {
-            $sig = Get-AuthenticodeSignature -FilePath $_.FullName
-            $sig.Status -ne 'Valid'
+      - name: Create module package
+        run: |
+          # Get version from manifest
+          $manifest = Import-PowerShellDataFile -Path .\STKeytab.psd1
+          $version = $manifest.Version
+          $packageName = "STKeytab-v$version.$(if($env:SKIP_SIGNING -eq 'true') {'unsigned'} else {'signed'})"
+
+          Write-Host "[+] Creating package: $packageName" -ForegroundColor Cyan
+
+          $packageDir = ".\package\STKeytab"
+          if (Test-Path .\package) { Remove-Item .\package -Recurse -Force }
+          New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
+
+          # Copy module files
+          Copy-Item -Path ".\STKeytab.psd1", ".\STKeytab.psm1" -Destination $packageDir -Force
+          Copy-Item -Path "Public", "Private" -Destination $packageDir -Force
+          Copy-Item -Path "README.md","LICENSE","NOTICE" -Destination $packageDir -Force
+
+          # Create Zip archive
+          $archivePath = "$packageName.zip"
+          Compress-Archive -Path $packageDir\* -DestinationPath $archivePath -Force
+
+          $packageInfo = @{
+            PackageName = $packageName
+            Version = $version
+            ArchivePath = $archivePath
+            CreatedAt = (Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+            Signed = $env:SKIP_SIGNING -ne 'true'
+            CommitHash = $env:GITHUB_SHA.Substring(0,8)
+            Branch = $env:GITHUB_REF_NAME
           }
 
-          if ($unsigned) {
-            Write-Error "[!] Found unsigned files: $($unsigned.Name -join ', ')"
-          } else {
-            Write-Host "[+] All $($psFiles.Count) PowerShell files are properly signed" -ForegroundColor Green
-          }
+          $packageInfo | ConvertTo-Json -Depth 2 | Set-Content "package-info.json"
+
+          # Store for other steps
+          Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_NAME=$packageName"
+          Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_PATH=$archivePath"
+          Add-Content -Path $env:GITHUB_ENV -Value "MODULE_VERSION=$version"
+
+          Write-Host "[+] Package created successfully: $archivePath" -ForegroundColor Green
+
 
       - name: Test signed module
         if: env.SKIP_SIGNING != 'true'
         shell: pwsh
         run: |
-          # Quick smoke test of signed module
-          Import-Module .\STkrbKeytab.psd1 -Force
+          # Test the packaged module
+          Import-Module .\package\STkrbKeytab\STkrbKeytab.psd1 -Force
           $commands = Get-Command -Module STkrbKeytab
-          Write-Host "[+] Signed module loaded successfully with $($commands.Count) commands" -ForegroundColor Green
+          Write-Host "[+] Packaged module loaded successfully with $($commands.Count) commands" -ForegroundColor Green
+
+          # Quick validation of signatures
+          $moduleFiles = Get-ChildItem .\package\STkrbKeytab -Recurse -Include "*.ps1", "*.psm1", "*.psd1"
+          $signedCount = 0
+          foreach ($file in $moduleFiles) {
+            $sig = Get-AuthenticodeSignature -FilePath $file.FullName
+            if ($sig.Status -eq 'Valid') { $signedCount++ }
+          }
+          Write-Host "[+] Verified $signedCount/$($moduleFiles.Count) files are properly signed" -ForegroundColor Green
+
+      - name: Upload signed module package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_NAME }}
+          path: |
+            ${{ env.PACKAGE_PATH }}
+            package/
+            package-info.json
+          retention-days: 90
+
+      - name: Upload signing summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: signing-summary-${{ github.run_number }}
+          path: |
+            package-info.json
+          retention-days: 30
