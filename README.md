@@ -9,7 +9,7 @@ Requires Modules:
 
 Requires AD - Privileges:
  - DCSync-equivalent (Replicating Directory Changes, ...All, and ...In Filtered Set) on the domain NC
-  
+
 Supports Powershell versions 5.1 and 7+
 
 ### Import
@@ -92,6 +92,7 @@ ConvertFrom-KeytabJson -JsonPath .\a.revealed.json -OutputPath .\a2.keytab -Forc
 
 ## Risk & Privileges
 
+
 - Some operations (e.g., replication-based key export) require **DCSync-equivalent** privileges
   (Replicating Directory Changes / …All / …In Filtered Set) on the domain.
 - Keytab files are **sensitive**: if they contain `krbtgt` keys, they may enable ticket forgery.
@@ -113,7 +114,7 @@ This tool is licensed under the Apache License, Version 2.0. See LICENSE and NOT
 All source files carry SPDX-License-Identifiers.
 
 ## Warranty & Liability
-This software is provided **“AS IS”**, without warranties or conditions of any kind, express or implied. 
-In no event shall the authors or contributors be liable for any claim, damages, or other liability arising from or in connection with the software or its use. 
+This software is provided **“AS IS”**, without warranties or conditions of any kind, express or implied.
+In no event shall the authors or contributors be liable for any claim, damages, or other liability arising from or in connection with the software or its use.
 See LICENSE for full terms.
 
