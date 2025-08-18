@@ -149,17 +149,16 @@ jobs:
 
           Write-Host "[+] Package created successfully: $archivePath" -ForegroundColor Green
 
-
       - name: Test signed module
         if: env.SKIP_SIGNING != 'true'
         run: |
           # Test the packaged module
-          Import-Module .\package\STkrbKeytab\STkrbKeytab.psd1 -Force
-          $commands = Get-Command -Module STkrbKeytab
+          Import-Module .\package\STKeytab\STKeytab.psd1 -Force
+          $commands = Get-Command -Module STKeytab
           Write-Host "[+] Packaged module loaded successfully with $($commands.Count) commands" -ForegroundColor Green
 
           # Quick validation of signatures
-          $moduleFiles = Get-ChildItem .\package\STkrbKeytab -Recurse -Include "*.ps1", "*.psm1", "*.psd1"
+          $moduleFiles = Get-ChildItem .\package\STKeytab -Recurse -Include "*.ps1", "*.psm1", "*.psd1"
           $signedCount = 0
           foreach ($file in $moduleFiles) {
             $sig = Get-AuthenticodeSignature -FilePath $file.FullName
