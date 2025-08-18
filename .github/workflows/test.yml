@@ -67,7 +67,7 @@ jobs:
       - name: Sign PowerShell files
         if: env.SKIP_SIGNING != 'true'
         run: |
-          .\CI\Sign-Module.ps1  -CertificateThumbprint $env:CERT_THUMBPRINT -Verify
+          .\CI\Sign-Module.ps1 -CertificateThumbprint $env:CERT_THUMBPRINT -Verify -ModulePath .\
 
           # Verify all files are signed
           $psFiles = Get-ChildItem -Recurse -Include "*.ps1", "*.psm1", "*.psd1" | Where-Object {
