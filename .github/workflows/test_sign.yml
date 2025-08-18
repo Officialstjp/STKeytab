@@ -152,7 +152,6 @@ jobs:
 
       - name: Test signed module
         if: env.SKIP_SIGNING != 'true'
-        shell: pwsh
         run: |
           # Test the packaged module
           Import-Module .\package\STkrbKeytab\STkrbKeytab.psd1 -Force
