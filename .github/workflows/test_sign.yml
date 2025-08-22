@@ -153,9 +153,18 @@ jobs:
         if: env.SKIP_SIGNING != 'true'
         run: |
           # Test the packaged module
-          Import-Module .\package\STKeytab\STKeytab.psd1 -Force
-          $commands = Get-Command -Module STKeytab
-          Write-Host "[+] Packaged module loaded successfully with $($commands.Count) commands" -ForegroundColor Green
+          $modulePath = .\package\STKeytab\STKeytab.psd1
+          try {
+            Write-Host "[+] Importing module: $modulePath" -ForegroundColor Cyan
+            Import-Module $modulePath -Force
+            $commands = Get-Command -Module STKeytab
+            Write-Host "[+] Packaged module loaded successfully with $($commands.Count) commands" -ForegroundColor Green
+          }
+          catch {
+            Write-Error "[!!] Failed to import signed module: $($_.Exception.Message)"
+            exit 1
+          }
+
 
           # Quick validation of signatures
           $moduleFiles = Get-ChildItem .\package\STKeytab -Recurse -Include "*.ps1", "*.psm1", "*.psd1"
