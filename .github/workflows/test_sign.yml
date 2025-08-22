@@ -112,19 +112,19 @@ jobs:
         run: |
           # Get version from manifest
           $manifest = Import-PowerShellDataFile -Path .\STKeytab.psd1
-          $version = $manifest.Version
+          $version = $manifest.ModuleVersion
           $packageName = "STKeytab-v$version.$(if($env:SKIP_SIGNING -eq 'true') {'unsigned'} else {'signed'})"
 
           Write-Host "[+] Creating package: $packageName" -ForegroundColor Cyan
 
           $packageDir = ".\package\STKeytab"
           if (Test-Path .\package) { Remove-Item .\package -Recurse -Force }
-          New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
+          New-Item -ItemType Directory -Path $packageDir -Force #| Out-Null
 
           # Copy module files
-          Copy-Item -Path ".\STKeytab.psd1", ".\STKeytab.psm1" -Destination $packageDir -Force
-          Copy-Item -Path "Public", "Private" -Destination $packageDir -Force
-          Copy-Item -Path "README.md","LICENSE","NOTICE" -Destination $packageDir -Force
+          Copy-Item -Path @(".\STKeytab.psd1", ".\STKeytab.psm1") -Destination $packageDir -Force -Verbose
+          Copy-Item -Path @("Public", "Private") -Destination $packageDir -Force -Verbose
+          Copy-Item -Path @("README.md","LICENSE","NOTICE") -Destination $packageDir -Force -Verbose
 
           # Create Zip archive
           $archivePath = "$packageName.zip"
