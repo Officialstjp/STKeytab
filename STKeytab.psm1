@@ -21,6 +21,16 @@ Date       Auth           Ver       Change
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
+if (!$here) {
+    $here = Split-Path -Parent $MyInvocation.MyCommand.Path
+    if (!$here) {
+        $here = Get-Location
+        if (!$here) {
+            Write-Error "[!!] Unable to determine script location."
+            exit 1
+        }
+    }
+}
 
 # Private first (sorted; allow 00., 10., … prefixes)
 Get-ChildItem "$here/Private" -Filter *.ps1 | Sort-Object Name |
