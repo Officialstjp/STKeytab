@@ -33,26 +33,37 @@ if (!$here) {
 }
 
 # Private first (sorted; allow 00., 10., … prefixes)
-Get-ChildItem "$here/Private" -Filter *.ps1 | Sort-Object Name |
-  ForEach-Object {
-    try {
-      . (Join-Path $here "Private/$($_.Name)")
-    } catch {
-      Write-Error "Failed to dot-source Private/$($_.Name): $_"
+$privateDir = Join-Path $here 'Private'
+if (Test-Path -LiteralPath $privateDir) {
+  Get-ChildItem -LiteralPath $privateDir -Filter *.ps1 -File | Sort-Object Name |
+    ForEach-Object {
+      try {
+        . $_.FullName
+      } catch {
+        Write-Error "Failed to dot-source Private/$($_.Name): $_"
+      }
     }
-  }
-
-
-# Public next
-$pub = Get-ChildItem "$here/Public" -Filter *.ps1 | Sort-Object Name
-foreach ($file in $pub ){
-  try {
-    . (Join-Path $here "Public/$($file.Name)")
-  } catch {
-    Write-Error "Failed to dot-source Public/$($file.Name): $_"
-  }
 }
 
 
+# Public next
+$publicDir = Join-Path $here 'Public'
+$publicScripts = @()
+if (Test-Path -LiteralPath $publicDir) {
+  $publicScripts = Get-ChildItem -LiteralPath $publicDir -Filter *.ps1 -File | Sort-Object Name
+  foreach ($file in $publicScripts) {
+    try {
+      . $file.FullName
+    } catch {
+      Write-Error "Failed to dot-source Public/$($file.Name): $_"
+    }
+  }
+}
+
 # Export public only (filename == function name)
-Export-ModuleMember -Function $pub.BaseName
+if ($publicScripts) {
+  $exportNames = $publicScripts | Select-Object -ExpandProperty BaseName
+  Export-ModuleMember -Function $exportNames
+} else {
+  Export-ModuleMember # Export nothing explicitly if no public scripts found
+}

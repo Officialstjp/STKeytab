@@ -14,6 +14,7 @@ jobs:
 
       - name: Setup PowerShell modules
         run: |
+          Write-Host "[++] Starting Pipeline [++]"
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser
           Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
@@ -154,14 +155,15 @@ jobs:
         run: |
           # Test the packaged module
           $modulePath = ".\package\STKeytab\STKeytab.psd1"
+          if (-not (Test-Path -LiteralPath $modulePath)) { throw "Module manifest not found at $modulePath" }
           try {
             Write-Host "[+] Importing module: $modulePath" -ForegroundColor Cyan
-            Import-Module $modulePath -Force -ErrorAction Stop
+            Import-Module -Name $modulePath -Force -ErrorAction Stop
             $commands = Get-Command -Module STKeytab
             Write-Host "[+] Packaged module loaded successfully with $($commands.Count) commands" -ForegroundColor Green
           }
           catch {
-            Write-Error "[!!] Failed to import signed module: $($_.Exception.Message)"
+            Write-Host "[!!] Failed to import signed module: $($_.Exception.Message)" -ForegroundColor Red
             exit 1
           }
 
