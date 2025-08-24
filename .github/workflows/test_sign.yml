@@ -71,43 +71,10 @@ jobs:
       - name: Sign PowerShell files
         if: env.SKIP_SIGNING != 'true'
         run: |
-          try {
-            Write-Host "[+] Starting module signing process..." -ForegroundColor Cyan
+          Write-Host "[+] Starting module signing process..." -ForegroundColor Cyan
 
-            .\CI\Sign-Module.ps1 -CertificateThumbprint $env:CERT_THUMBPRINT -Verify -ModulePath .\
+          .\CI\Sign-Module.ps1 -CertificateThumbprint $env:CERT_THUMBPRINT -Verify -ModulePath .\
 
-            # Comprehensive verification
-            $psFiles = Get-ChildItem -Recurse -Include "*.ps1", "*.psm1", "*.psd1" | Where-Object {
-              $_.FullName -notmatch '\\tests\\' -and $_.FullName -notmatch '\\temp\\' -and $_.Name -ne 'Sign-Module.ps1' -and $_.FullName -notmatch '\\CI\\'
-            }
-
-            $signatureResults = @()
-            foreach ($file in $psFiles) {
-              $sig = Get-AuthenticodeSignature -FilePath $file.FullName
-              $signatureResults += [PSCustomObject]@{
-                File = $file.Name
-                Status = $sig.Status
-                StatusMessage = $sig.StatusMessage
-                SignerCertificate = $sig.SignerCertificate.Subject
-              }
-            }
-
-            $unsigned = $signatureResults | Where-Object { $_.Status -ne 'Valid' }
-
-            if ($unsigned) {
-              Write-Host "[!] Signature verification failures:" -ForegroundColor Red
-              $unsigned | Format-Table -AutoSize | Out-Host
-              Write-Error "Found $($unsigned.Count) files with invalid signatures"
-            } else {
-              Write-Host "[+] All $($psFiles.Count) PowerShell files are properly signed" -ForegroundColor Green
-              $signatureResults | Format-Table -AutoSize | Out-Host
-            }
-          }
-          catch {
-            Write-Error "[!!] Signing process failed: $($_.Exception.Message)"
-            Write-Host $_.ScriptStackTrace
-            exit 1
-          }
 
       - name: Create module package
         run: |
