@@ -153,10 +153,10 @@ jobs:
         if: env.SKIP_SIGNING != 'true'
         run: |
           # Test the packaged module
-          $modulePath = .\package\STKeytab\STKeytab.psd1
+          $modulePath = ".\package\STKeytab\STKeytab.psd1"
           try {
             Write-Host "[+] Importing module: $modulePath" -ForegroundColor Cyan
-            Import-Module $modulePath -Force
+            Import-Module $modulePath -Force -ErrorAction Stop
             $commands = Get-Command -Module STKeytab
             Write-Host "[+] Packaged module loaded successfully with $($commands.Count) commands" -ForegroundColor Green
           }
