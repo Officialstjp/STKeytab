@@ -1,3 +1,9 @@
+<#
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
@@ -26,7 +32,7 @@ try {
         throw "Certificate is not valid for code signing"
     }
 
-    Write-Host "✅ Certificate imported successfully:" -ForegroundColor Green
+    Write-Host "Certificate imported successfully:" -ForegroundColor Green
     Write-Host "  Subject: $($cert.Subject)" -ForegroundColor Gray
     Write-Host "  Thumbprint: $($cert.Thumbprint)" -ForegroundColor Gray
     Write-Host "  Expires: $($cert.NotAfter)" -ForegroundColor Gray

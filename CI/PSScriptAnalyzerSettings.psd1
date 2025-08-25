@@ -4,11 +4,9 @@ Copyright (c) 2025 Stefan Ploch
 #>
 
 @{
-    # PSScriptAnalyzer settings for STKeytab module
+    # PSScriptAnalyzer settings for the STKeytab module
 
     IncludeDefaultRules = $true
-
-    # Suppress rules that are acceptable or don't apply to this module type
     ExcludeRules = @(
         # === Test File Suppressions ===
         'PSAvoidGlobalVars',                        # Test files legitimately use global test variables

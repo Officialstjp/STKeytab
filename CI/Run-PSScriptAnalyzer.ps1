@@ -1,3 +1,13 @@
+<#
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Stefan Ploch
+#>
+
+
+<#
+.SYNOPSIS
+    Runs PSScriptAnalyzer on specified folders and files.
+#>
 Write-Host "=== PSScriptAnalyzer Analysis ===" -ForegroundColor Cyan
 
 $allIssues = @()

@@ -8,6 +8,7 @@ on:
 jobs:
   test:
     runs-on: self-hosted
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,6 +48,7 @@ jobs:
   sign-module:
     name: Sign Module
     runs-on: self-hosted
+    timeout-minutes: 20
     needs: test
     if: github.event_name != 'pull_request'
     steps:
@@ -162,4 +164,4 @@ jobs:
           path: |
             package-info.json
           retention-days: 30
-#commitline
+
