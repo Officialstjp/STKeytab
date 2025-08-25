@@ -31,34 +31,41 @@ if (!$here) {
         }
     }
 }
+Write-Host "[DEBUG] Script location: $here"
+
 
 # Private first (sorted; allow 00., 10., … prefixes)
+Write-Host "[DEBUG] Importing from $privateDir"
 $privateDir = Join-Path $here 'Private'
 if (Test-Path -LiteralPath $privateDir) {
-  Get-ChildItem -LiteralPath $privateDir -Filter *.ps1 -File | Sort-Object Name |
-    ForEach-Object {
-      try {
-        . $_.FullName
-      } catch {
-        Write-Error "Failed to dot-source Private/$($_.Name): $_"
-      }
+    Write-Host "[DEBUG] Path valid"
+    Get-ChildItem -LiteralPath $privateDir -Filter *.ps1 -File | Sort-Object Name |
+        ForEach-Object {
+        try {
+            Write-Host "[DEBUG] Importing from Private/$($_.Name)"
+            . $_.FullName
+        } catch {
+            Write-Error "Failed to dot-source Private/$($_.Name): $_"
+        }
     }
 }
 
 
-
+Write-Host "[DEBUG] Importing from $publicDir"
 # Public next
 $publicDir = Join-Path $here 'Public'
 $publicScripts = @()
 if (Test-Path -LiteralPath $publicDir) {
-  $publicScripts = Get-ChildItem -LiteralPath $publicDir -Filter *.ps1 -File | Sort-Object Name
-  foreach ($file in $publicScripts) {
-    try {
-      . $file.FullName
-    } catch {
-      Write-Error "Failed to dot-source Public/$($file.Name): $_"
+    Write-Host "[DEBUG] Path valid"
+    $publicScripts = Get-ChildItem -LiteralPath $publicDir -Filter *.ps1 -File | Sort-Object Name
+    foreach ($file in $publicScripts) {
+        try {
+            Write-Host "[DEBUG] Importing from Public/$($file.Name)"
+            . $file.FullName
+        } catch {
+            Write-Error "Failed to dot-source Public/$($file.Name): $_"
+        }
     }
-  }
 }
 
 # Export public only (filename == function name)
