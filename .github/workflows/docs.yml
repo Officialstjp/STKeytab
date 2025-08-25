@@ -9,7 +9,7 @@ on:
       - 'STKeytab.psd1'
       - 'docs/**'
       - 'CI/Build-Docs.ps1'
-      - 'workflows/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ main ]
     paths:
@@ -19,7 +19,7 @@ on:
       - 'STKeytab.psd1'
       - 'docs/**'
       - 'CI/Build-Docs.ps1'
-      - 'workflows/**'
+      - '.github/workflows/**'
 
 jobs:
   docs:
