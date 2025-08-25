@@ -157,7 +157,7 @@ function New-Keytab {
                     $dc = Get-ADDomainController -Server $Server -ErrorAction Stop
                     if ($dc.IsReadOnly) { Write-Warning ("Target DC '{0}' is read-only (RODC); replication-based extraction may fail." -f $Server) }
                 } catch {
-                    Write-Warning ("Unable to query domain controller '{0}': {1}" -f $Server, $_.Exception.Message)
+                    if (-not $SuppressWarnings.IsPresent) { Write-Warning ("Unable to query domain controller '{0}': {1}" -f $Server, $_.Exception.Message) }
                 }
             } else {
                 Write-Verbose ("-Server specified ('{0}'); ensure it is a writable DC." -f $Server)
