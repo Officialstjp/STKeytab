@@ -36,8 +36,8 @@ jobs:
         shell: pwsh
         run: |
           Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
-          Install-Module -Name PlatyPS -Scope CurrentUser -MinimumVersion 2.0.0 -Force -AllowClobber
-          Import-Module PlatyPS -MinimumVersion 2.0.0 -ErrorAction Stop
+          Install-Module -Name PlatyPS -Scope CurrentUser -Force -AllowClobber
+          Import-Module PlatyPS -ErrorAction Stop
 
       - name: Validate docs (no drift)
         if: github.event_name == 'pull_request'
