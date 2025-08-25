@@ -22,7 +22,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
 if (!$here) {
-    $here = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $here = Split-Path -Parent $PSCommandPath
     if (!$here) {
         $here = Get-Location
         if (!$here) {
