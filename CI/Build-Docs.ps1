@@ -43,10 +43,16 @@ try {
     Import-Module $ModuleManifest -Force -ErrorAction Stop
 
     $docsChanged = $false
+    $mdUpdateParams = @{
+        Encoding = [System.Text.Encoding]::UTF8
+        AlphabeticParamsOrder = $false
+        UseFullTypeName = $true
+        ExcludeDontShow = $false
+    }
     switch ($Mode) {
         'Update' {
             Write-Host "Updating markdown help in-place (docs/) ..."
-            Update-MarkdownHelp -Module $ModuleName -OutputFolder $DocsPath -Force -ErrorAction Stop | Out-Null
+            Update-MarkdownHelp -Path $DocsPath @mdUpdateParams -Force -ErrorAction Stop | Out-Null
             $docsChanged = $true
         }
         'Validate' {
@@ -56,7 +62,7 @@ try {
                 New-Item -ItemType Directory -Path $TempDocs | Out-Null
 
                 Write-Host "Checking for help drift (Update-MarkdownHelp -> temp)..."
-                Update-MarkdownHelp -Module $ModuleName -OutputFolder $TempDocs -Force -ErrorAction Stop | Out-Null
+                New-MarkdownHelp -Module $ModuleName -OutputFolder $TempDocs @mdUpdateParams -Force -ErrorAction Stop | Out-Null
 
                 # compare with current docs (using git if available)
                 $diffCount = 0
