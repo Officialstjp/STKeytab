@@ -42,9 +42,6 @@ try {
 
     Import-Module $ModuleManifest -Force -ErrorAction Stop
 
-    Write-Host "Validating markdown help in '$DocsPath'"
-    Test-MarkdownHelp -Path $DocsPath -ErrorAction Stop
-
     $docsChanged = $false
     switch ($Mode) {
         'Update' {

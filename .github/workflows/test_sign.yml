@@ -2,8 +2,27 @@ name: Sign & Test STKeytab
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'Public/**'
+      - 'Private/**'
+      - 'Tests/**'
+      - 'STKeytab.psm1'
+      - 'STKeytab.psd1'
+      - 'docs/**'
+      - 'CI/**'
+      - '.github/workflows/**'
+
   pull_request:
     branches: [ main ]
+    paths:
+      - 'Public/**'
+      - 'Private/**'
+      - 'Tests/**'
+      - 'STKeytab.psm1'
+      - 'STKeytab.psd1'
+      - 'docs/**'
+      - 'CI/**'
+      - '.github/workflows/**'
 
 jobs:
   test:
