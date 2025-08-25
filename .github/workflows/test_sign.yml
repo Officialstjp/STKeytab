@@ -1,3 +1,10 @@
+# ======================
+
+# add shell: powershell where needed
+
+
+
+# ======================
 name: Sign & Test STKeytab
 on:
   push:
@@ -14,6 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup PowerShell modules
+        shell: powershell
         run: |
           Write-Host "[++] Starting Pipeline [++]"
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
@@ -21,6 +29,7 @@ jobs:
           Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
 
       - name: Run Pester tests
+        shell: powershell
         run: |
           Import-Module Pester
           $config = New-PesterConfiguration
@@ -41,6 +50,7 @@ jobs:
           path: TestResults.xml
 
       - name: Run PSScriptAnalyzer
+        shell: powershell
         run: |
           Write-Host "[+] Running PSScriptAnalyzer..." -ForegroundColor Cyan
           .\CI\Run-PSScriptAnalyzer.ps1
@@ -56,6 +66,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Import signing certificate
+        shell: powershell
         env:
           SIGNING_CERTIFICATE: ${{ secrets.SIGNING_CERTIFICATE }}
           SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
@@ -71,6 +82,7 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "CERT_THUMBPRINT=$thumb"
 
       - name: Sign PowerShell files
+        shell: powershell
         if: env.SKIP_SIGNING != 'true'
         run: |
           Write-Host "[+] Starting module signing process..." -ForegroundColor Cyan
@@ -79,6 +91,7 @@ jobs:
 
 
       - name: Create module package
+        shell: powershell
         run: |
           # Get version from manifest
           $manifest = Import-PowerShellDataFile -Path .\STKeytab.psd1
@@ -120,6 +133,7 @@ jobs:
           Write-Host "[+] Package created successfully: $archivePath" -ForegroundColor Green
 
       - name: Test signed module
+        shell: powershell
         if: env.SKIP_SIGNING != 'true'
         run: |
           # Test the packaged module

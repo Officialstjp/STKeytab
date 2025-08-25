@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install PlatyPS
-        shell: pwsh
+        shell: powershell
         run: |
           Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
           Install-Module -Name PlatyPS -Scope CurrentUser -Force -AllowClobber
@@ -41,19 +41,19 @@ jobs:
 
       - name: Validate docs (no drift)
         if: github.event_name == 'pull_request'
-        shell: pwsh
+        shell: powershell
         run: |
           ./CI/Build-Docs.ps1 -Mode Validate -FailOnDrift
 
       - name: Update docs on push
         if: github.event_name == 'push'
-        shell: pwsh
+        shell: powershell
         run: |
           ./CI/Build-Docs.ps1 -Mode Update -AutoCommit -CommitMessage "docs: update help and external help [skip ci]"
 
       - name: Push doc changes
         if: github.event_name == 'push'
-        shell: pwsh
+        shell: powershell
         run: |
           $status = git status --porcelain
           if ($status) {

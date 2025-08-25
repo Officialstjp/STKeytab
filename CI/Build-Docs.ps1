@@ -28,7 +28,7 @@ $ScriptRoot = Split-Path -Parent $PSCommandPath
 $repoRoot   = Split-Path -Parent $ScriptRoot
 Push-Location $repoRoot
 try {
-    Import-Module PlatyPS -MinimumVersion 2.0.0 -ErrorAction Stop
+    Import-Module PlatyPS -ErrorAction Stop
 
     $ModuleManifest = Join-Path $repoRoot 'STKeytab.psd1'
     $ModuleName     = 'STKeytab'
