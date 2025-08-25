@@ -94,7 +94,7 @@ try {
             }
         }
     }
-
+<#
     # Generate external help (MAML XML) always
     Write-Host "Generating external help to '$OutHelpPath'..."
     New-ExternalHelp -Path $DocsPath -OutputPath $OutHelpPath -Force | Out-Null
@@ -113,7 +113,7 @@ try {
         -Locale $Locale `
         -Module $ModuleName `
         -Version $version | Out-Null
-
+#>
     Write-Host "Artifacts ready in '$Artifacts'."
 
     # Auto-commit updated docs/en-US if requested
