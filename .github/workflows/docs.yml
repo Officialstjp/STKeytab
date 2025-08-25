@@ -1,8 +1,4 @@
-permissions:
-  contents: write
-
 name: Docs
-
 on:
   push:
     branches: [ main ]
@@ -13,6 +9,7 @@ on:
       - 'STKeytab.psd1'
       - 'docs/**'
       - 'CI/Build-Docs.ps1'
+      - 'workflows/**'
   pull_request:
     branches: [ main ]
     paths:
@@ -22,6 +19,7 @@ on:
       - 'STKeytab.psd1'
       - 'docs/**'
       - 'CI/Build-Docs.ps1'
+      - 'workflows/**'
 
 jobs:
   docs:
