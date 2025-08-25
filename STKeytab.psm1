@@ -43,7 +43,7 @@ if (Test-Path -LiteralPath $privateDir) {
     Get-ChildItem -LiteralPath $privateDir -Filter *.ps1 -File | Sort-Object Name |
         ForEach-Object {
         try {
-            Write-Host "[DEBUG] Importing from Private/$($_.Name)"
+            Write-Host "[DEBUG] Importing from '$_'"
             . $_.FullName
         } catch {
             Write-Error "Failed to dot-source Private/$($_.Name): $_"
