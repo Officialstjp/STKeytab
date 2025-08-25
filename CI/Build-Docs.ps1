@@ -113,8 +113,9 @@ try {
         -Locale $Locale `
         -Module $ModuleName `
         -Version $version | Out-Null
-#>
+
     Write-Host "Artifacts ready in '$Artifacts'."
+    #>
 
     # Auto-commit updated docs/en-US if requested
     if ($AutoCommit) {
