@@ -6,11 +6,13 @@ Copyright (c) 2025 Stefan Ploch
 
 function Read-Keytab {
     <#
-        .SYNOPSIS
-        Parse a keytab file into structured entries.
+    .SYNOPSIS
+    Parse a keytab file into structured entries.
 
-        .DESCRIPTION
-        Robust parser for MIT keytab v0x0502. Can reveal raw key bytes for merge scenarios.
+    .DESCRIPTION
+    Robust parser for MIT keytab v0x0502. Can reveal raw key bytes for merge scenarios (sensitive).
+    Returns entry objects with properties: Realm, Components, NameType, TimestampUtc, Kvno, EtypeId,
+    EtypeName, KeyLength, Key (masked by default), and RawKey (when -RevealKeys is used).
 
         .PARAMETER Path
         Path to the keytab file (Pos 1).
@@ -18,8 +20,8 @@ function Read-Keytab {
         .PARAMETER RevealKeys
         Include raw key bytes in each entry's RawKey property (sensitive).
 
-        .PARAMETER MaxKeyHex
-        Max length of the displayed hex string for masked key preview.
+    .PARAMETER MaxKeyHex
+    Max length of the displayed hex string for masked key preview.
 
         .INPUTS
         System.String (file path) or objects with FilePath/FullName properties.
@@ -36,12 +38,14 @@ function Read-Keytab {
 
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=0)]
         [Alias('FullName','PSPath','FilePath')]
+        [ValidateNotNullOrEmpty()]
         [string]$Path,
         [switch]$RevealKeys,
         [int]$MaxKeyHex = 64
     )
     begin {
         if (-not (Test-Path -LiteralPath $Path)) { throw "File '$Path' not found" }
+        if ($RevealKeys) { Write-Warning 'RevealKeys is sensitive: raw key bytes will be returned in entries.' }
     }
     process {
         $bytes = [IO.File]::ReadAllBytes($Path)

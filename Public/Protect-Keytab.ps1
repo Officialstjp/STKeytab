@@ -6,22 +6,23 @@ Copyright (c) 2025 Stefan Ploch
 
 function Protect-Keytab {
     <#
-        .SYNOPSIS
-        Protect a keytab file at rest using Windows DPAPI.
+    .SYNOPSIS
+    Protect a keytab file at rest using Windows DPAPI.
 
-        .DESCRIPTION
-        Uses DPAPI (CurrentUser or LocalMachine scope) to encrypt a keytab file. Optional
-        additional entropy can be provided. Can restrict ACL on the output and delete the
-        plaintext original after successful protection.
+    .DESCRIPTION
+    Uses DPAPI (CurrentUser or LocalMachine scope) to encrypt a keytab file. Optional
+    additional entropy can be provided. Can restrict ACL on the output and delete the
+    plaintext original after successful protection. LocalMachine scope is not portable
+    across machines.
 
-        .PARAMETER Path
-        Path to the plaintext keytab file to protect (Pos 1).
+    .PARAMETER Path
+    Path to the plaintext keytab file to protect.
 
-        .PARAMETER OutputPath
-        Destination path for the protected file. Defaults to <Path>.dpapi (Pos 2).
+    .PARAMETER OutputPath
+    Destination path for the protected file. Defaults to <Path>.dpapi when not specified.
 
-        .PARAMETER Scope
-        DPAPI scope: CurrentUser (default) or LocalMachine.
+    .PARAMETER Scope
+    DPAPI scope: CurrentUser (default) or LocalMachine. LocalMachine scope binds decryption to the computer and is not portable.
 
         .PARAMETER Entropy
         Optional additional entropy string to bind to the protection.
@@ -29,8 +30,8 @@ function Protect-Keytab {
         .PARAMETER Force
         Overwrite OutputPath if it exists.
 
-        .PARAMETER DeletePlaintext
-        Remove the original plaintext file after successful protection.
+    .PARAMETER DeletePlaintext
+    Remove the original plaintext file after successful protection.
 
         .PARAMETER RestrictAcl
         Apply a user-only ACL to the output file.
@@ -45,20 +46,23 @@ function Protect-Keytab {
         Protect-Keytab -Path .\user.keytab -OutputPath .\user.keytab.dpapi -Scope CurrentUser -RestrictAcl
         Protect a keytab with DPAPI in the current-user scope and set a restrictive ACL.
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=0)]
         [Alias('In','FullName','FilePath')]
+        [ValidateNotNullOrEmpty()]
         [string]$Path,
 
-        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=1)]
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName, Position=1)]
         [Alias('Out','Output', 'OutFile')]
+        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         [Validateset('CurrentUser','LocalMachine')]
         [string]$Scope = 'CurrentUser',
 
         [string]$Entropy,
+        [SecureString]$EntropySecure,
         [switch]$Force,
         [switch]$DeletePlaintext,
         [switch]$RestrictAcl
@@ -73,7 +77,22 @@ function Protect-Keytab {
     process {
         if ($PSCmdlet.ShouldProcess($Path, 'Protect keytab (DPAPI)')) {
             $bytes = [IO.File]::ReadAllBytes($Path)
-            $entropyBytes = if ($Entropy) { [Text.Encoding]::UTF8.GetBytes($Entropy) } else { $null }
+            $entropyBytes = $null
+            try {
+                if ($EntropySecure) {
+                    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($EntropySecure)
+                    try {
+                        $plainEntropy = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+                        if ($plainEntropy) { $entropyBytes = [Text.Encoding]::UTF8.GetBytes($plainEntropy) }
+                    } finally {
+                        if ($bstr -ne [IntPtr]::Zero) { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+                    }
+                } elseif ($Entropy) {
+                    $entropyBytes = [Text.Encoding]::UTF8.GetBytes($Entropy)
+                }
+            } catch {
+                Write-Warning ("Failed to materialize entropy: {0}" -f $_.Exception.Message)
+            }
             $scopeEnum = if ($Scope -eq 'LocalMachine') {
                 [System.Security.Cryptography.DataProtectionScope]::LocalMachine
             } else {

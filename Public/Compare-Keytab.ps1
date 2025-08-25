@@ -6,15 +6,14 @@ Copyright (c) 2025 Stefan Ploch
 
 function Compare-Keytab {
     <#
-        .SYNOPSIS
-        Compare two keytab files with optional timestamp-insensitive and key-byte comparisons.
+    .SYNOPSIS
+    Compare two keytab files with optional timestamp-insensitive and key-byte comparisons.
 
-        .DESCRIPTION
-        Reads both keytabs, canonicalizes their entries (optionally ignoring timestamps),
-        and compares structure and, by default, key bytes. Returns an object with an
-        Equal flag and a Differences collection describing any mismatches. Use -IgnoreKeyBytes
-        for structure-only comparisons. Use -RevealKeys to include sensitive key bytes in the
-        diff details (disabled by default for safety).
+    .DESCRIPTION
+    Reads both keytabs, canonicalizes their entries (optionally ignoring timestamps), and compares
+    structure and key bytes (by default). Returns an object with an Equal flag and a Differences
+    collection describing mismatches. Use -IgnoreKeyBytes for structure-only comparisons. Use
+    -RevealKeys to include sensitive key bytes in the diff (avoid in logs and CI artifacts).
 
         .PARAMETER ReferencePath
         Path to the baseline (reference) keytab.
@@ -51,10 +50,12 @@ function Compare-Keytab {
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=0)]
         [Alias('FullNameRef','FilePathRef')]
+        [ValidateNotNullOrEmpty()]
         [string]$ReferencePath,
 
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=1)]
         [Alias('FullNameCand','FilePathCand')]
+        [ValidateNotNullOrEmpty()]
         [string]$CandidatePath,
 
         [switch]$IgnoreTimestamp,
@@ -63,6 +64,7 @@ function Compare-Keytab {
     )
     begin {
         Set-StrictMode -Version Latest
+        if ($RevealKeys) { Write-Warning 'RevealKeys is sensitive: raw key bytes may appear in differences.' }
 
         function New-JoinKey {
             param([pscustomobject]$E)

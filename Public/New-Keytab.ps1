@@ -6,112 +6,118 @@ Copyright (c) 2025 Stefan Ploch
 
 function New-Keytab {
     <#
-        .SYNOPSIS
-        Create a keytab for an AD user, computer, or krbtgt using replication-safe extraction.
+    .SYNOPSIS
+    Create a keytab for an AD user, computer, or krbtgt using replication-safe key extraction.
 
-        .DESCRIPTION
-        Front-door cmdlet that discovers principal type, selects safe encryption types by default (AES),
-        and writes a deterministic keytab when -FixedTimestampUtc is provided. Supports summary JSON and
-        pass-thru. Use -AcknowledgeRisk for krbtgt extractions.
+    .DESCRIPTION
+    Front-door cmdlet that discovers principal type and extracts Kerberos keys via directory replication.
+    Defaults to AES-only encryption types. Deterministic output is available when -FixedTimestampUtc is
+    provided. Supports JSON summaries and PassThru. krbtgt extractions are gated and require -AcknowledgeRisk
+    with a documented justification.
 
-        .PARAMETER SamAccountName
-        The account's sAMAccountName (user, computer$, or krbtgt) (Pos 1).
+    .PARAMETER SamAccountName
+    The account's sAMAccountName (user, computer$, or krbtgt).
 
-        .PARAMETER Type
-        Principal type. Auto infers from name; User, Computer, or Krbtgt can be forced.
+    .PARAMETER Type
+    Principal type. Auto infers from name; User, Computer, or Krbtgt can be forced.
 
-        .PARAMETER Domain
-        Domain NetBIOS or FQDN. When omitted, attempts discovery (Pos 2).
+    .PARAMETER Domain
+    Domain NetBIOS or FQDN. When omitted, attempts discovery.
 
-        .PARAMETER IncludeEtype
-        Encryption type IDs to include. Default: 18,17,23 (AES-256, AES-128, RC4 opt-in) (Pos 3).
+    .PARAMETER IncludeEtype
+    Encryption type IDs to include. Default: 18,17 (AES-256, AES-128). RC4 (23) is not included by default and
+    must be explicitly opted-in when legacy compatibility is required.
 
-        .PARAMETER ExcludeEtype
-        Encryption type IDs to exclude. (Pos 4).
+    .PARAMETER ExcludeEtype
+    Encryption type IDs to exclude.
 
-        .PARAMETER OutputPath
-        Path to write the keytab file (Pos 5).
+    .PARAMETER IncludeLegacyRC4
+    Includes the RC4 encryption type (23).
 
-        .PARAMETER JsonSummaryPath
-        Optional path to write a JSON summary. Defaults next to OutputPath. (Pos 6)
+    .PARAMETER OutputPath
+    Path to write the keytab file.
 
-        .PARAMETER Server
-        Domain Controller to target for replication (optional) (Pos 7).
+    .PARAMETER JsonSummaryPath
+    Optional path to write a JSON summary. Defaults next to OutputPath when summaries are requested.
 
-        .PARAMETER Justification
-        Free-text justification string for auditing high-risk operations (Pos 8).
+    .PARAMETER Server
+    Domain Controller to target for replication (optional).
 
-        .PARAMETER Credential
-        Alternate credentials to access AD/replication (Pos 9).
+    .PARAMETER Justification
+    Free-text justification string for auditing high-risk operations.
 
-        .PARAMETER EnvFile
-        Optional .env file to load credentials from (Pos 10).
+    .PARAMETER Credential
+    Alternate credentials to access AD/replication.
 
-        .PARAMETER RestrictAcl
-        Apply a user-only ACL to outputs.
+    .PARAMETER EnvFile
+    Optional .env file to load credentials from.
 
-        .PARAMETER Force
-        Overwrite existing OutputPath.
+    .PARAMETER RestrictAcl
+    Apply a user-only ACL to outputs.
 
-        .PARAMETER PassThru
-        Return a small object summary in addition to writing files.
+    .PARAMETER Force
+    Overwrite existing OutputPath.
 
-        .PARAMETER Summary
-        Write a JSON summary file.
+    .PARAMETER PassThru
+    Return a small object summary in addition to writing files.
 
-        .PARAMETER IncludeOldKvno
-        Include previous KVNO keys when available.
+    .PARAMETER Summary
+    Write a JSON summary file.
 
-        .PARAMETER IncludeOlderKvno
-        Include older KVNO keys (krbtgt scenarios).
+    .PARAMETER IncludeOldKvno
+    Include previous KVNO keys when available.
 
-        .PARAMETER AcknowledgeRisk
-        Required for krbtgt extraction.
+    .PARAMETER IncludeOlderKvno
+    Include older KVNO keys (krbtgt scenarios).
 
-        .PARAMETER VerboseDiagnostics
-        Emit additional diagnostics during extraction.
+    .PARAMETER AcknowledgeRisk
+    Required for krbtgt extraction.
 
-        .PARAMETER SuppressWarnings
-        Suppress risk warnings.
+    .PARAMETER VerboseDiagnostics
+    Emit additional diagnostics during extraction.
 
-        .PARAMETER FixedTimestampUtc
-        Use a fixed timestamp for deterministic output.
+    .PARAMETER SuppressWarnings
+    Suppress risk warnings.
 
-        .PARAMETER IncludeShortHost
-        For computer accounts, include HOST/shortname SPN.
+    .PARAMETER FixedTimestampUtc
+    Use a fixed timestamp for deterministic output. Determinism is opt-in and not auto-populated.
 
-        .PARAMETER AdditionalSpn
-        Additional SPNs (service/host) to include for computer accounts.
+    .PARAMETER IncludeShortHost
+    For computer accounts, include HOST/shortname SPN.
 
-        .INPUTS
-        System.String (SamAccountName) via property name.
+    .PARAMETER AdditionalSpn
+    Additional SPNs (service/host) to include for computer accounts.
 
-        .OUTPUTS
-        System.String (OutputPath) or summary object when -PassThru.
+    .INPUTS
+    System.String (SamAccountName) via property name.
 
-        .EXAMPLE
-        New-Keytab -SamAccountName web01$ -Type Computer -OutputPath .\web01.keytab -IncludeShortHost -Summary
-        Create a computer keytab including short HOST/ SPNs and write a summary JSON.
+    .OUTPUTS
+    System.String (OutputPath) or summary object when -PassThru.
 
-        .EXAMPLE
-        New-Keytab -SamAccountName user1 -IncludeEtype 18,17 -ExcludeEtype 23 -OutputPath .\user1.keytab -FixedTimestampUtc (Get-Date '2020-01-01Z')
-        Create a deterministic user keytab with AES types only.
-    #>
-    [CmdletBinding(SupportsShouldProcess)]
+    .EXAMPLE
+    New-Keytab -SamAccountName web01$ -Type Computer -OutputPath .\web01.keytab -IncludeShortHost -Summary
+    Create a computer keytab including short HOST/ SPNs and write a summary JSON.
+
+    .EXAMPLE
+    New-Keytab -SamAccountName user1 -IncludeEtype 18,17 -ExcludeEtype 23 -OutputPath .\user1.keytab -FixedTimestampUtc (Get-Date '2020-01-01Z')
+    Create a deterministic user keytab with AES types only.
+#>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
     param(
         # Common
         [Parameter(Position=0, Mandatory, ValueFromPipelineByPropertyName=$true)]
+        [ValidateNotNullOrEmpty()]
         [string]$SamAccountName,
 
         [ValidateSet('Auto','User','Computer','Krbtgt')]
         [string]$Type = 'Auto',
 
         [Parameter(Position=1, ValueFromPipelineByPropertyName)][string]$Domain,
-        [Parameter(Position=2, ValueFromPipelineByPropertyName)][object[]]$IncludeEtype = @(18,17,23),
+        [Parameter(Position=2, ValueFromPipelineByPropertyName)][object[]]$IncludeEtype = @(18,17),
         [Parameter(Position=3, ValueFromPipelineByPropertyName)][object[]]$ExcludeEtype,
 
-        [Parameter(Position=4, ValueFromPipelineByPropertyName)][string]$OutputPath,
-        [Parameter(Position=5, ValueFromPipelineByPropertyName)][string]$JsonSummaryPath,
+        [Parameter(Position=4, ValueFromPipelineByPropertyName)][ValidateNotNullOrEmpty()][string]$OutputPath,
+        [Parameter(Position=5, ValueFromPipelineByPropertyName)][Alias('JsonSummaryPath')][string]$SummaryPath,
         [Parameter(Position=6, ValueFromPipelineByPropertyName)][string]$Server,
         [Parameter(Position=7, ValueFromPipelineByPropertyName)][string]$Justification,
         [Parameter(Position=8, ValueFromPipelineByPropertyName)][pscredential]$Credential,
@@ -126,6 +132,8 @@ function New-Keytab {
         [switch]$AcknowledgeRisk,
         [switch]$VerboseDiagnostics,
         [switch]$SuppressWarnings,
+        [switch]$IncludeLegacyRC4,
+        [switch]$AESOnly,
 
         [datetime]$FixedTimestampUtc,
 
@@ -139,6 +147,22 @@ function New-Keytab {
         Get-RequiredModule -Name DSInternals
 
         if (-not $Credential -and $EnvFile) { $Credential = Get-CredentialFromEnv -EnvFile $EnvFile }
+        if (-not $PSBoundParameters.ContainsKey('IncludeEtype')) { $IncludeEtype = @(18,17) }
+        if ($IncludeLegacyRC4.IsPresent -and ($IncludeEtype -notcontains 23)) { $IncludeEtype += 23 }
+
+        if ($Server) {
+            $dcCmd = Get-Command -Name Get-ADDomainController -ErrorAction SilentlyContinue
+            if ($dcCmd) {
+                try {
+                    $dc = Get-ADDomainController -Server $Server -ErrorAction Stop
+                    if ($dc.IsReadOnly) { Write-Warning ("Target DC '{0}' is read-only (RODC); replication-based extraction may fail." -f $Server) }
+                } catch {
+                    Write-Warning ("Unable to query domain controller '{0}': {1}" -f $Server, $_.Exception.Message)
+                }
+            } else {
+                Write-Verbose ("-Server specified ('{0}'); ensure it is a writable DC." -f $Server)
+            }
+        }
 
         $type = $Type
         if ($type -eq 'Auto') {
@@ -159,7 +183,7 @@ function New-Keytab {
                 return New-PrincipalKeytabInternal -SamAccountName 'krbtgt' -Domain $Domain -Server $Server -Credential $Credential `
                                                         -OutputPath $OutputPath -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype -IsKrbtgt `
                                                         -IncludeOldKvno:$IncludeOldKvno -IncludeOlderKvno:$IncludeOlderKvno -RestrictAcl:$RestrictAcl -Force:$Force `
-                                                        -JsonSummaryPath $JsonSummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
+                                                        -JsonSummaryPath $SummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
                                                         -VerboseDiagnostics:$VerboseDiagnostics @extra
                 }
             }
@@ -185,7 +209,7 @@ function New-Keytab {
                     if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { $extra.FixedTimestampUtc = $FixedTimestampUtc }
                     return New-PrincipalKeytabInternal -SamAccountName ("{0}$" -f $compName) -Domain $domainFqdn -Server $Server -Credential $Credential `
                                                     -OutputPath $OutputPath -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype -RestrictAcl:$RestrictAcl -Force:$Force `
-                                                    -JsonSummaryPath $JsonSummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
+                                                    -JsonSummaryPath $SummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
                                                     -PrincipalDescriptorsOverride $desc -VerboseDiagnostics:$VerboseDiagnostics @extra
                 }
             }
@@ -197,7 +221,7 @@ function New-Keytab {
                     if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { $extra.FixedTimestampUtc = $FixedTimestampUtc }
                     return New-PrincipalKeytabInternal -SamAccountName $userName -Domain $Domain -Server $Server -Credential $Credential `
                                                     -OutputPath $OutputPath -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype `
-                                                    -RestrictAcl:$RestrictAcl -Force:$Force -JsonSummaryPath $JsonSummaryPath -PassThru:$PassThru `
+                                                    -RestrictAcl:$RestrictAcl -Force:$Force -JsonSummaryPath $SummaryPath -PassThru:$PassThru `
                                                     -Summary:$Summary -Justification $Justification -VerboseDiagnostics:$VerboseDiagnostics @extra
                 }
             }

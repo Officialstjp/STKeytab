@@ -6,19 +6,19 @@ Copyright (c) 2025 Stefan Ploch
 
 function ConvertFrom-KeytabJson {
     <#
-        .SYNOPSIS
-        Convert canonical JSON back into a keytab file (requires key bytes).
+    .SYNOPSIS
+    Convert canonical JSON back into a keytab file (requires key bytes).
 
-        .DESCRIPTION
-        Reads canonical JSON as produced by ConvertTo-KeytabJson -RevealKeys and reconstructs
-        a MIT v0x0502 keytab. Requires key bytes to be present in JSON. Can restrict ACL on
-        output and support deterministic timestamps for reproducible builds.
+    .DESCRIPTION
+    Reads canonical JSON as produced by ConvertTo-KeytabJson -RevealKeys and reconstructs
+    a MIT v0x0502 keytab. Requires key bytes to be present in JSON. Can restrict ACL on
+    output and supports deterministic timestamps for reproducible builds.
 
         .PARAMETER JsonPath
         Path to the canonical JSON file.
 
-        .PARAMETER OutputPath
-        Output keytab path to write.
+    .PARAMETER OutputPath
+    Output keytab path to write. Defaults to <JsonPath>.keytab when not specified.
 
         .PARAMETER Force
         Overwrite OutputPath if it exists.
@@ -42,11 +42,13 @@ function ConvertFrom-KeytabJson {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=0)]
-        [Alias('FullName','FilePath')]
+        [Alias('FullName','FilePath','PSPath')]
+        [ValidateNotNullOrEmpty()]
         [string]$JsonPath,
 
-        [Parameter(Mandatory)]
+        [Parameter()]
         [Alias('OutFile', 'Out')]
+        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         [switch]$Force,

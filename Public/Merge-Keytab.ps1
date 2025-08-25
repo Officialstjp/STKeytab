@@ -6,16 +6,17 @@ Copyright (c) 2025 Stefan Ploch
 
 function Merge-Keytab {
     <#
-        .SYNOPSIS
-        Merge multiple keytabs into a single file with de-duplication and safety checks.
+    .SYNOPSIS
+    Merge multiple keytabs into a single file with de-duplication and safety checks.
 
-        .DESCRIPTION
-        Reads input keytabs, de-duplicates entries across KVNO and encryption types, and
-        writes a consolidated keytab. Blocks merges containing krbtgt entries unless
-        -AcknowledgeRisk is provided.
+    .DESCRIPTION
+    Reads input keytabs (with key material), de-duplicates entries across principal, KVNO,
+    and encryption types, and writes a consolidated keytab. Merges containing krbtgt entries
+    are blocked unless -AcknowledgeRisk is provided. Inputs must carry key bytes (e.g., from
+    Read-Keytab -RevealKeys) to produce a valid merged output.
 
-        .PARAMETER InputPaths
-        One or more paths to input keytabs to merge.
+    .PARAMETER InputPaths
+    One or more paths to input keytabs to merge. Inputs must include key material.
 
         .PARAMETER OutputPath
         Destination path of the merged keytab.
@@ -39,14 +40,16 @@ function Merge-Keytab {
         Merge-Keytab -InputPaths a.keytab,b.keytab -OutputPath merged.keytab -Force
         Merge two keytabs into a single file, overwriting the destination if present.
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
     param(
         [Parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
         [Alias('Input','In')]
+        [ValidateNotNullOrEmpty()]
         [string[]]$InputPaths,
 
         [Parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=1)]
         [Alias('Output','Out')]
+        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         [switch]$Force,

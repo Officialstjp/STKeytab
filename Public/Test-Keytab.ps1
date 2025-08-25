@@ -6,11 +6,13 @@ Copyright (c) 2025 Stefan Ploch
 
 function Test-Keytab {
     <#
-        .SYNOPSIS
-        Validate a keytab file and report stats.
+    .SYNOPSIS
+    Validate a keytab file and report stats.
 
-        .DESCRIPTION
-        Lightweight validation that counts entries and flags unknown encryption types.
+    .DESCRIPTION
+    Lightweight validation that counts entries and flags unknown encryption types. Returns
+    $true/$false by default. With -Detailed, returns an object containing IsValid, EntryCount,
+    UnknownEtypes, and Warnings.
 
         .PARAMETER Path
         Path to the keytab file (Pos 1).
@@ -32,6 +34,7 @@ function Test-Keytab {
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=0)]
         [Alias('FullName','PSPath','FilePath')]
+        [ValidateNotNullOrEmpty()]
         [string]$Path,
         [switch]$Detailed
     )

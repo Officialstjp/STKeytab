@@ -6,21 +6,22 @@ Copyright (c) 2025 Stefan Ploch
 
 function Unprotect-Keytab {
     <#
-        .SYNOPSIS
-        Decrypt a DPAPI-protected keytab file.
+    .SYNOPSIS
+    Decrypt a DPAPI-protected keytab file.
 
-        .DESCRIPTION
-        Uses DPAPI to decrypt a previously protected keytab file. Defaults output name by
-        stripping .dpapi suffix when present. Can restrict ACL on the output.
+    .DESCRIPTION
+    Uses DPAPI to decrypt a previously protected keytab file. Defaults output name by
+    stripping the .dpapi suffix when present. If additional entropy was used during protection,
+    the same Entropy value must be provided for decryption. Can restrict ACL on the output.
 
-        .PARAMETER Path
-        Path to the DPAPI-protected input file (Pos 1).
+    .PARAMETER Path
+    Path to the DPAPI-protected input file.
 
-        .PARAMETER OutputPath
-        Destination for the decrypted keytab. Defaults to removing .dpapi extension (Pos 2).
+    .PARAMETER OutputPath
+    Destination for the decrypted keytab. Defaults to removing the .dpapi extension when not specified.
 
-        .PARAMETER Scope
-        DPAPI scope used for decryption: CurrentUser (default) or LocalMachine.
+    .PARAMETER Scope
+    DPAPI scope used for decryption: CurrentUser (default) or LocalMachine.
 
         .PARAMETER Entropy
         Additional entropy string that was used during protection (if any).
@@ -41,20 +42,23 @@ function Unprotect-Keytab {
         Unprotect-Keytab -Path .\user.keytab.dpapi -OutputPath .\user.keytab -Scope CurrentUser
         Decrypt a DPAPI-protected keytab into a plaintext keytab.
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=0)]
         [Alias('In','FullName','FilePath')]
+        [ValidateNotNullOrEmpty()]
         [string]$Path,
 
-        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=1)]
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName, Position=1)]
         [Alias('Out','Output', 'OutFile')]
+        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         [ValidateSet('CurrentUser','LocalMachine')]
         [string]$Scope = 'CurrentUser',
 
-        [string]$Entropy,
+    [string]$Entropy,
+    [SecureString]$EntropySecure,
         [switch]$Force,
         [switch]$RestrictAcl
     )
@@ -71,7 +75,22 @@ function Unprotect-Keytab {
             }
 
             $bytes = [IO.File]::ReadAllBytes($Path)
-            $entropyBytes = if ($Entropy) { [Text.Encoding]::UTF8.GetBytes($Entropy) } else { $null }
+            $entropyBytes = $null
+            try {
+                if ($EntropySecure) {
+                    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($EntropySecure)
+                    try {
+                        $plainEntropy = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+                        if ($plainEntropy) { $entropyBytes = [Text.Encoding]::UTF8.GetBytes($plainEntropy) }
+                    } finally {
+                        if ($bstr -ne [IntPtr]::Zero) { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+                    }
+                } elseif ($Entropy) {
+                    $entropyBytes = [Text.Encoding]::UTF8.GetBytes($Entropy)
+                }
+            } catch {
+                Write-Warning ("Failed to materialize entropy: {0}" -f $_.Exception.Message)
+            }
             $scopeEnum = if ($Scope -eq 'LocalMachine') {
                 [System.Security.Cryptography.DataProtectionScope]::LocalMachine
             } else {

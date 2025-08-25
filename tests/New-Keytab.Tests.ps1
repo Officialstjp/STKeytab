@@ -155,6 +155,18 @@ Describe 'Encryption type filtering' {
             if (Test-Path $json) { Remove-Item $json -Force }
         }
     }
+
+    It 'includes RC4 (23) if -IncludeLegacyRC4 is specified' {
+        $out = Join-Path $global:TestOutDir ("ktest_legacy_rc4.keytab")
+        try {
+            $obj = New-Keytab -SuppressWarnings -SamAccountName 'WEB01$' -Type Computer -Domain contoso.com -Server dc01.contoso.com -OutputPath $out -Force -IncludeLegacyRC4 -PassThru -Confirm:$false
+            $obj.Etypes | Should -Contain 23
+        } finally {
+            if (Test-Path $out) { Remove-Item $out -Force }
+            $json = [IO.Path]::ChangeExtension($out,'json')
+            if (Test-Path $json) { Remove-Item $json -Force }
+        }
+    }
 }
 
 Describe 'Advanced options' {
