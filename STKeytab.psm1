@@ -46,6 +46,7 @@ if (Test-Path -LiteralPath $privateDir) {
 }
 
 
+
 # Public next
 $publicDir = Join-Path $here 'Public'
 $publicScripts = @()
