@@ -25,8 +25,8 @@ jobs:
         run: |
           Write-Host "[++] Starting Pipeline [++]"
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module -Name Pester -Force -Scope CurrentUser
-          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+          if (-not (Get-Module Pester -Listavailable)) { Install-Module -Name Pester -Force -Scope CurrentUser -SkipPublisherCheck }
+          if (-not (Get-Module PSScriptAnalyzer -Listavailable)) { Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -SkipPublisherCheck }
 
       - name: Run Pester tests
         shell: powershell

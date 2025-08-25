@@ -36,7 +36,7 @@ jobs:
         shell: powershell
         run: |
           Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
-          Install-Module -Name PlatyPS -Scope CurrentUser -Force -AllowClobber
+          If (-not (Get-Module PlatyPs -Listavailable)) { Install-Module -Name PlatyPS -Scope CurrentUser -Force -AllowClobber }
           Import-Module PlatyPS -ErrorAction Stop
 
       - name: Validate docs (no drift)
