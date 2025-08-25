@@ -40,13 +40,15 @@ Write-Host "[DEBUG] Importing from $privateDir"
 
 if (Test-Path -LiteralPath $privateDir) {
     Write-Host "[DEBUG] Path valid"
-    Get-ChildItem -LiteralPath $privateDir -Filter *.ps1 -File | Sort-Object Name |
-        ForEach-Object {
+    $privateScripts = Get-ChildItem -LiteralPath $privateDir -Filter *.ps1 -File | Sort-Object Name
+    foreach ($script in $privateScripts) {
         try {
-            Write-Host "[DEBUG] Importing from '$_'"
-            . $_.FullName
+            $scriptPath = if ($script.PSIsContainer -or -not $script.FullName) { $script } else { $script.FullName }
+            Write-Host "[DEBUG] Importing from '$scriptPath'"
+            . $scriptPath
         } catch {
-            Write-Error "Failed to dot-source Private/$($_.Name): $_"
+            $fileName = if ($script -is [System.IO.FileInfo]) { $script.Name } else { $script }
+            Write-Error "Failed to dot-source Private/$fileName`: $_"
         }
     }
 }
@@ -61,12 +63,14 @@ $publicScripts = @()
 if (Test-Path -LiteralPath $publicDir) {
     Write-Host "[DEBUG] Path valid"
     $publicScripts = Get-ChildItem -LiteralPath $publicDir -Filter *.ps1 -File | Sort-Object Name
-    foreach ($file in $publicScripts) {
+    foreach ($script in $publicScripts) {
         try {
-            Write-Host "[DEBUG] Importing from Public/$($file.Name)"
-            . $file.FullName
+            $scriptPath = if ($script.PSIsContainer -or -not $script.FullName) { $script } else { $script.FullName }
+            Write-Host "[DEBUG] Importing from Public/$($script.Name)"
+            . $scriptPath
         } catch {
-            Write-Error "Failed to dot-source Public/$($file.Name): $_"
+            $fileName = if ($script -is [System.IO.FileInfo]) { $script.Name } else { $script }
+            Write-Error "Failed to dot-source Public/$fileName`: $_"
         }
     }
 }
