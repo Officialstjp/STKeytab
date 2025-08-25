@@ -2,6 +2,9 @@
 
 A focused PowerShell toolkit for generating and working with MIT keytabs (0x0502) using replication-based key extraction. The module favors safe defaults, deterministic outputs when requested, and minimal dependencies.
 
+### Documentation
+Cmdlet help is maintained in Markdown using [PlatyPS](https://github.com/PowerShell/platyPS) and (not yet) built into external help (MAML XML) for offline use. The CI pipeline validates help drift and auto-updates docs on push. See `docs/` for source and `en-US/` for built help.
+
 ### Requirements
 Requires Modules:
 - ActiveDirectory
@@ -11,6 +14,9 @@ Requires AD - Privileges:
  - DCSync-equivalent (Replicating Directory Changes, ...All, and ...In Filtered Set) on the domain NC
 
 Supports Powershell versions 5.1 and 7+
+
+### CI/CD
+Includes a self-hosted docs job that validates and auto-updates PlatyPS help. See `.github/workflows/docs.yml` and `CI/Build-Docs.ps1`.
 
 ### Import
 ```powershell
@@ -82,6 +88,8 @@ ConvertFrom-KeytabJson -JsonPath .\a.revealed.json -OutputPath .\a2.keytab -Forc
 - -FixedTimestampUtc is opt-in and respected end-to-end for reproducible artifacts.
 - DPAPI helper cmdlets support CurrentUser and LocalMachine scopes with optional entropy; outputs can be ACL-restricted to the current user.
 - New-KeytabFromPassword is AES-only (etype 17/18). RC4 is intentionally not supported in this path.
+ - New-KeytabFromPassword is AES-only (etype 17/18). RC4 is intentionally not supported in this path.
+ - PlatyPS-based help is validated and auto-updated in CI; see docs/ for Markdown and en-US/ for built help.
 - Canonical JSON is stably sorted and can omit timestamps via -IgnoreTimestamp; ConvertFrom-KeytabJson requires key bytes (export with -RevealKeys to include them).
 - The module does **not** collect any telemetry.
 
@@ -89,6 +97,11 @@ ConvertFrom-KeytabJson -JsonPath .\a.revealed.json -OutputPath .\a2.keytab -Forc
 - Reset-AccountPasswordWithKeytab workflow with dry-run and rollback.
 - Set-AccountSpn cmdlets with conflict detection and transactional behavior.
 - Interop helpers (Wireshark config, ktutil scripts) and CI/signing polish.
+
+### Recent Changes
+- Hardened module loader and CI import logic
+- Comfort/security pass: warnings for -RevealKeys, DPAPI entropy, OutputPath optionality, AES/RC4 policy
+- PlatyPS help: Markdown sources, CI drift validation and auto-update
 
 ## Risk & Privileges
 
