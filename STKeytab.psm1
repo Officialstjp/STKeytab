@@ -35,8 +35,9 @@ Write-Host "[DEBUG] Script location: $here"
 
 
 # Private first (sorted; allow 00., 10., … prefixes)
-Write-Host "[DEBUG] Importing from $privateDir"
 $privateDir = Join-Path $here 'Private'
+Write-Host "[DEBUG] Importing from $privateDir"
+
 if (Test-Path -LiteralPath $privateDir) {
     Write-Host "[DEBUG] Path valid"
     Get-ChildItem -LiteralPath $privateDir -Filter *.ps1 -File | Sort-Object Name |
@@ -51,9 +52,11 @@ if (Test-Path -LiteralPath $privateDir) {
 }
 
 
-Write-Host "[DEBUG] Importing from $publicDir"
 # Public next
 $publicDir = Join-Path $here 'Public'
+
+Write-Host "[DEBUG] Importing from $publicDir"
+
 $publicScripts = @()
 if (Test-Path -LiteralPath $publicDir) {
     Write-Host "[DEBUG] Path valid"
