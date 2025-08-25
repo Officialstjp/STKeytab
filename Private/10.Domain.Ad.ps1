@@ -66,11 +66,18 @@ function Get-ReplicatedAccount {
     )
 
     $netbios = ConvertTo-NetBIOSIfFqdn $DomainFQDN
-    $repl = @{
-        SamAccountName = $SamAccountName
-        Domain         = $netbios
-        # Many mocks (and some environments) expect -Server; default to DomainFQDN when not supplied
-        Server         = ($Server ? $Server : $DomainFQDN)
+    if ($Server) {
+        $repl = @{
+            SamAccountName = $SamAccountName
+            Domain         = $netbios
+            Server         = $Server
+        }
+    } else {
+        $repl = @{
+            SamAccountName = $SamAccountName
+            Domain         = $netbios
+            Server         = $DomainFQDN
+        }
     }
 
     if ($Credential) { $repl.Credential = $Credential }
