@@ -30,6 +30,7 @@ function global:New-MockAccount {
 
 Mock Get-RequiredModule { return $true } -ModuleName STKeytab
 
+
 Describe 'Compare-Keytab' {
     BeforeEach {
         Mock Get-ADReplAccount {
