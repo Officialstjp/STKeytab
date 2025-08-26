@@ -11,11 +11,12 @@ This module provides functions for managing Kerberos keytabs.
 .CHANGE LOG
 Date       Auth           Ver       Change
 ---------- -------------- -------- ------------------------------------------------
-10.08.25   Stjp           1.0      Initial version
-16.08.25   Stjp           1.1      Refactor, Add New-Keytab, New-KeytabFromPassword, Read-Keytab, Test-Keytab, Merge-Keytab, Protect-Keytab / Unprotect-Keytab
-17.08.25   Stjp           1.2      Add Compare-Keytab, ConvertTo-KeytabJson, ConvertFrom-KeytabJson
-17.08.25   Stjp           1.2.1    Add headers across all functions, parameter descriptions and Valuefrompipeline support,
+10.08.25   Stjp           0.1      Initial version
+16.08.25   Stjp           0.2      Refactor, Add New-Keytab, New-KeytabFromPassword, Read-Keytab, Test-Keytab, Merge-Keytab, Protect-Keytab / Unprotect-Keytab
+17.08.25   Stjp           0.32     Add Compare-Keytab, ConvertTo-KeytabJson, ConvertFrom-KeytabJson
+17.08.25   Stjp           0.3.1    Add headers across all functions, parameter descriptions and Valuefrompipeline support,
                                    begin - process - end structure for all public functions
+26.08.25   Stjp           0.4      Add external help generation, add cmdlet help docs,..
 #>
 
 Set-StrictMode -Version Latest

@@ -6,7 +6,7 @@ Copyright (c) 2025 Stefan Ploch
 
 @{
   RootModule        = 'STKeytab.psm1'
-  ModuleVersion     = '1.2.0'
+  ModuleVersion     = '0.4.0'
   GUID              = 'c5a6e3a4-c5a6-7b8e-9a0b-f1d9e3f4e5b1'
   PowerShellVersion = '5.1'
   CompatiblePSEditions = @('Desktop','Core')
@@ -26,12 +26,15 @@ Copyright (c) 2025 Stefan Ploch
   )
   CmdletsToExport   = @()
   AliasesToExport   = @()
+  # HelpInfoURI for Update-Help (point to your hosted HelpInfo.xml)
+  HelpInfoURI = 'https://github.com/Officialstjp/STKeytab/releases/download/help/'
+
   PrivateData = @{
     PSData = @{
       Tags        = @('Kerberos','Keytab','ActiveDirectory','Security','DPAPI','AES')
       ProjectUri  = 'https://github.com/Officialstjp/STKeytab'
       LicenseUri  = 'https://github.com/Officialstjp/STKeytab/blob/main/LICENSE'
-      ReleaseNotes= 'v1.2.0: Added password-based keytab generation (AES PBKDF2), Compare-Keytab and ConvertTo/From-KeytabJson; parser hardening; DPAPI polish; deterministic outputs via -FixedTimestampUtc.'
+      ReleaseNotes= 'v0.4.0: Complete PlatyPS documentation system with external help (MAML XML), comprehensive about topics, consolidated CI pipeline, and professional help infrastructure. See README.md changelog for full details.'
     }
   }
 }
