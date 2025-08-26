@@ -91,7 +91,7 @@ function Invoke-PesterTests {
     }
 }
 
-function Invoke-ScriptAnalyzer {
+function Invoke-MyScriptAnalyzer {
     Write-Log "Running PSScriptAnalyzer..."
     $script = Join-Path $RepoRoot 'CI\Test-Sign\Run-PSScriptAnalyzer.ps1'
     if (-not (Test-Path $script)) {
@@ -214,7 +214,7 @@ switch ($Step) {
     'All'        {
         Ensure-Modules
         Invoke-PesterTests
-        Invoke-ScriptAnalyzer
+        Invoke-MyScriptAnalyzer
         Import-SigningCert -CertificateBase64 $CertificateBase64 -Password $SigningCertPassword
         Sign-ModuleFiles
         Package-Module
