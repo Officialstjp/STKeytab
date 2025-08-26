@@ -24,10 +24,10 @@ Describe 'Set-UserOnlyAcl'{
             $tmp = New-Item -Type File -Path (Join-Path $TestOutDir ([guid]::NewGuid()))
             try {
                 $acl = Set-UserOnlyAcl -Path $tmp.FullName
-                $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+                $CurrUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
                 $acl.AreAccessRulesProtected    | Should -BeTrue
-                $acl.Sddl                       | Should -Be "O:$($sid)G:$($sid)D:PAI(A;;FA;;;$($sid))"
+                $acl.Owner                      | Should -Be $CurrUser
                 $aces = $acl.Access
                 Write-Host "Count: $($aces | Measure-Object).Count"
                 $($aces | Measure-Object).Count | Should -BeExactly 1

@@ -46,10 +46,10 @@ Mock Get-RequiredModule { return $true }
 
 Describe 'New-Keytab (Computer) basic header' {
     BeforeEach {
-        Mock Get-ADReplAccount { New-MockAccount }
+        Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
-        }
+        } -ModuleName STKeytab
     }
 
     It 'writes a keytab with correct 0x0502 header' {
@@ -83,10 +83,10 @@ Describe 'New-Keytab (Computer) basic header' {
 
 Describe 'Principal handling' {
     BeforeEach {
-        Mock Get-ADReplAccount { New-MockAccount }
+        Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
-        }
+        } -ModuleName STKeytab
     }
 
     It 'includes short host variants when -IncludeShortHost specified' {
@@ -109,10 +109,10 @@ Describe 'Principal handling' {
 
 Describe 'Encryption type filtering' {
     BeforeEach {
-        Mock Get-ADReplAccount { New-MockAccount }
+        Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
-        } 
+        } -ModuleName STKeytab
     }
 
     It 'filters to only requested encryption types' {
@@ -171,10 +171,10 @@ Describe 'Encryption type filtering' {
 
 Describe 'Advanced options' {
     BeforeEach {
-        Mock Get-ADReplAccount { New-MockAccount }
+        Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
-        }
+        } -ModuleName STKeytab
     }
 
     It 'respects -WhatIf without creating files' {
@@ -201,10 +201,10 @@ Describe 'Advanced options' {
 
 Describe 'Etype filtering' {
     BeforeEach {
-        Mock Get-ADComputer { [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } }
+        Mock Get-ADComputer { [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } } -ModuleName STKeytab
         Mock Get-ADReplAccount {
             New-MockAccount -Etypes @{ 'AES256_CTS_HMAC_SHA1_96' = (1..32); 'AES128_CTS_HMAC_SHA1_96' = (1..16); 'ARCFOUR_HMAC' = (1..16) }
-        }
+        } -ModuleName STKeytab
     }
     It 'includes only requested etypes via -IncludeEtype' {
         $out = Join-Path $global:TestOutDir ("ktest_inc.keytab")
@@ -246,8 +246,8 @@ Describe 'Kvno & summary' {
     BeforeEach {
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 4 }
-        }
-        Mock Get-ADReplAccount { New-MockAccount -Kvno 4 }
+        } -ModuleName STKeytab
+        Mock Get-ADReplAccount { New-MockAccount -Kvno 4 } -ModuleName STKeytab
     }
     It 'writes JSON summary including kvno when requested' {
         $out = Join-Path $global:TestOutDir ("ktest_kvno.keytab")
@@ -270,8 +270,8 @@ Describe 'Force & WhatIf behavior' {
     BeforeEach {
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
-        }
-        Mock Get-ADReplAccount { New-MockAccount }
+        } -ModuleName STKeytab
+        Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
     }
     It 'does not create file when -WhatIf used' {
         $out = Join-Path $global:TestOutDir ("ktest_whatif2.keytab")
@@ -301,8 +301,8 @@ Describe 'PassThru object contract' {
     BeforeEach {
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
-        }
-        Mock Get-ADReplAccount { New-MockAccount }
+        } -ModuleName STKeytab
+        Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
     }
     It 'returns expected PassThru members' {
         $out = Join-Path $global:TestOutDir ("ktest_passthru.keytab")
