@@ -1,0 +1,98 @@
+# STKeytab
+## about_STKeytab
+
+# SHORT DESCRIPTION
+Overview of the STKeytab PowerShell module for generating and working with MIT keytabs using replication-based key extraction or password derivation.
+
+# LONG DESCRIPTION
+STKeytab is a security-focused PowerShell module that creates and manages MIT Kerberos keytab files (format 0x0502). The module supports two primary workflows:
+
+1. Replication-based extraction: Extract Kerberos keys from Active Directory using DCSync-equivalent permissions via the DSInternals module
+2. Password-based derivation: Generate keytabs from passwords using AES string-to-key (PBKDF2-HMACSHA1) with MIT/Heimdal/Windows salt policies
+
+## Key Features
+- Safe defaults: AES-only encryption (AES256, AES128) by default; RC4 requires explicit opt-in
+- Deterministic output: Optional fixed timestamps for byte-identical results across runs
+- Security guardrails: Risk acknowledgment required for sensitive operations (krbtgt, merges)
+- DPAPI protection: Encrypt keytabs at rest with Windows Data Protection API
+- Canonical comparison: Compare keytabs with timestamp-insensitive and key-byte options
+- JSON interop: Export/import canonical JSON format for debugging and scripting
+
+## Principal Types Supported
+- User accounts: Standard domain users with UPN-based principals
+- Computer accounts: Machine accounts with HOST/ and service SPNs
+- krbtgt accounts: Domain controller service accounts (high-impact, gated operations)
+
+## Command Categories
+- Generation: New-Keytab, New-KeytabFromPassword
+- Analysis: Read-Keytab, Test-Keytab, Compare-Keytab
+- Management: Merge-Keytab, Protect-Keytab, Unprotect-Keytab
+- Conversion: ConvertTo-KeytabJson, ConvertFrom-KeytabJson
+
+## SCENARIOS
+The module supports these common scenarios:
+
+User/computer keytab generation via replication: Extract keys from Active Directory for service accounts and users requiring Kerberos authentication.
+
+Password-derived keytabs: Generate keytabs when replication access is not available or for testing scenarios.
+
+Merging and comparing keytabs: Combine multiple keytab sources and perform timestamp-insensitive comparisons for validation.
+
+Protecting keytabs at rest: Use DPAPI to encrypt sensitive keytab files with user or machine scope protection.
+
+# EXAMPLES
+## Example 1: Computer Account Keytab
+```
+New-Keytab -SamAccountName WEB01$ -Domain contoso.com -IncludeShortHost -OutputPath .\web01.keytab -Force -Summary
+```
+
+Creates a keytab for computer account WEB01$ including both FQDN and short hostname SPNs, with AES-only encryption by default.
+
+## Example 2: Password-Based User Keytab
+```
+$password = ConvertTo-SecureString 'P@ssw0rd!' -AsPlainText -Force
+New-KeytabFromPassword -SamAccountName user1 -Realm EXAMPLE.COM -Password $password -Kvno 3 -OutputPath .\user1.keytab -Force
+```
+
+Generates a keytab from a password using AES string-to-key derivation, suitable for environments where replication access is not available.
+
+## Example 3: Deterministic Output
+```
+New-Keytab -SamAccountName WEB01$ -Domain contoso.com -FixedTimestampUtc (Get-Date '2024-01-01Z') -OutputPath .\web01.keytab -Force
+```
+
+Creates a keytab with a fixed timestamp, ensuring byte-identical output across multiple runs with the same inputs.
+
+# NOTE
+The module requires Windows PowerShell 5.1 for Active Directory scenarios due to DSInternals module compatibility. PowerShell 7+ is supported for password-based operations and file manipulation scenarios.
+
+# TROUBLESHOOTING NOTE
+Common issues and solutions:
+
+"Get-ADReplAccount not found": Ensure DSInternals module is installed and running under Windows PowerShell (not PowerShell 7+) for AD scenarios.
+
+"RODC target": The module warns if targeting a read-only domain controller. Use a writable DC for replication operations.
+
+"Module import fails in CI": Ensure paths are quoted and Test-Path validation passes before Import-Module.
+
+"RC4 not included": RC4 encryption is excluded by default for security. Use -IncludeLegacyRC4 or explicit -IncludeEtype if required.
+
+## SEE ALSO
+- about_STKeytab_Security
+- about_STKeytab_Determinism
+- about_STKeytab_Interop
+- about_STKeytab_KVNO
+- about_STKeytab_DPAPI
+- New-Keytab
+- New-KeytabFromPassword
+- Read-Keytab
+
+# KEYWORDS
+- MIT Kerberos
+- keytab
+- Active Directory
+- DSInternals
+- DCSync
+- PBKDF2
+- AES
+- replication

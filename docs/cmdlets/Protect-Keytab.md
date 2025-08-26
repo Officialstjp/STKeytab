@@ -1,51 +1,47 @@
 ﻿---
 external help file: STKeytab-help.xml
-Module Name: Stkeytab
+Module Name: STKeytab
 online version:
 schema: 2.0.0
 ---
 
-# ConvertTo-KeytabJson
+# Protect-Keytab
 
 ## SYNOPSIS
-Convert a keytab file to canonical JSON (keys masked by default).
+Protect a keytab file at rest using Windows DPAPI.
 
 ## SYNTAX
 
 ```
-ConvertTo-KeytabJson [-Path] <String> -OutputPath <String> [-RevealKeys] [-IgnoreTimestamp]
+Protect-Keytab [-Path] <String> [[-OutputPath] <String>] [-Scope <String>] [-Entropy <String>]
+ [-EntropySecure <SecureString>] [-Force] [-DeletePlaintext] [-RestrictAcl]
  [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Parses a keytab and emits a canonical JSON representation for diffs and tooling.
-Keys are masked by default; pass -RevealKeys to include raw key bytes.
-Use
--IgnoreTimestamp to omit timestamp variance from the model.
+Uses DPAPI (CurrentUser or LocalMachine scope) to encrypt a keytab file.
+Optional
+additional entropy can be provided.
+Can restrict ACL on the output and delete the
+plaintext original after successful protection.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-ConvertTo-KeytabJson -Path .\in.keytab -OutputPath .\in.json
-Write canonical JSON to a file.
-```
-
-### EXAMPLE 2
-```
-ConvertTo-KeytabJson -Path .\in.keytab -RevealKeys | Out-File .\in.revealed.json
-Output JSON with key material to the pipeline and save to a file.
+Protect-Keytab -Path .\user.keytab -OutputPath .\user.keytab.dpapi -Scope CurrentUser -RestrictAcl
+Protect a keytab with DPAPI in the current-user scope and set a restrictive ACL.
 ```
 
 ## PARAMETERS
 
 ### -Path
-Path to the input keytab file.
+Path to the plaintext keytab file to protect (Pos 1).
 
 ```yaml
 Type: System.String
 Parameter Sets: (All)
-Aliases: FullName, FilePath
+Aliases: In, FullName, FilePath
 
 Required: True
 Position: 1
@@ -55,24 +51,68 @@ Accept wildcard characters: False
 ```
 
 ### -OutputPath
-Path to write the resulting JSON.
-If omitted, JSON is written to the pipeline.
+Destination path for the protected file.
+Defaults to \<Path\>.dpapi (Pos 2).
 
 ```yaml
 Type: System.String
 Parameter Sets: (All)
-Aliases: OutFile, Out
+Aliases: Out, Output, OutFile
 
-Required: True
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: True (ByPropertyName, ByValue)
+Accept wildcard characters: False
+```
+
+### -Scope
+DPAPI scope: CurrentUser (default) or LocalMachine.
+
+```yaml
+Type: System.String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: CurrentUser
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Entropy
+Optional additional entropy string to bind to the protection.
+
+```yaml
+Type: System.String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -RevealKeys
-Include raw key bytes in the JSON.
-Sensitive-avoid in source control.
+### -EntropySecure
+{{ Fill EntropySecure Description }}
+
+```yaml
+Type: System.Security.SecureString
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Force
+Overwrite OutputPath if it exists.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -86,8 +126,23 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -IgnoreTimestamp
-Exclude timestamps from the canonical model.
+### -DeletePlaintext
+Remove the original plaintext file after successful protection.
+
+```yaml
+Type: System.Management.Automation.SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -RestrictAcl
+Apply a user-only ACL to the output file.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -155,7 +210,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ### System.String (file path) or objects with FilePath/FullName properties.
 ## OUTPUTS
 
-### System.String (OutputPath) when -OutputPath is provided, otherwise JSON text.
+### System.String. Returns the OutputPath written.
 ## NOTES
 
 ## RELATED LINKS

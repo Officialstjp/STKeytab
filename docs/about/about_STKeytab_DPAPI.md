@@ -1,0 +1,153 @@
+# STKeytab_DPAPI
+## about_STKeytab_DPAPI
+
+# SHORT DESCRIPTION
+Protecting keytabs at rest using Windows Data Protection API (DPAPI) with scope and entropy options.
+
+# LONG DESCRIPTION
+The STKeytab module provides DPAPI protection for keytab files through the Protect-Keytab and Unprotect-Keytab commands. DPAPI offers transparent encryption tied to user or machine identity without requiring additional key management.
+
+## Protection Scopes
+DPAPI supports two protection scopes with different portability characteristics:
+
+### CurrentUser Scope (Default)
+- Protection: Encrypted for the current user account only
+- Portability: Can be decrypted by the same user on any machine where they log in
+- Use cases: User-specific keytabs, development scenarios, single-user systems
+- Security: Tied to user profile and login credentials
+
+### LocalMachine Scope
+- Protection: Encrypted for the local machine only
+- Portability: Can only be decrypted on the same physical/virtual machine
+- Use cases: System service keytabs, server deployments, machine-specific storage
+- Security: Tied to machine-specific cryptographic keys
+
+### Scope Selection Guidance
+Choose CurrentUser when:
+- The keytab is used by interactive user processes
+- Portability across machines is needed (domain-joined scenarios)
+- Development and testing scenarios
+
+Choose LocalMachine when:
+- The keytab is used by system services or scheduled tasks
+- Maximum security isolation is required
+- The keytab should not be portable across machines
+
+## Entropy and Key Derivation
+DPAPI supports optional entropy (additional key material) for enhanced security:
+
+### Default Entropy
+When no entropy is specified, DPAPI uses internal entropy derived from the protection scope.
+
+### Custom Entropy
+Additional entropy can be provided via:
+- -Entropy parameter: Accepts string or byte array
+- -EntropySecure parameter: Accepts SecureString for secure handling
+
+### Entropy Security
+The module implements secure entropy handling:
+- SecureString entropy is converted to bytes securely via Marshal.SecureStringToBSTR
+- Entropy buffers are zeroed after use to prevent memory disclosure
+- UTF-8 encoding is used for string entropy for consistency
+
+### Entropy Recommendations
+- Use -EntropySecure when possible to avoid plaintext entropy in command lines
+- Store entropy separately from protected keytabs
+- Document entropy requirements for operational procedures
+- Consider entropy as an additional authentication factor
+
+## ACL Hardening
+The -RestrictAcl parameter applies restrictive file permissions:
+
+### Default Permissions
+Without -RestrictAcl, protected keytabs inherit standard file permissions.
+
+### Restricted Permissions
+With -RestrictAcl, the module applies user-only permissions:
+- Owner: Full control for the current user
+- Groups and other users: No access
+- Inheritance: Disabled to prevent permission escalation
+
+### ACL Considerations
+- Restricted ACLs prevent access by other users, including administrators
+- Service accounts may need explicit permissions if running under different identities
+- Backup and antivirus software may be blocked by restrictive ACLs
+
+## File Naming Conventions
+The module uses consistent naming patterns for protected files:
+
+### Protection Naming (Protect-Keytab)
+- Default: Appends .dpapi extension (e.g., web01.keytab → web01.keytab.dpapi)
+- Custom: Uses specified OutputPath when provided
+- Source handling: Can optionally delete plaintext source with -DeletePlaintext
+
+### Unprotection Naming (Unprotect-Keytab)
+- .dpapi extension: Strips .dpapi to restore original name
+- No .dpapi extension: Appends .unprotected.keytab to avoid overwriting
+- Custom: Uses specified OutputPath when provided
+
+# EXAMPLES
+## Example 1: Basic CurrentUser Protection
+```
+Protect-Keytab -Path .\web01.keytab -RestrictAcl -DeletePlaintext
+```
+
+Protects keytab with CurrentUser scope, applies restrictive ACLs, and deletes the plaintext source.
+
+## Example 2: LocalMachine Protection with Custom Entropy
+```
+$entropy = Read-Host -AsSecureString "Protection entropy"
+Protect-Keytab -Path .\service.keytab -Scope LocalMachine -EntropySecure $entropy -RestrictAcl -OutputPath .\service.protected
+```
+
+Protects for machine scope with secure entropy and custom output path.
+
+## Example 3: Unprotection with Matching Entropy
+```
+$entropy = Read-Host -AsSecureString "Protection entropy"
+Unprotect-Keytab -Path .\service.protected -EntropySecure $entropy -RestrictAcl -OutputPath .\service.keytab
+```
+
+Unprotects using the same entropy provided during protection.
+
+## Example 4: Batch Protection for Multiple Keytabs
+```
+Get-ChildItem *.keytab | ForEach-Object {
+    Protect-Keytab -Path $_.FullName -RestrictAcl -DeletePlaintext -Scope CurrentUser
+}
+```
+
+Protects all keytab files in the current directory with consistent settings.
+
+# NOTE
+DPAPI protection is Windows-specific and cannot be used on other operating systems. Protected keytabs are not portable across different platforms.
+
+The entropy used for protection must be available during unprotection. Lost entropy makes protected data unrecoverable, so store entropy securely and separately from protected files.
+
+DPAPI protection complements but does not replace proper file system permissions and access controls. Use both DPAPI and ACL hardening for defense in depth.
+
+# TROUBLESHOOTING NOTE
+"Unprotection fails with access denied": Verify the same user account and machine (for LocalMachine scope) are being used for unprotection.
+
+"Entropy mismatch errors": Ensure the same entropy value is provided for both protection and unprotection operations.
+
+"ACL prevents service access": Consider whether -RestrictAcl is appropriate for service-accessed keytabs, or add explicit service account permissions.
+
+"Protected file not portable": This is expected behavior for LocalMachine scope. Use CurrentUser scope if portability is required.
+
+# SEE ALSO
+- about_STKeytab_Security
+- about_STKeytab
+- Protect-Keytab
+- Unprotect-Keytab
+
+# KEYWORDS
+- DPAPI
+- Data Protection API
+- CurrentUser scope
+- LocalMachine scope
+- Entropy
+- SecureString
+- ACL hardening
+- File encryption
+- At-rest protection

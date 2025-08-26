@@ -1,46 +1,51 @@
 ﻿---
 external help file: STKeytab-help.xml
-Module Name: Stkeytab
+Module Name: STKeytab
 online version:
 schema: 2.0.0
 ---
 
-# ConvertFrom-KeytabJson
+# ConvertTo-KeytabJson
 
 ## SYNOPSIS
-Convert canonical JSON back into a keytab file (requires key bytes).
+Convert a keytab file to canonical JSON (keys masked by default).
 
 ## SYNTAX
 
 ```
-ConvertFrom-KeytabJson [-JsonPath] <String> -OutputPath <String> [-Force] [-FixedTimestampUtc <DateTime>]
- [-RestrictAcl] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
+ConvertTo-KeytabJson [-Path] <String> [-OutputPath <String>] [-RevealKeys] [-IgnoreTimestamp]
+ [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Reads canonical JSON as produced by ConvertTo-KeytabJson -RevealKeys and reconstructs
-a MIT v0x0502 keytab.
-Requires key bytes to be present in JSON.
-Can restrict ACL on
-output and support deterministic timestamps for reproducible builds.
+Parses a keytab and emits a canonical JSON representation for diffs and tooling.
+Keys are masked by default; pass -RevealKeys to include raw key bytes.
+Use
+-IgnoreTimestamp to omit timestamp variance from the model.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-ConvertFrom-KeytabJson -JsonPath .\entry.json -OutputPath .\out.keytab -Force
-Reconstruct a keytab from JSON, overwriting the destination if present.
+ConvertTo-KeytabJson -Path .\in.keytab -OutputPath .\in.json
+Write canonical JSON to a file.
+```
+
+### EXAMPLE 2
+```
+ConvertTo-KeytabJson -Path .\in.keytab -RevealKeys | Out-File .\in.revealed.json
+Output JSON with key material to the pipeline and save to a file.
 ```
 
 ## PARAMETERS
 
-### -JsonPath
-Path to the canonical JSON file.
+### -Path
+Path to the input keytab file.
 
 ```yaml
 Type: System.String
 Parameter Sets: (All)
-Aliases: FullName, FilePath
+Aliases: FullName, FilePath, PSPath
 
 Required: True
 Position: 1
@@ -50,22 +55,24 @@ Accept wildcard characters: False
 ```
 
 ### -OutputPath
-Output keytab path to write.
+Path to write the resulting JSON.
+If omitted, JSON is written to the pipeline.
 
 ```yaml
 Type: System.String
 Parameter Sets: (All)
 Aliases: OutFile, Out
 
-Required: True
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Force
-Overwrite OutputPath if it exists.
+### -RevealKeys
+Include raw key bytes in the JSON.
+Sensitive-avoid in source control.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -79,23 +86,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -FixedTimestampUtc
-Use a fixed timestamp for written entries for deterministic output.
-
-```yaml
-Type: System.DateTime
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -RestrictAcl
-Apply a user-only ACL on the output file.
+### -IgnoreTimestamp
+Exclude timestamps from the canonical model.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -163,7 +155,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ### System.String (file path) or objects with FilePath/FullName properties.
 ## OUTPUTS
 
-### System.String. Returns the OutputPath written.
+### System.String (OutputPath) when -OutputPath is provided, otherwise JSON text.
 ## NOTES
 
 ## RELATED LINKS

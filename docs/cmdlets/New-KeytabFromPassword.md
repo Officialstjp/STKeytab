@@ -16,18 +16,18 @@ Generate a keytab from a password using MIT/Heimdal/Windows salt policies (AES o
 ```
 New-KeytabFromPassword [-Realm] <String> [-SamAccountName] <String> [[-Password] <SecureString>]
  [-Credential <PSCredential>] [[-Compatibility] <String>] [[-IncludeEtype] <Object[]>]
- [[-ExcludeEtype] <Object[]>] [[-OutputPath] <String>] [[-JsonSummaryPath] <String>] [[-Kvno] <Int32>]
- [[-Iterations] <Int32>] [-RestrictAcl] [-Force] [-Summary] [-PassThru] [-IncludeLegacyRC4]
+ [[-ExcludeEtype] <Object[]>] [[-OutputPath] <String>] [[-SummaryPath] <String>] [[-Kvno] <Int32>]
+ [[-Iterations] <Int32>] [-RestrictAcl] [-Force] [-Summary] [-PassThru] [-IncludeLegacyRC4] [-AESOnly]
  [-FixedTimestampUtc <DateTime>] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### Principal
 ```
 New-KeytabFromPassword [-Realm] <String> [-Principal] <String> [[-Compatibility] <String>]
- [[-IncludeEtype] <Object[]>] [[-ExcludeEtype] <Object[]>] [[-OutputPath] <String>]
- [[-JsonSummaryPath] <String>] [[-Kvno] <Int32>] [[-Iterations] <Int32>] [-RestrictAcl] [-Force] [-Summary]
- [-PassThru] [-IncludeLegacyRC4] [-FixedTimestampUtc <DateTime>] [-ProgressAction <ActionPreference>] [-WhatIf]
- [-Confirm] [<CommonParameters>]
+ [[-IncludeEtype] <Object[]>] [[-ExcludeEtype] <Object[]>] [[-OutputPath] <String>] [[-SummaryPath] <String>]
+ [[-Kvno] <Int32>] [[-Iterations] <Int32>] [-RestrictAcl] [-Force] [-Summary] [-PassThru] [-IncludeLegacyRC4]
+ [-AESOnly] [-FixedTimestampUtc <DateTime>] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -187,13 +187,13 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -JsonSummaryPath
-Path to write a JSON summary; defaults next to OutputPath when -Summary or -PassThru is specified (Pos 8).
+### -SummaryPath
+{{ Fill SummaryPath Description }}
 
 ```yaml
 Type: System.String
 Parameter Sets: (All)
-Aliases:
+Aliases: JsonSummaryPath
 
 Required: False
 Position: 8
@@ -294,6 +294,21 @@ Accept wildcard characters: False
 
 ### -IncludeLegacyRC4
 Includes the RC4 encryption type (23).
+
+```yaml
+Type: System.Management.Automation.SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AESOnly
+{{ Fill AESOnly Description }}
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter

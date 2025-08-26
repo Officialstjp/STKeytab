@@ -1,42 +1,41 @@
 ﻿---
 external help file: STKeytab-help.xml
-Module Name: Stkeytab
+Module Name: STKeytab
 online version:
 schema: 2.0.0
 ---
 
-# Protect-Keytab
+# Unprotect-Keytab
 
 ## SYNOPSIS
-Protect a keytab file at rest using Windows DPAPI.
+Decrypt a DPAPI-protected keytab file.
 
 ## SYNTAX
 
 ```
-Protect-Keytab [-Path] <String> [-OutputPath] <String> [-Scope <String>] [-Entropy <String>] [-Force]
- [-DeletePlaintext] [-RestrictAcl] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
- [<CommonParameters>]
+Unprotect-Keytab [-Path] <String> [[-OutputPath] <String>] [-Scope <String>] [-Entropy <String>]
+ [-EntropySecure <SecureString>] [-Force] [-RestrictAcl] [-ProgressAction <ActionPreference>] [-WhatIf]
+ [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Uses DPAPI (CurrentUser or LocalMachine scope) to encrypt a keytab file.
-Optional
-additional entropy can be provided.
-Can restrict ACL on the output and delete the
-plaintext original after successful protection.
+Uses DPAPI to decrypt a previously protected keytab file.
+Defaults output name by
+stripping .dpapi suffix when present.
+Can restrict ACL on the output.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Protect-Keytab -Path .\user.keytab -OutputPath .\user.keytab.dpapi -Scope CurrentUser -RestrictAcl
-Protect a keytab with DPAPI in the current-user scope and set a restrictive ACL.
+Unprotect-Keytab -Path .\user.keytab.dpapi -OutputPath .\user.keytab -Scope CurrentUser
+Decrypt a DPAPI-protected keytab into a plaintext keytab.
 ```
 
 ## PARAMETERS
 
 ### -Path
-Path to the plaintext keytab file to protect (Pos 1).
+Path to the DPAPI-protected input file (Pos 1).
 
 ```yaml
 Type: System.String
@@ -51,15 +50,15 @@ Accept wildcard characters: False
 ```
 
 ### -OutputPath
-Destination path for the protected file.
-Defaults to \<Path\>.dpapi (Pos 2).
+Destination for the decrypted keytab.
+Defaults to removing .dpapi extension (Pos 2).
 
 ```yaml
 Type: System.String
 Parameter Sets: (All)
 Aliases: Out, Output, OutFile
 
-Required: True
+Required: False
 Position: 2
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
@@ -67,7 +66,7 @@ Accept wildcard characters: False
 ```
 
 ### -Scope
-DPAPI scope: CurrentUser (default) or LocalMachine.
+DPAPI scope used for decryption: CurrentUser (default) or LocalMachine.
 
 ```yaml
 Type: System.String
@@ -82,7 +81,7 @@ Accept wildcard characters: False
 ```
 
 ### -Entropy
-Optional additional entropy string to bind to the protection.
+Additional entropy string that was used during protection (if any).
 
 ```yaml
 Type: System.String
@@ -96,23 +95,23 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Force
-Overwrite OutputPath if it exists.
+### -EntropySecure
+{{ Fill EntropySecure Description }}
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: System.Security.SecureString
 Parameter Sets: (All)
 Aliases:
 
 Required: False
 Position: Named
-Default value: False
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -DeletePlaintext
-Remove the original plaintext file after successful protection.
+### -Force
+Overwrite OutputPath if it exists.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter

@@ -1,45 +1,46 @@
 ﻿---
 external help file: STKeytab-help.xml
-Module Name: Stkeytab
+Module Name: STKeytab
 online version:
 schema: 2.0.0
 ---
 
-# Unprotect-Keytab
+# ConvertFrom-KeytabJson
 
 ## SYNOPSIS
-Decrypt a DPAPI-protected keytab file.
+Convert canonical JSON back into a keytab file (requires key bytes).
 
 ## SYNTAX
 
 ```
-Unprotect-Keytab [-Path] <String> [-OutputPath] <String> [-Scope <String>] [-Entropy <String>] [-Force]
+ConvertFrom-KeytabJson [-JsonPath] <String> [-OutputPath <String>] [-Force] [-FixedTimestampUtc <DateTime>]
  [-RestrictAcl] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Uses DPAPI to decrypt a previously protected keytab file.
-Defaults output name by
-stripping .dpapi suffix when present.
-Can restrict ACL on the output.
+Reads canonical JSON as produced by ConvertTo-KeytabJson -RevealKeys and reconstructs
+a MIT v0x0502 keytab.
+Requires key bytes to be present in JSON.
+Can restrict ACL on
+output and support deterministic timestamps for reproducible builds.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Unprotect-Keytab -Path .\user.keytab.dpapi -OutputPath .\user.keytab -Scope CurrentUser
-Decrypt a DPAPI-protected keytab into a plaintext keytab.
+ConvertFrom-KeytabJson -JsonPath .\entry.json -OutputPath .\out.keytab -Force
+Reconstruct a keytab from JSON, overwriting the destination if present.
 ```
 
 ## PARAMETERS
 
-### -Path
-Path to the DPAPI-protected input file (Pos 1).
+### -JsonPath
+Path to the canonical JSON file.
 
 ```yaml
 Type: System.String
 Parameter Sets: (All)
-Aliases: In, FullName, FilePath
+Aliases: FullName, FilePath, PSPath
 
 Required: True
 Position: 1
@@ -49,43 +50,12 @@ Accept wildcard characters: False
 ```
 
 ### -OutputPath
-Destination for the decrypted keytab.
-Defaults to removing .dpapi extension (Pos 2).
+Output keytab path to write.
 
 ```yaml
 Type: System.String
 Parameter Sets: (All)
-Aliases: Out, Output, OutFile
-
-Required: True
-Position: 2
-Default value: None
-Accept pipeline input: True (ByPropertyName, ByValue)
-Accept wildcard characters: False
-```
-
-### -Scope
-DPAPI scope used for decryption: CurrentUser (default) or LocalMachine.
-
-```yaml
-Type: System.String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: CurrentUser
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Entropy
-Additional entropy string that was used during protection (if any).
-
-```yaml
-Type: System.String
-Parameter Sets: (All)
-Aliases:
+Aliases: OutFile, Out
 
 Required: False
 Position: Named
@@ -109,8 +79,23 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -FixedTimestampUtc
+Use a fixed timestamp for written entries for deterministic output.
+
+```yaml
+Type: System.DateTime
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -RestrictAcl
-Apply a user-only ACL to the output file.
+Apply a user-only ACL on the output file.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter

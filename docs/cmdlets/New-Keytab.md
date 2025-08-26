@@ -14,10 +14,10 @@ Create a keytab for an AD user, computer, or krbtgt using replication-safe extra
 
 ```
 New-Keytab [-SamAccountName] <String> [-Type <String>] [[-Domain] <String>] [[-IncludeEtype] <Object[]>]
- [[-ExcludeEtype] <Object[]>] [[-OutputPath] <String>] [[-JsonSummaryPath] <String>] [[-Server] <String>]
+ [[-ExcludeEtype] <Object[]>] [[-OutputPath] <String>] [[-SummaryPath] <String>] [[-Server] <String>]
  [[-Justification] <String>] [[-Credential] <PSCredential>] [[-EnvFile] <String>] [-RestrictAcl] [-Force]
  [-PassThru] [-Summary] [-IncludeOldKvno] [-IncludeOlderKvno] [-AcknowledgeRisk] [-VerboseDiagnostics]
- [-SuppressWarnings] [-IncludeLegacyRC4] [-FixedTimestampUtc <DateTime>] [-IncludeShortHost]
+ [-SuppressWarnings] [-IncludeLegacyRC4] [-AESOnly] [-FixedTimestampUtc <DateTime>] [-IncludeShortHost]
  [-AdditionalSpn <String[]>] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
@@ -138,15 +138,13 @@ Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
-### -JsonSummaryPath
-Optional path to write a JSON summary.
-Defaults next to OutputPath.
-(Pos 6)
+### -SummaryPath
+{{ Fill SummaryPath Description }}
 
 ```yaml
 Type: System.String
 Parameter Sets: (All)
-Aliases:
+Aliases: JsonSummaryPath
 
 Required: False
 Position: 6
@@ -352,6 +350,21 @@ Accept wildcard characters: False
 
 ### -IncludeLegacyRC4
 Includes the RC4 encryption type (23).
+
+```yaml
+Type: System.Management.Automation.SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AESOnly
+{{ Fill AESOnly Description }}
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
