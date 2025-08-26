@@ -32,20 +32,16 @@ if (!$here) {
         }
     }
 }
-Write-Host "[DEBUG] Script location: $here"
 
 
 # Private first (sorted; allow 00., 10., … prefixes)
 $privateDir = Join-Path $here 'Private'
-Write-Host "[DEBUG] Importing from $privateDir"
 
 if (Test-Path -LiteralPath $privateDir) {
-    Write-Host "[DEBUG] Path valid"
     $privateScripts = Get-ChildItem -LiteralPath $privateDir -Filter *.ps1 -File | Sort-Object Name
     foreach ($script in $privateScripts) {
         try {
             $scriptPath = if ($script.PSIsContainer -or -not $script.FullName) { $script } else { $script.FullName }
-            Write-Host "[DEBUG] Importing from '$scriptPath'"
             . $scriptPath
         } catch {
             $fileName = if ($script -is [System.IO.FileInfo]) { $script.Name } else { $script }
@@ -58,16 +54,12 @@ if (Test-Path -LiteralPath $privateDir) {
 # Public next
 $publicDir = Join-Path $here 'Public'
 
-Write-Host "[DEBUG] Importing from $publicDir"
-
 $publicScripts = @()
 if (Test-Path -LiteralPath $publicDir) {
-    Write-Host "[DEBUG] Path valid"
     $publicScripts = Get-ChildItem -LiteralPath $publicDir -Filter *.ps1 -File | Sort-Object Name
     foreach ($script in $publicScripts) {
         try {
             $scriptPath = if ($script.PSIsContainer -or -not $script.FullName) { $script } else { $script.FullName }
-            Write-Host "[DEBUG] Importing from Public/$($script.Name)"
             . $scriptPath
         } catch {
             $fileName = if ($script -is [System.IO.FileInfo]) { $script.Name } else { $script }

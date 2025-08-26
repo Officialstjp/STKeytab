@@ -135,22 +135,26 @@ try {
     Write-Host "  - External help XML: $(Join-Path $OutHelpPath '*.xml')"
 
     # Auto-commit updated docs/en-US if requested
-    if ($AutoCommit) {
-        if (Get-Command git -ErrorAction SilentlyContinue) {
-            # Stage only if there are changes
-            $status = & git status --porcelain
-            if ($status) {
-                & git add --all -- docs $Locale 2>$null
-                & git config user.name  "s-githa"
-                & git config user.email "s-githa@local.local"
-                & git commit -m $CommitMessage
-                Write-Host "Committed documentation updates."
+    try {
+        if ($AutoCommit) {
+            if (Get-Command git -ErrorAction SilentlyContinue) {
+                # Stage only if there are changes
+                $status = & git status --porcelain
+                if ($status) {
+                    & git add --all -- docs $Locale 2>$null
+                    & git config user.name  "s-githa"
+                    & git config user.email "s-githa@local.local"
+                    & git commit -m $CommitMessage
+                    Write-Host "Committed documentation updates."
+                } else {
+                    Write-Host "No changes to commit."
+                }
             } else {
-                Write-Host "No changes to commit."
+                Write-Warning "git not available; skipping AutoCommit."
             }
-        } else {
-            Write-Warning "git not available; skipping AutoCommit."
         }
+    } catch {
+        Write-Host "Auto-Commit failed at line $($_.InvocationInfo.ScriptLineNumber): $_"
     }
 }
 finally {

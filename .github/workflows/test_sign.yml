@@ -35,12 +35,12 @@ jobs:
       - name: Setup PowerShell modules
         shell: pwsh
         run: |
-          ./CI/Test-Sign/Test-Sign.ps1 -Step Setup
+          ./CI/Test-Sign.ps1 -Step Setup
 
       - name: Run Pester tests
         shell: pwsh
         run: |
-          ./CI/Test-Sign/Test-Sign.ps1 -Step Test
+          ./CI/Test-Sign.ps1 -Step Test
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -52,7 +52,7 @@ jobs:
       - name: Run PSScriptAnalyzer
         shell: pwsh
         run: |
-          ./CI/Test-Sign/Test-Sign.ps1 -Step Analyze
+          ./CI/Test-Sign.ps1 -Step Analyze
 
   sign-module:
     name: Sign Module
@@ -72,24 +72,24 @@ jobs:
           SIGNING_CERTIFICATE: ${{ secrets.SIGNING_CERTIFICATE }}
           SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
         run: |
-          ./CI/Test-Sign/Test-Sign.ps1 -Step ImportCert -CertificateBase64 $env:SIGNING_CERTIFICATE -SigningCertPassword $env:SIGNING_CERT_PASSWORD
+          ./CI/Test-Sign.ps1 -Step ImportCert -CertificateBase64 $env:SIGNING_CERTIFICATE -SigningCertPassword $env:SIGNING_CERT_PASSWORD
 
       - name: Sign PowerShell files
         shell: pwsh
         if: env.SKIP_SIGNING != 'true'
         run: |
-          ./CI/Test-Sign/Test-Sign.ps1 -Step Sign
+          ./CI/Test-Sign.ps1 -Step Sign
 
       - name: Create module package
         shell: pwsh
         run: |
-          ./CI/Test-Sign/Test-Sign.ps1 -Step Package
+          ./CI/Test-Sign.ps1 -Step Package
 
       - name: Test signed module
         shell: pwsh
         if: env.SKIP_SIGNING != 'true'
         run: |
-          ./CI/Test-Sign/Test-Sign.ps1 -Step TestSigned
+          ./CI/Test-Sign.ps1 -Step TestSigned
 
       - name: Upload signed module package
         uses: actions/upload-artifact@v4
