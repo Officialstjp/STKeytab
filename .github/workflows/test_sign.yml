@@ -5,7 +5,7 @@ on:
     paths:
       - 'Public/**'
       - 'Private/**'
-      - 'Tests/**'
+      - 'tests/**'
       - 'STKeytab.psm1'
       - 'STKeytab.psd1'
       - 'docs/**'
@@ -17,7 +17,7 @@ on:
     paths:
       - 'Public/**'
       - 'Private/**'
-      - 'Tests/**'
+      - 'tests/**'
       - 'STKeytab.psm1'
       - 'STKeytab.psd1'
       - 'docs/**'
