@@ -93,9 +93,9 @@ function Invoke-PesterTests {
 
 function Invoke-ScriptAnalyzer {
     Write-Log "Running PSScriptAnalyzer..."
-    $script = Join-Path $RepoRoot 'CI\Run-PSScriptAnalyzer.ps1'
+    $script = Join-Path $RepoRoot 'CI\Test-Sign\Run-PSScriptAnalyzer.ps1'
     if (-not (Test-Path $script)) {
-        throw "PSScriptAnalzyer helper not found: $script"
+        throw "PSScriptAnalyzer helper not found: $script"
     }
     & $script
 }
@@ -110,7 +110,7 @@ function Import-SigningCert {
         Add-GithubEnv -Name "SKIP_SIGNING" -Value "true"
         return
     }
-    $import = Join-Path $RepoRoot 'CI\Import-SigningCert.ps1'
+    $import = Join-Path $RepoRoot 'CI\Test-Sign\Import-SigningCert.ps1'
     if (-not (Test-Path $import)) { throw "Import-SigningCert helper not found: $import" }
     $thumb = & $import -CertificateBase64 $CertificateBase64 -Password $SigningCertPassword
     if (-not $thumb) { throw "Failed to import signing certificate." }
@@ -125,7 +125,7 @@ function Sign-ModuleFiles {
         Add-GitHubEnv -Name "SKIP_SIGNING" -Value "true"
         return
     }
-    $signer = Join-Path $RepoRoot 'CI\Sign-Module.ps1'
+    $signer = Join-Path $RepoRoot 'CI\Test-Sign\Sign-Module.ps1'
     if (-not (Test-Path $signer)) { throw "Sign-Module helper not found: $signer" }
     Write-Log "Signing module files with $thumb ..."
     & $signer -CertificateThumbprint $thumb -Verify -ModulePath $RepoRoot
@@ -151,7 +151,7 @@ function Package-Module  {
             if (Test-Path $doc) { Copy-Item -Path $doc -Destination $packageDir -Force -Verbose }
         }
 
-        archivePath = "$packageName.zip"
+        $archivePath = "$packageName.zip"
         Compress-Archive -Path "$packageDir\*" -DestinationPath $archivePath -Force
 
         $packageInfo = @{
@@ -207,7 +207,7 @@ switch ($Step) {
     'Setup'      { Ensure-Modules }
     'Test'       { Invoke-PesterTests }
     'Analyze'    { Invoke-ScriptAnalyzer }
-    'ImportCert' { Import-SigningCert -CertB64 $CertificateBase64 -Password $SigningCertPassword }
+    'ImportCert' { Import-SigningCert -CertificateBase64 $CertificateBase64 -Password $SigningCertPassword }
     'Sign'       { Sign-ModuleFiles }
     'Package'    { Package-Module }
     'TestSigned' { Test-SignedModule }
@@ -215,7 +215,7 @@ switch ($Step) {
         Ensure-Modules
         Invoke-PesterTests
         Invoke-ScriptAnalyzer
-        Import-SigningCert -CertB64 $CertificateBase64 -Password $SigningCertPassword
+        Import-SigningCert -CertificateBase64 $CertificateBase64 -Password $SigningCertPassword
         Sign-ModuleFiles
         Package-Module
         Test-SignedModule

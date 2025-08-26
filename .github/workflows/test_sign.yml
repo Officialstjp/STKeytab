@@ -32,6 +32,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure Git safe directory
+        shell: pwsh
+        run: |
+          git config --global --add safe.directory $env:GITHUB_WORKSPACE
+
       - name: Setup PowerShell modules
         shell: pwsh
         run: |
@@ -65,6 +70,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Configure Git safe directory
+        shell: pwsh
+        run: |
+          git config --global --add safe.directory $env:GITHUB_WORKSPACE
 
       - name: Import signing certificate
         shell: pwsh

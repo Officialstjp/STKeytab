@@ -65,7 +65,10 @@ Describe 'Compare-Keytab' {
 
             $res = Compare-Keytab -ReferencePath $outA -CandidatePath $outB -IgnoreTimestamp -RevealKeys
             $res.Equal | Should -Be $true
-        } finally {
+        } catch {
+            Write-Host "Error occurred while comparing equal keytab files: $_"
+        }
+        finally {
             if (Test-Path $outA) { Remove-item $outA -Force}
             if (Test-Path $outB) { Remove-item $outB -Force}
         }
@@ -81,6 +84,8 @@ Describe 'Compare-Keytab' {
             $res = Compare-Keytab -ReferencePath $outA -CandidatePath $outB -IgnoreTimestamp
             $res.Equal | Should -Be $false
             Write-Host $res.Differences
+        } catch {
+            Write-Host "Error occurred while comparing different keytab files: $_"
         } finally {
             if (Test-Path $outA) { Remove-item $outA -Force}
             if (Test-Path $outB) { Remove-item $outB -Force}

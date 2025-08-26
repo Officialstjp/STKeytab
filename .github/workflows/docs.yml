@@ -30,6 +30,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure Git safe directory
+        shell: pwsh
+        run: |
+          git config --global --add safe.directory $env:GITHUB_WORKSPACE
+
       - name: Install PlatyPS
         shell: pwsh
         run: |
