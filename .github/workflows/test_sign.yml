@@ -35,24 +35,12 @@ jobs:
       - name: Setup PowerShell modules
         shell: pwsh
         run: |
-          Write-Host "[++] Starting Pipeline [++]"
-          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          if (-not (Get-Module Pester -Listavailable)) { Install-Module -Name Pester -Force -Scope CurrentUser -SkipPublisherCheck }
-          if (-not (Get-Module PSScriptAnalyzer -Listavailable)) { Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -SkipPublisherCheck }
+          ./CI/Test-Sign/Test-Sign.ps1 -Step Setup
 
       - name: Run Pester tests
         shell: pwsh
         run: |
-          Import-Module Pester
-          $config = New-PesterConfiguration
-          $config.Run.Path = "tests"
-          $config.TestResult.Enabled = $true
-          $config.TestResult.OutputFormat = "NUnitXml"
-          $config.TestResult.OutputPath = "TestResults.xml"
-          $config.Output.Verbosity = 'Detailed'
-
-          Write-Host "[+] Running Pester tests..." -ForegroundColor Cyan
-          Invoke-Pester -Configuration $config
+          ./CI/Test-Sign/Test-Sign.ps1 -Step Test
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -64,8 +52,7 @@ jobs:
       - name: Run PSScriptAnalyzer
         shell: pwsh
         run: |
-          Write-Host "[+] Running PSScriptAnalyzer..." -ForegroundColor Cyan
-          .\CI\Run-PSScriptAnalyzer.ps1
+          ./CI/Test-Sign/Test-Sign.ps1 -Step Analyze
 
   sign-module:
     name: Sign Module
@@ -73,6 +60,8 @@ jobs:
     timeout-minutes: 20
     needs: test
     if: github.event_name != 'pull_request'
+    env:
+      SKIP_SIGNING: 'false'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -83,94 +72,24 @@ jobs:
           SIGNING_CERTIFICATE: ${{ secrets.SIGNING_CERTIFICATE }}
           SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
         run: |
-          if (-not $env:SIGNING_CERTIFICATE) {
-              Write-Warning "[~] No signing certificate provided. Module will be unsigned."
-              Add-Content -Path $env:GITHUB_ENV -Value "SKIP_SIGNING=true"
-              exit 0
-          }
-
-          $thumb = .\CI\Import-SigningCert.ps1 -CertificateBase64 $env:SIGNING_CERTIFICATE -Password $env:SIGNING_CERT_PASSWORD
-          # Store thumbprint for signing step
-          Add-Content -Path $env:GITHUB_ENV -Value "CERT_THUMBPRINT=$thumb"
+          ./CI/Test-Sign/Test-Sign.ps1 -Step ImportCert -CertificateBase64 $env:SIGNING_CERTIFICATE -SigningCertPassword $env:SIGNING_CERT_PASSWORD
 
       - name: Sign PowerShell files
         shell: pwsh
         if: env.SKIP_SIGNING != 'true'
         run: |
-          Write-Host "[+] Starting module signing process..." -ForegroundColor Cyan
-
-          .\CI\Sign-Module.ps1 -CertificateThumbprint $env:CERT_THUMBPRINT -Verify -ModulePath .\
-
+          ./CI/Test-Sign/Test-Sign.ps1 -Step Sign
 
       - name: Create module package
         shell: pwsh
         run: |
-          # Get version from manifest
-          $manifest = Import-PowerShellDataFile -Path .\STKeytab.psd1
-          $version = $manifest.ModuleVersion
-          $packageName = "STKeytab-v$version.$(if($env:SKIP_SIGNING -eq 'true') {'unsigned'} else {'signed'})"
-
-          Write-Host "[+] Creating package: $packageName" -ForegroundColor Cyan
-
-          $packageDir = ".\package\STKeytab"
-          if (Test-Path .\package) { Remove-Item .\package -Recurse -Force }
-          New-Item -ItemType Directory -Path $packageDir -Force #| Out-Null
-
-          # Copy module files
-          Copy-Item -Path @(".\STKeytab.psd1", ".\STKeytab.psm1") -Destination $packageDir -Force -Verbose
-          Copy-Item -Path @("Public", "Private") -Destination $packageDir -Force -Verbose
-          Copy-Item -Path @("README.md","LICENSE","NOTICE") -Destination $packageDir -Force -Verbose
-
-          # Create Zip archive
-          $archivePath = "$packageName.zip"
-          Compress-Archive -Path $packageDir\* -DestinationPath $archivePath -Force
-
-          $packageInfo = @{
-            PackageName = $packageName
-            Version = $version
-            ArchivePath = $archivePath
-            CreatedAt = (Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
-            Signed = $env:SKIP_SIGNING -ne 'true'
-            CommitHash = $env:GITHUB_SHA.Substring(0,8)
-            Branch = $env:GITHUB_REF_NAME
-          }
-
-          $packageInfo | ConvertTo-Json -Depth 2 | Set-Content "package-info.json"
-
-          # Store for other steps
-          Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_NAME=$packageName"
-          Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_PATH=$archivePath"
-          Add-Content -Path $env:GITHUB_ENV -Value "MODULE_VERSION=$version"
-
-          Write-Host "[+] Package created successfully: $archivePath" -ForegroundColor Green
+          ./CI/Test-Sign/Test-Sign.ps1 -Step Package
 
       - name: Test signed module
         shell: pwsh
         if: env.SKIP_SIGNING != 'true'
         run: |
-          # Test the packaged module
-          $modulePath = ".\package\STKeytab\STKeytab.psd1"
-          if (-not (Test-Path -LiteralPath $modulePath)) { throw "Module manifest not found at $modulePath" }
-          try {
-            Write-Host "[+] Importing module: $modulePath" -ForegroundColor Cyan
-            Import-Module -Name $modulePath -Force -ErrorAction Stop
-            $commands = Get-Command -Module STKeytab
-            Write-Host "[+] Packaged module loaded successfully with $($commands.Count) commands" -ForegroundColor Green
-          }
-          catch {
-            Write-Host "[!!] Failed to import signed module: $($_.Exception.Message)" -ForegroundColor Red
-            exit 1
-          }
-
-
-          # Quick validation of signatures
-          $moduleFiles = Get-ChildItem .\package\STKeytab -Recurse -Include "*.ps1", "*.psm1", "*.psd1"
-          $signedCount = 0
-          foreach ($file in $moduleFiles) {
-            $sig = Get-AuthenticodeSignature -FilePath $file.FullName
-            if ($sig.Status -eq 'Valid') { $signedCount++ }
-          }
-          Write-Host "[+] Verified $signedCount/$($moduleFiles.Count) files are properly signed" -ForegroundColor Green
+          ./CI/Test-Sign/Test-Sign.ps1 -Step TestSigned
 
       - name: Upload signed module package
         uses: actions/upload-artifact@v4
@@ -190,4 +109,3 @@ jobs:
           path: |
             package-info.json
           retention-days: 30
-

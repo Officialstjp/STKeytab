@@ -33,11 +33,12 @@ try {
     $ModuleManifest = Join-Path $repoRoot 'STKeytab.psd1'
     $ModuleName     = 'STKeytab'
     $DocsPath       = Join-Path $repoRoot 'docs'
+    $CmdletDocsPath = Join-Path $DocsPath 'cmdlets'
     # External help location in repo (standard PowerShell layout)
     $OutHelpPath    = Join-Path $repoRoot $Locale
 
     if (-not (Test-Path $ModuleManifest)) { throw "Module manifest not found: $ModuleManifest" }
-    if (-not (Test-Path $DocsPath)) { throw "Documentation folder not found: $DocsPath" }
+    if (-not (Test-Path $CmdletDocsPath)) { throw "Cmdlet documentation folder not found: $CmdletDocsPath" }
     if (-not (Test-Path $OutHelpPath)) { New-Item -ItemType Directory -Path $OutHelpPath | Out-Null }
 
     Import-Module $ModuleManifest -Force -ErrorAction Stop
@@ -51,8 +52,8 @@ try {
     }
     switch ($Mode) {
         'Update' {
-            Write-Host "Updating markdown help in-place (docs/) ..."
-            Update-MarkdownHelp -Path $DocsPath @mdUpdateParams -Force -ErrorAction Stop | Out-Null
+            Write-Host "Updating markdown help in-place (docs/cmdlets/) ..."
+            Update-MarkdownHelp -Path $CmdletDocsPath @mdUpdateParams -Force -ErrorAction Stop | Out-Null
             $docsChanged = $true
         }
         'Validate' {
@@ -67,8 +68,8 @@ try {
                 # compare with current docs (using git if available)
                 $diffCount = 0
                 if (Get-Command git -ErrorAction SilentlyContinue) {
-                    $null = Start-Process git -ArgumentList @('--no-pager','diff','--no-index','--name-only',"$DocsPath","$TempDocs") -PassThru -NoNewWindow -Wait
-                    $diffOutput = & git --no-pager diff --no-index --name-only "$DocsPath" "$TempDocs"
+                    $null = Start-Process git -ArgumentList @('--no-pager','diff','--no-index','--name-only',"$CmdletDocsPath","$TempDocs") -PassThru -NoNewWindow -Wait
+                    $diffOutput = & git --no-pager diff --no-index --name-only "$CmdletDocsPath" "$TempDocs"
                     $diffCount = ($diffOutput | Where-Object { $_ -ne '' }).Count
                 } else {
                     # Fallback: Compare file hashes
@@ -80,24 +81,24 @@ try {
                             }
                         }
                     }
-                    $a = Get-FileHashMap $DocsPath
+                    $a = Get-FileHashMap $CmdletDocsPath
                     $b = Get-FileHashMap $TempDocs
                     $cmp = Compare-Object -ReferenceObject $a -DifferenceObject $b -Property Rel, Hash
                     $diffCount = ($cmp | Measure-Object).Count
                 }
 
                 if ($diffCount -gt 0) {
-                    Write-Error "Docs drift detected. Run 'Update-MarkdownHelp -Module $ModuleName -OutputFolder docs -Force' locally and commit."
+                    Write-Error "Docs drift detected. Run 'Update-MarkdownHelp -Module $ModuleName -OutputFolder docs/cmdlets -Force' locally and commit."
                 } else {
                     Write-Host "No docs drift detected."
                 }
             }
         }
     }
-<#
+
     # Generate external help (MAML XML) always
     Write-Host "Generating external help to '$OutHelpPath'..."
-    New-ExternalHelp -Path $DocsPath -OutputPath $OutHelpPath -Force | Out-Null
+    New-ExternalHelp -Path $CmdletDocsPath -OutputPath $OutHelpPath -Force | Out-Null
 
     # Build CAB for help distribution
     $Artifacts = Join-Path $repoRoot $ArtifactsDir
@@ -108,14 +109,30 @@ try {
 
     Write-Host "Creating external help CAB..."
     New-ExternalHelpCab `
-        -ExternalHelpPath $OutHelpPath `
-        -CabOutputPath $Artifacts `
-        -Locale $Locale `
-        -Module $ModuleName `
-        -Version $version | Out-Null
+        -CabFilesFolder $OutHelpPath `
+        -LandingPagePath (Join-Path $CmdletDocsPath 'STKeytab.md') `
+        -OutputFolder $Artifacts | Out-Null
 
-    Write-Host "Artifacts ready in '$Artifacts'."
-    #>
+    # Create HelpInfo.xml for Update-Help
+    $helpInfoPath = Join-Path $Artifacts "STKeytab_$($manifest.GUID.ToString())_HelpInfo.xml"
+    $helpInfo = @"
+<?xml version="1.0" encoding="utf-8"?>
+<HelpInfo xmlns="http://schemas.microsoft.com/powershell/help/2010/05">
+  <HelpContentURI>https://github.com/Officialstjp/STKeytab/releases/download/help/</HelpContentURI>
+  <SupportedUICultures>
+    <UICulture>
+      <UICultureName>en-US</UICultureName>
+      <UICultureVersion>$version</UICultureVersion>
+    </UICulture>
+  </SupportedUICultures>
+</HelpInfo>
+"@
+    Set-Content -Path $helpInfoPath -Value $helpInfo -Encoding UTF8
+
+    Write-Host "Artifacts ready in '$Artifacts':"
+    Write-Host "  - External help CAB: $(Join-Path $Artifacts '*.cab')"
+    Write-Host "  - HelpInfo.xml: $helpInfoPath"
+    Write-Host "  - External help XML: $(Join-Path $OutHelpPath '*.xml')"
 
     # Auto-commit updated docs/en-US if requested
     if ($AutoCommit) {
