@@ -46,6 +46,7 @@ Mock Get-RequiredModule { return } -ModuleName STKeytab
 
 Describe 'New-Keytab (Computer) basic header' {
     BeforeEach {
+    Mock Get-RequiredModule { } -ModuleName STKeytab
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
@@ -83,6 +84,7 @@ Describe 'New-Keytab (Computer) basic header' {
 
 Describe 'Principal handling' {
     BeforeEach {
+    Mock Get-RequiredModule { } -ModuleName STKeytab
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
@@ -109,6 +111,7 @@ Describe 'Principal handling' {
 
 Describe 'Encryption type filtering' {
     BeforeEach {
+    Mock Get-RequiredModule { } -ModuleName STKeytab
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
@@ -171,6 +174,7 @@ Describe 'Encryption type filtering' {
 
 Describe 'Advanced options' {
     BeforeEach {
+    Mock Get-RequiredModule { } -ModuleName STKeytab
         Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
@@ -201,6 +205,7 @@ Describe 'Advanced options' {
 
 Describe 'Etype filtering' {
     BeforeEach {
+    Mock Get-RequiredModule { } -ModuleName STKeytab
         Mock Get-ADComputer { [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } } -ModuleName STKeytab
         Mock Get-ADReplAccount {
             New-MockAccount -Etypes @{ 'AES256_CTS_HMAC_SHA1_96' = (1..32); 'AES128_CTS_HMAC_SHA1_96' = (1..16); 'ARCFOUR_HMAC' = (1..16) }
@@ -244,6 +249,7 @@ Describe 'Etype filtering' {
 
 Describe 'Kvno & summary' {
     BeforeEach {
+    Mock Get-RequiredModule { } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 4 }
         } -ModuleName STKeytab
@@ -268,6 +274,7 @@ Describe 'Kvno & summary' {
 
 Describe 'Force & WhatIf behavior' {
     BeforeEach {
+    Mock Get-RequiredModule { } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
         } -ModuleName STKeytab
@@ -299,6 +306,7 @@ Describe 'Force & WhatIf behavior' {
 
 Describe 'PassThru object contract' {
     BeforeEach {
+    Mock Get-RequiredModule { } -ModuleName STKeytab
         Mock Get-ADComputer {
             [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
         } -ModuleName STKeytab

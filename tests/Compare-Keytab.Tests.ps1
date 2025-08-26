@@ -33,6 +33,7 @@ Mock Get-RequiredModule { return } -ModuleName STKeytab
 Describe 'Compare-Keytab' {
     InModuleScope STKeytab {
         BeforeEach {
+            Mock Get-RequiredModule { } -ModuleName STKeytab
             Mock Get-ADReplAccount {
                 New-MockAccount
             } -ModuleName STKeytab

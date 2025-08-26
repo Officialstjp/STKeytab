@@ -143,9 +143,6 @@ function New-Keytab {
     )
 
     begin {
-        Get-RequiredModule -Name ActiveDirectory
-        Get-RequiredModule -Name DSInternals
-
         if (-not $Credential -and $EnvFile) { $Credential = Get-CredentialFromEnv -EnvFile $EnvFile }
         if (-not $PSBoundParameters.ContainsKey('IncludeEtype')) { $IncludeEtype = @(18,17) }
         if ($IncludeLegacyRC4.IsPresent -and ($IncludeEtype -notcontains 23)) { $IncludeEtype += 23 }
