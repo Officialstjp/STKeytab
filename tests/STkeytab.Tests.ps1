@@ -227,8 +227,8 @@ Describe 'Key material extraction (mocked AD/DSInternals)' {
     InModuleScope $ModuleName {
         BeforeEach {
             # default KVNO from AD
-            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 9; DistinguishedName = 'CN=User,DC=x,DC=y' } } -ModuleName STKeytab
-            Mock Get-ADComputer { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 12; DistinguishedName = 'CN=PC,OU=Domain Controllers,DC=x,DC=y' } } -ModuleName STKeytab
+            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 9; DistinguishedName = 'CN=User,DC=x,DC=y' } } 
+            Mock Get-ADComputer { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 12; DistinguishedName = 'CN=PC,OU=Domain Controllers,DC=x,DC=y' } }
         }
 
         It 'Extracts KerberosNew groups and maps kvno for krbtgt' {
@@ -275,7 +275,7 @@ Describe 'Key material extraction (mocked AD/DSInternals)' {
 Describe 'New-Keytab orchestration (mocked dependencies)' {
     InModuleScope $ModuleName {
         BeforeEach {
-            Mock Get-RequiredModule { } -ModuleName STKeytab # avoid touching actual modules
+            Mock Get-RequiredModule { }  # avoid touching actual modules
             # Fake account with KerberosNew current only
             $script:fakeEntry = [pscustomobject]@{ Key = (11..42 | ForEach-Object {[byte]$_}); KeyType = 18 }
             $script:fakeAcct = [pscustomobject]@{
@@ -290,10 +290,10 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
                 }
             }
 
-            Mock Get-ADReplAccount { $script:fakeAcct } -ModuleName STKeytab
-            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 3; DistinguishedName = 'CN=User,DC=ex,DC=com' } } -ModuleName STKeytab
-            Mock Get-ADComputer { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 4; DistinguishedName = 'CN=PC,OU=Computers,DC=ex,DC=com'; servicePrincipalName = @('host/pc.ex.com','cifs/pc.ex.com') } } -ModuleName STKeytab
-            Mock Get-ADDomain { [pscustomobject]@{ DNSRoot='ex.com'; NetBIOSName='EX' } } -ModuleName STKeytab
+            Mock Get-ADReplAccount { $script:fakeAcct }
+            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 3; DistinguishedName = 'CN=User,DC=ex,DC=com' } }
+            Mock Get-ADComputer { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 4; DistinguishedName = 'CN=PC,OU=Computers,DC=ex,DC=com'; servicePrincipalName = @('host/pc.ex.com','cifs/pc.ex.com') } }
+            Mock Get-ADDomain { [pscustomobject]@{ DNSRoot='ex.com'; NetBIOSName='EX' } }
         }
 
         It 'Creates user keytab and summary' {
@@ -316,7 +316,7 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
         }
 
         It 'Creates krbtgt keytab with IncludeOldKvno when acknowledged' {
-            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 5; DistinguishedName = 'CN=krbtgt,DC=ex,DC=com' } } -ModuleName STKeytab
+            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 5; DistinguishedName = 'CN=krbtgt,DC=ex,DC=com' } }
             $old = [pscustomobject]@{ Key = (51..82 | ForEach-Object {[byte]$_}); KeyType = 18 }
             $acct = [pscustomobject]@{
                 DistinguishedName = 'CN=krbtgt,DC=ex,DC=com'
@@ -329,7 +329,7 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
                     }
                 }
             }
-            Mock Get-ADReplAccount { $acct } -ModuleName STKeytab
+            Mock Get-ADReplAccount { $acct }
             $out = Join-Path $TestOutDir 'krbtgt.keytab'
             $r = New-Keytab -SuppressWarnings -SamAccountName 'krbtgt' -Type Krbtgt -Domain 'ex.com' -OutputPath $out -IncludeOldKvno -AcknowledgeRisk -Confirm:$false
             Test-Path $out | Should -BeTrue

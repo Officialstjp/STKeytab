@@ -34,26 +34,26 @@ Describe 'Compare-Keytab' {
     BeforeEach {
         Mock Get-ADReplAccount {
             New-MockAccount
-        } -ModuleName STKeytab
+        }
 
         Mock Get-ADComputer {
             [pscustomobject]@{
                 servicePrincipalName = @('host/web01.contoso.com','cifs/web01.contoso.com')
                 'msDS-KeyVersionNumber' = 7
             }
-        } -ModuleName STKeytab -ParameterFilter { ($Identity -like '*WEB01*') -or ($SamAccountName -like '*WEB01*') }
+        } -ParameterFilter { ($Identity -like '*WEB01*') -or ($SamAccountName -like '*WEB01*') }
 
         # Fallback for second keytab files
         Mock Get-ADReplAccount {
             New-MockAccount -Kvno 8
-        } -ModuleName STKeytab
+        }
 
         Mock Get-AdComputer {
             [pscustomobject]@{
                 servicePrincipalName = @('host/sql02.contoso.com','cifs/sql02.contoso.com')
                 'msDS-KeyVersionNumber' = 8
             }
-        } -ModuleName STKeytab
+        }
     }
 
     It 'Evaluates two identical keytab files as equal' {
