@@ -11,6 +11,35 @@ Copyright (c) 2025 Stefan Ploch
 #
 # ---------------------------------------------------------------------- #
 
+function Get-ADReplAccount {
+    <#
+        .SYNOPSIS
+        Internal wrapper to allow mocking Get-ADReplAccount in tests.
+
+        .DESCRIPTION
+        This wrapper ensures a stable symbol exists in the module scope so that
+        Pester can mock it even when DSInternals is not installed on the CI runner.
+        In real execution it delegates to DSInternals\Get-ADReplAccount.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SamAccountName,
+        [string]$Domain,
+        [string]$Server,
+        [pscredential]$Credential
+    )
+    # If tests mock this function, the body will not run.
+    # Otherwise, delegate to DSInternals if available.
+    $mod = Get-Module -Name DSInternals -ListAvailable | Select-Object -First 1
+    if (-not $mod) {
+        throw "DSInternals module not found. Install 'DSInternals' or run in an environment where tests mock Get-ADReplAccount."
+    }
+    if (-not (Get-Module -Name DSInternals)) {
+        Import-Module -Name DSInternals -ErrorAction Stop | Out-Null
+    }
+    return DSInternals\Get-ADReplAccount -SamAccountName $SamAccountName -Domain $Domain -Server $Server -Credential $Credential -ErrorAction Stop
+}
+
 function Resolve-DomainContext {
   <#
         .SYNOPSIS

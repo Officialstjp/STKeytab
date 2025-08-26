@@ -227,7 +227,7 @@ Describe 'Key material extraction (mocked AD/DSInternals)' {
     InModuleScope $ModuleName {
         BeforeEach {
             # default KVNO from AD
-            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 9; DistinguishedName = 'CN=User,DC=x,DC=y' } } 
+            Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 9; DistinguishedName = 'CN=User,DC=x,DC=y' } }
             Mock Get-ADComputer { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 12; DistinguishedName = 'CN=PC,OU=Domain Controllers,DC=x,DC=y' } }
         }
 
