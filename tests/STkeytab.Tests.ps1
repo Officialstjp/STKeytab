@@ -275,7 +275,7 @@ Describe 'Key material extraction (mocked AD/DSInternals)' {
 Describe 'New-Keytab orchestration (mocked dependencies)' {
     InModuleScope $ModuleName {
         BeforeEach {
-            Mock Get-RequiredModule { }  # avoid touching actual modules
+            Mock Get-RequiredModule { } -ModuleName STKeytab  # avoid touching actual modules
             # Fake account with KerberosNew current only
             $script:fakeEntry = [pscustomobject]@{ Key = (11..42 | ForEach-Object {[byte]$_}); KeyType = 18 }
             $script:fakeAcct = [pscustomobject]@{

@@ -28,7 +28,7 @@ function global:New-MockAccount {
     [pscustomobject]@{ KeyVersionNumber = $Kvno; KerberosKeys = $keys; DistinguishedName = 'CN=WEB01,OU=Servers,DC=contoso,DC=com' }
 }
 
-Mock Get-RequiredModule { return $true }
+Mock Get-RequiredModule { return } -ModuleName STKeytab
 
 Describe 'Compare-Keytab' {
     InModuleScope STKeytab {
