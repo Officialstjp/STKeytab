@@ -91,13 +91,18 @@ function Invoke-PesterTests {
     }
 }
 
-function Invoke-MyScriptAnalyzer {
+function Invoke-CiScriptAnalyzer {
     Write-Log "Running PSScriptAnalyzer..."
     $script = Join-Path $RepoRoot 'CI\Test-Sign\Run-PSScriptAnalyzer.ps1'
     if (-not (Test-Path $script)) {
         throw "PSScriptAnalyzer helper not found: $script"
     }
-    & $script
+    Push-Location $RepoRoot
+    try {
+        & $script
+    } finally {
+        Pop-Location
+    }
 }
 
 function Import-SigningCert {
@@ -206,7 +211,7 @@ function Test-SignedModule {
 switch ($Step) {
     'Setup'      { Ensure-Modules }
     'Test'       { Invoke-PesterTests }
-    'Analyze'    { Invoke-ScriptAnalyzer }
+    'Analyze'    { Invoke-CiScriptAnalyzer }
     'ImportCert' { Import-SigningCert -CertificateBase64 $CertificateBase64 -Password $SigningCertPassword }
     'Sign'       { Sign-ModuleFiles }
     'Package'    { Package-Module }
