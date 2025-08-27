@@ -115,6 +115,9 @@ function Import-SigningCert {
         Add-GithubEnv -Name "SKIP_SIGNING" -Value "true"
         return
     }
+    if ([string]::IsNullOrWhiteSpace($SigningCertPassword)) {
+        throw "No signing certificate password provided (empty). Ensure the workflow passes a non-empty value to -SigningCertPassword."
+    }
     $import = Join-Path $RepoRoot 'CI\Test-Sign\Import-SigningCert.ps1'
     if (-not (Test-Path $import)) { throw "Import-SigningCert helper not found: $import" }
     $thumb = & $import -CertificateBase64 $CertificateBase64 -Password $SigningCertPassword
@@ -212,7 +215,7 @@ switch ($Step) {
     'Setup'      { Ensure-Modules }
     'Test'       { Invoke-PesterTests }
     'Analyze'    { Invoke-CiScriptAnalyzer }
-    'ImportCert' { Import-SigningCert -CertificateBase64 $CertificateBase64 -Password $SigningCertPassword }
+    'ImportCert' { Import-SigningCert -CertificateBase64 $CertificateBase64 -SigningCertPassword $SigningCertPassword }
     'Sign'       { Sign-ModuleFiles }
     'Package'    { Package-Module }
     'TestSigned' { Test-SignedModule }

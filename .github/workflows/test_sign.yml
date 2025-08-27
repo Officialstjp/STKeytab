@@ -87,7 +87,7 @@ jobs:
               Write-Log "Signing certificate or password not set; skipping signing." 'WARNING'
               Add-GitHubEnv -Name "SKIP_SIGNING" -Value "true"
               return
-          }
+          } # cert is available here
           ./CI/Test-Sign.ps1 -Step ImportCert -CertificateBase64 $env:SIGNING_CERTIFICATE -SigningCertPassword $env:SIGNING_CERT_PASSWORD
 
       - name: Sign PowerShell files
