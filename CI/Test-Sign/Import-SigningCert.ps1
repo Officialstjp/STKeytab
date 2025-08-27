@@ -48,3 +48,4 @@ try {
         Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
     }
 }
+
