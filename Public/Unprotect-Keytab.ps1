@@ -14,14 +14,14 @@ function Unprotect-Keytab {
     stripping the .dpapi suffix when present. If additional entropy was used during protection,
     the same Entropy value must be provided for decryption. Can restrict ACL on the output.
 
-    .PARAMETER Path
-    Path to the DPAPI-protected input file.
+       .PARAMETER Path
+        Path to the DPAPI-protected input file.
 
-    .PARAMETER OutputPath
-    Destination for the decrypted keytab. Defaults to removing the .dpapi extension when not specified.
+        .PARAMETER OutputPath
+        Destination for the decrypted keytab. Defaults to removing the .dpapi extension when not specified.
 
-    .PARAMETER Scope
-    DPAPI scope used for decryption: CurrentUser (default) or LocalMachine.
+        .PARAMETER Scope
+        DPAPI scope used for decryption: CurrentUser (default) or LocalMachine.
 
         .PARAMETER Entropy
         Additional entropy string that was used during protection (if any).

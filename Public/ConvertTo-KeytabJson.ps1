@@ -17,8 +17,8 @@ function ConvertTo-KeytabJson {
         .PARAMETER Path
         Path to the input keytab file.
 
-    .PARAMETER OutputPath
-    Path to write the resulting JSON. If omitted, JSON text is written to the pipeline.
+        .PARAMETER OutputPath
+        Path to write the resulting JSON. If omitted, JSON text is written to the pipeline.
 
         .PARAMETER RevealKeys
         Include raw key bytes in the JSON. Sensitive—avoid in source control.

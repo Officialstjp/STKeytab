@@ -117,7 +117,7 @@ Unprotect-Keytab -Path .\web01.keytab.dpapi -RestrictAcl
 - Import-Module fails in CI: ensure paths are quoted and Test-Path checks pass before Import-Module.
 
 
-### Notes
+## Notes
 - Safe defaults prefer AES. RC4 is opt-in.
 - -FixedTimestampUtc is opt-in and respected end-to-end for reproducible artifacts.
 - DPAPI helper cmdlets support CurrentUser and LocalMachine scopes with optional entropy; outputs can be ACL-restricted to the current user.
@@ -126,6 +126,28 @@ Unprotect-Keytab -Path .\web01.keytab.dpapi -RestrictAcl
  - PlatyPS-based help is validated and auto-updated in CI; see docs/ for Markdown and en-US/ for built help.
 - Canonical JSON is stably sorted and can omit timestamps via -IgnoreTimestamp; ConvertFrom-KeytabJson requires key bytes (export with -RevealKeys to include them).
 - The module does **not** collect any telemetry.
+
+## Features & Roadmap
+
+### Supported vs not Supported
+This module supports; others generally don’t:
+- DSInternals-backed, “no password reset” keytab export for AD principals (including krbtgt with guarded flags). Similar to Impacket / Mimikatz key replication-extraction.
+- DPAPI-protect keytabs (user or machine scope) + restrictive ACLs baked in.
+- Deterministic outputs + canonical JSON + structured diff with timestamp-insensitivity.
+- Explicit KVNO control (S2K) and multi-KVNO emit for krbtgt (current/old/older).
+
+This module and others both support:
+- Password-based S2K generation (here: AES-only; ktutil: any supported enctype).
+- Reading/listing keytabs (here: Read-Keytab/Test-Keytab; others: klist -k/ktutil list).
+
+Others support; this doesn't (yet)
+- Account/SPN lifecycle (create computer/service accounts, add/remove SPNs, set msDS-SupportedEncryptionTypes, join realmd, rotate machine passwords on schedule) - msktutil/adcli + Samba join/export flows
+
+### Planned next:
+- Reset-AccountPasswordWithKeytab (dry-run and rollback).
+- Set-AccountSpn with conflict detection and transactional behavior.
+- Interop helpers (Wireshark config, ktutil scripts).
+- HelpInfoURI and Update-Help hosting.
 
 ## Changelog
 
@@ -210,12 +232,6 @@ Unprotect-Keytab -Path .\web01.keytab.dpapi -RestrictAcl
 ---
 
 *Note: Versions 0.1.0-0.2.0 represent the foundational development phase. Starting with 0.3.0, changes follow semantic versioning more strictly with detailed tracking of additions, changes, and technical improvements.*
-
-## Roadmap
-- Reset-AccountPasswordWithKeytab (dry-run and rollback).
-- Set-AccountSpn with conflict detection and transactional behavior.
-- Interop helpers (Wireshark config, ktutil scripts).
-- HelpInfoURI and Update-Help hosting.
 
 ## CI/CD
 - Docs workflow builds/validates PlatyPS help; auto-commits on push with [skip ci]. See .github/workflows/docs.yml and CI/Build-Docs.ps1.

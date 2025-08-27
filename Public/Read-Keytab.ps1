@@ -20,8 +20,8 @@ function Read-Keytab {
         .PARAMETER RevealKeys
         Include raw key bytes in each entry's RawKey property (sensitive).
 
-    .PARAMETER MaxKeyHex
-    Max length of the displayed hex string for masked key preview.
+        .PARAMETER MaxKeyHex
+        Max length of the displayed hex string for masked key preview.
 
         .INPUTS
         System.String (file path) or objects with FilePath/FullName properties.

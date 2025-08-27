@@ -17,8 +17,8 @@ function ConvertFrom-KeytabJson {
         .PARAMETER JsonPath
         Path to the canonical JSON file.
 
-    .PARAMETER OutputPath
-    Output keytab path to write. Defaults to <JsonPath>.keytab when not specified.
+        .PARAMETER OutputPath
+        Output keytab path to write. Defaults to <JsonPath>.keytab when not specified.
 
         .PARAMETER Force
         Overwrite OutputPath if it exists.

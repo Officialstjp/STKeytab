@@ -15,14 +15,14 @@ function Protect-Keytab {
     plaintext original after successful protection. LocalMachine scope is not portable
     across machines.
 
-    .PARAMETER Path
-    Path to the plaintext keytab file to protect.
+        .PARAMETER Path
+        Path to the plaintext keytab file to protect.
 
-    .PARAMETER OutputPath
-    Destination path for the protected file. Defaults to <Path>.dpapi when not specified.
+        .PARAMETER OutputPath
+        Destination path for the protected file. Defaults to <Path>.dpapi when not specified.
 
-    .PARAMETER Scope
-    DPAPI scope: CurrentUser (default) or LocalMachine. LocalMachine scope binds decryption to the computer and is not portable.
+        .PARAMETER Scope
+        DPAPI scope: CurrentUser (default) or LocalMachine. LocalMachine scope binds decryption to the computer and is not portable.
 
         .PARAMETER Entropy
         Optional additional entropy string to bind to the protection.
@@ -30,8 +30,8 @@ function Protect-Keytab {
         .PARAMETER Force
         Overwrite OutputPath if it exists.
 
-    .PARAMETER DeletePlaintext
-    Remove the original plaintext file after successful protection.
+        .PARAMETER DeletePlaintext
+        Remove the original plaintext file after successful protection.
 
         .PARAMETER RestrictAcl
         Apply a user-only ACL to the output file.

@@ -15,8 +15,8 @@ function Merge-Keytab {
     are blocked unless -AcknowledgeRisk is provided. Inputs must carry key bytes (e.g., from
     Read-Keytab -RevealKeys) to produce a valid merged output.
 
-    .PARAMETER InputPaths
-    One or more paths to input keytabs to merge. Inputs must include key material.
+        .PARAMETER InputPaths
+        One or more paths to input keytabs to merge. Inputs must include key material.
 
         .PARAMETER OutputPath
         Destination path of the merged keytab.
