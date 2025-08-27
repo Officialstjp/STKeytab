@@ -219,8 +219,8 @@ switch ($Step) {
     'All'        {
         Ensure-Modules
         Invoke-PesterTests
-    Invoke-CiScriptAnalyzer
-    Import-SigningCert -CertificateBase64 $CertificateBase64 -SigningCertPassword $SigningCertPassword
+        Invoke-CiScriptAnalyzer
+        Import-SigningCert -CertificateBase64 $CertificateBase64 -SigningCertPassword $SigningCertPassword
         Sign-ModuleFiles
         Package-Module
         Test-SignedModule

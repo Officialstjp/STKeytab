@@ -82,6 +82,12 @@ jobs:
           SIGNING_CERTIFICATE: ${{ secrets.SIGNING_CERTIFICATE }}
           SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
         run: |
+          # check if the Cert and password are available
+          if (-not $env:SIGNING_CERTIFICATE -or -not $env:SIGNING_CERT_PASSWORD) {
+              Write-Log "Signing certificate or password not set; skipping signing." 'WARNING'
+              Add-GitHubEnv -Name "SKIP_SIGNING" -Value "true"
+              return
+          }
           ./CI/Test-Sign.ps1 -Step ImportCert -CertificateBase64 $env:SIGNING_CERTIFICATE -SigningCertPassword $env:SIGNING_CERT_PASSWORD
 
       - name: Sign PowerShell files
