@@ -16,6 +16,12 @@ The module defaults to AES-only encryption for maximum security:
 
 RC4 encryption is considered legacy and cryptographically weak. It is only included when explicitly requested via -IncludeLegacyRC4 switch or -IncludeEtype parameter to support legacy interoperability scenarios.
 
+### Centralized Policy (BigBrother)
+- Etype selection is enforced by a centralized policy layer to keep behavior consistent and secure across cmdlets.
+- Defaults include AES256 (18) and AES128 (17); obsolete/"dead" ciphers are excluded unless explicitly overridden with -AllowDeadCiphers.
+- Replication path: RC4 (23) may be included via -IncludeLegacyRC4 when legacy interop is unavoidable.
+- Password derivation (S2K) path: AES-only. Requests for non-AES etypes will show a security banner and hard-fail. Use replication if RC4 is absolutely required.
+
 ## Sensitive Operation Controls
 Several operations handle sensitive data or have high security impact:
 

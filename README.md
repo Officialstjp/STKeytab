@@ -1,6 +1,6 @@
 ## STKeytab
 
-Security-aware PowerShell toolkit for generating and working with MIT keytabs (0x0502) using replication-based key extraction or password-based derivation. Safe defaults, optional determinism, and minimal dependencies.
+Security-aware PowerShell toolkit for generating and working with MIT keytabs (0x0502) using replication-based key extraction or password-based derivation. Safe defaults, centralized security policy ("BigBrother"), optional determinism, and minimal dependencies.
 
 ## Table of contents
 - Quick start
@@ -39,8 +39,8 @@ Import-Module "$PWD\STKeytab.psd1" -Force
 ```
 
 ## Commands
-- New-Keytab: Create a keytab for an AD principal via replication (AES-only by default; RC4 is opt-in).
-- New-KeytabFromPassword: Create a keytab from a password using AES S2K (PBKDF2-HMACSHA1).
+- New-Keytab: Create a keytab for an AD principal via replication (AES-only by default; RC4 is opt-in via policy flags).
+- New-KeytabFromPassword: Create a keytab from a password using AES S2K (PBKDF2-HMACSHA1; AES-only path with hard guardrails).
 - Read-Keytab, Test-Keytab: Parse and validate keytabs (keys masked by default).
 - Merge-Keytab: Merge keytabs with de-duplication and guardrails.
 - Protect-Keytab, Unprotect-Keytab: DPAPI protection for at-rest keytabs.
@@ -98,13 +98,20 @@ Unprotect-Keytab -Path .\web01.keytab.dpapi -RestrictAcl
 - CI validates help drift on PRs and auto-updates on push. Built external help (MAML) and CAB can be hosted for Update-Help once HelpInfoURI is set in STKeytab.psd1.
 
 ## Security model
-- AES-only by default (AES256, AES128). RC4 is an explicit opt-in.
+- AES-only by default (AES256, AES128). RC4 is an explicit opt-in governed by centralized policy.
 - Sensitive flags:
   - -RevealKeys: prints key material; emits a warning; avoid in logs and PRs.
   - -AcknowledgeRisk and -Justification: required for high-impact operations (e.g., krbtgt).
 - DPAPI:
   - CurrentUser and LocalMachine scopes supported. LocalMachine is not portable.
   - Optional entropy; prefer -EntropySecure (SecureString).
+
+### Centralized policy (BigBrother)
+- Etype selection is driven by a single policy layer:
+  - Defaults: AES-only includes; dead/obsolete ciphers excluded.
+  - Password path: AES-only enforcement with clear banner and hard error if legacy requested.
+  - Replication path: RC4 can be added explicitly with -IncludeLegacyRC4; dead ciphers remain excluded unless -AllowDeadCiphers.
+- Public cmdlets compose a policy (Include/Exclude/AESOnly/IncludeLegacyRC4/AllowDeadCiphers) and internal orchestration resolves final etypes from available keys.
 
 ## Determinism
 - With -FixedTimestampUtc, the writer uses a fixed UTC timestamp and a stable entry order. Given identical inputs (keys, KVNOs, etypes, SPNs), outputs are byte-identical across runs and machines—ideal for CI reproducibility and code review.
@@ -117,13 +124,11 @@ Unprotect-Keytab -Path .\web01.keytab.dpapi -RestrictAcl
 - Import-Module fails in CI: ensure paths are quoted and Test-Path checks pass before Import-Module.
 
 
-## Notes
-- Safe defaults prefer AES. RC4 is opt-in.
+- Safe defaults prefer AES. RC4 is opt-in and only via explicit flags.
 - -FixedTimestampUtc is opt-in and respected end-to-end for reproducible artifacts.
 - DPAPI helper cmdlets support CurrentUser and LocalMachine scopes with optional entropy; outputs can be ACL-restricted to the current user.
 - New-KeytabFromPassword is AES-only (etype 17/18). RC4 is intentionally not supported in this path.
- - New-KeytabFromPassword is AES-only (etype 17/18). RC4 is intentionally not supported in this path.
- - PlatyPS-based help is validated and auto-updated in CI; see docs/ for Markdown and en-US/ for built help.
+- PlatyPS-based help is validated and auto-updated in CI; see docs/ for Markdown and en-US/ for built help.
 - Canonical JSON is stably sorted and can omit timestamps via -IgnoreTimestamp; ConvertFrom-KeytabJson requires key bytes (export with -RevealKeys to include them).
 - The module does **not** collect any telemetry.
 
