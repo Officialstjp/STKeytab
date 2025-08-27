@@ -29,6 +29,7 @@ function New-PrincipalKeytabInternal {
 		[string]$OutputPath,
 		[object[]]$IncludeEtype,
 		[object[]]$ExcludeEtype,
+		[psobject]$Policy,
 		[switch]$RestrictAcl,
 		[switch]$Force,
 		[string]$JsonSummaryPath,
@@ -72,7 +73,11 @@ function New-PrincipalKeytabInternal {
 	}
 
 	$allEtypes = Select-CombinedEtypes -KeySets $keySets
-	$selection = Resolve-EtypeSelection -AvailableIds ([int[]]$allEtypes) -Include $IncludeEtype -Exclude $ExcludeEtype
+	if ($PSBoundParameters.ContainsKey('Policy') -and $Policy) {
+		$selection = Resolve-EtypeSelection -AvailableIds ([int[]]$allEtypes) -Policy $Policy
+	} else {
+		$selection = Resolve-EtypeSelection -AvailableIds ([int[]]$allEtypes) -Include $IncludeEtype -Exclude $ExcludeEtype
+	}
 
 	if ($selection.UnknownInclude.Count -gt 0) { Write-Warning "Unknown IncludeEtype: $($selection.UnknownInclude -join ', ')" }
 	if ($selection.UnknownExclude.Count -gt 0) { Write-Warning "Unknown ExcludeEtype: $($selection.UnknownExclude -join ', ')" }

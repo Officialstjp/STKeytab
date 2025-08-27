@@ -6,16 +6,18 @@ Copyright (c) 2025 Stefan Ploch
 
 <#
 .SYNOPSIS
-Write a security warning banner based on risk level.
+Big Brother Messenger - security related messaging and communication for the module.
 
 .DESCRIPTION
+This module provides cmdlets for managing and enforcing security related messaging and communication
+in the Module.
+
 Notes:
  - Public entry point: Write-SecurityWarning
  - RiskLevel values currently produced: 'krbtgt','High','Medium'
  - Enables opt-out via:  -Suppress  or env var STCRYPT_SUPPRESS_SECURITY_WARNING=1
  - Tries to stay pure (no Write-Host) unless -AsString:$false (default) for visibility.
  - Returns the composed banner text (always) so callers can log it.
-#
 #>
 
 

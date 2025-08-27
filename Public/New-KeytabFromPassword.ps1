@@ -16,73 +16,73 @@ function New-KeytabFromPassword {
     replication; the caller controls KVNO. Ensure KVNO matches the account’s actual key version when using
     these keytabs with AD.
 
-    .PARAMETER Realm
-    Kerberos realm (usually the AD domain in uppercase).
+        .PARAMETER Realm
+        Kerberos realm (usually the AD domain in uppercase).
 
-    .PARAMETER SamAccountName
-    Account name when deriving a user or computer principal (use -Principal for service names).
+        .PARAMETER SamAccountName
+        Account name when deriving a user or computer principal (use -Principal for service names).
 
-    .PARAMETER Principal
-    Full principal (e.g., http/web01.contoso.com@CONTOSO.COM) for service principals.
+        .PARAMETER Principal
+        Full principal (e.g., http/web01.contoso.com@CONTOSO.COM) for service principals.
 
-    .PARAMETER Password
-    SecureString password to derive keys from. Alternatively use -Credential.
+        .PARAMETER Password
+        SecureString password to derive keys from. Alternatively use -Credential.
 
-    .PARAMETER Credential
-    PSCredential; the password part is used if -Password not provided.
+        .PARAMETER Credential
+        PSCredential; the password part is used if -Password not provided.
 
-    .PARAMETER Compatibility
-    Salt policy for string-to-key: MIT, Heimdal, or Windows.
+        .PARAMETER Compatibility
+        Salt policy for string-to-key: MIT, Heimdal, or Windows.
 
-    .PARAMETER IncludeEtype
-    Encryption types to include. Defaults to AES-256 and AES-128 (18,17).
+        .PARAMETER IncludeEtype
+        Encryption types to include. Defaults to AES-256 and AES-128 (18,17).
 
-    .PARAMETER ExcludeEtype
-    Encryption types to exclude from selection.
+        .PARAMETER ExcludeEtype
+        Encryption types to exclude from selection.
 
-    .PARAMETER IncludeLegacyRC4
-    Includes the RC4 encryption type (23).
+        .PARAMETER IncludeLegacyRC4
+        Includes the RC4 encryption type (23).
 
-    .PARAMETER OutputPath
-    Path to write the generated keytab.
+        .PARAMETER OutputPath
+        Path to write the generated keytab.
 
-    .PARAMETER JsonSummaryPath
-    Path to write a JSON summary; defaults next to OutputPath when -Summary or -PassThru is specified.
+        .PARAMETER JsonSummaryPath
+        Path to write a JSON summary; defaults next to OutputPath when -Summary or -PassThru is specified.
 
-    .PARAMETER Kvno
-    Key Version Number to stamp into entries (default 1). Ensure this matches the account’s actual KVNO.
+        .PARAMETER Kvno
+        Key Version Number to stamp into entries (default 1). Ensure this matches the account’s actual KVNO.
 
-    .PARAMETER Iterations
-    PBKDF2 iteration count (default 4096).
+        .PARAMETER Iterations
+        PBKDF2 iteration count (default 4096).
 
-    .PARAMETER RestrictAcl
-    Apply a user-only ACL on outputs.
+        .PARAMETER RestrictAcl
+        Apply a user-only ACL on outputs.
 
-    .PARAMETER Force
-    Overwrite OutputPath if it exists.
+        .PARAMETER Force
+        Overwrite OutputPath if it exists.
 
-    .PARAMETER Summary
-    Emit a JSON summary file.
+        .PARAMETER Summary
+        Emit a JSON summary file.
 
-    .PARAMETER PassThru
-    Return a summary object in addition to writing files.
+        .PARAMETER PassThru
+        Return a summary object in addition to writing files.
 
-    .PARAMETER FixedTimestampUtc
-    Use a fixed timestamp for deterministic output. Determinism is opt-in and not auto-populated.
+        .PARAMETER FixedTimestampUtc
+        Use a fixed timestamp for deterministic output. Determinism is opt-in and not auto-populated.
 
-    .INPUTS
-    None. Parameters are bound by name.
+        .INPUTS
+        None. Parameters are bound by name.
 
-    .OUTPUTS
-    System.String (OutputPath) or summary object when -PassThru.
+        .OUTPUTS
+        System.String (OutputPath) or summary object when -PassThru.
 
-    .EXAMPLE
-    New-KeytabFromPassword -Realm CONTOSO.COM -SamAccountName user1 -Password (Read-Host -AsSecureString) -OutputPath .\user1.keytab
-    Generate a user keytab from a password with default AES types.
+        .EXAMPLE
+        New-KeytabFromPassword -Realm CONTOSO.COM -SamAccountName user1 -Password (Read-Host -AsSecureString) -OutputPath .\user1.keytab
+        Generate a user keytab from a password with default AES types.
 
-    .EXAMPLE
-    New-KeytabFromPassword -Realm CONTOSO.COM -Principal http/web01.contoso.com@CONTOSO.COM -Credential (Get-Credential) -IncludeEtype 18 -Kvno 3 -OutputPath .\http.keytab
-    Generate a service keytab with AES-256 only and KVNO 3.
+        .EXAMPLE
+        New-KeytabFromPassword -Realm CONTOSO.COM -Principal http/web01.contoso.com@CONTOSO.COM -Credential (Get-Credential) -IncludeEtype 18 -Kvno 3 -OutputPath .\http.keytab
+        Generate a service keytab with AES-256 only and KVNO 3.
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'User', ConfirmImpact='Medium')]
     param(
@@ -108,14 +108,26 @@ function New-KeytabFromPassword {
         [switch]$Force,
         [switch]$Summary,
         [switch]$PassThru,
+        [datetime]$FixedTimestampUtc,
+
+        # Quick settings
         [switch]$IncludeLegacyRC4,
         [switch]$AESOnly,
-        [datetime]$FixedTimestampUtc
+        [switch]$AllowDeadCiphers
     )
 
     begin {
-        if (-not $PSBoundParameters.ContainsKey('IncludeEtype')) { $IncludeEtype = @(18,17) }
-        if ($IncludeLegacyRC4.IsPresent -and ($IncludeEtype -notcontains 23)) { $IncludeEtype += 23 }
+        # Firstly, check if the parameters specified make sense
+        if (($AESOnly.IsPresent) -and ($IncludeLegacyRC4.IsPresent -or $AllowDeadCiphers.IsPresent)) {
+            throw "-AESOnly cannot be defined with -IncludeLegacyRC4 or -AllowDeadCiphers."
+        }
+        if (-not $PSBoundParameters.ContainsKey('Password') -and -not $PSBoundParameters.ContainsKey('Credential')) {
+            throw "-Password and -Credential cannot be specified together."
+        }
+
+        # Then, build policy intent with single source of truth (BigBrother)
+        $policy = Get-PolicyIntent -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype -AESOnly:$AESOnly `
+                    -IncludeLegacyRC4:$IncludeLegacyRC4 -AllowDeadCiphers:$AllowDeadCiphers -PathKind 'Password'
     }
     process {
         if ($Credential -and -not $Password) { $Password = $Credential.GetNetworkCredential().SecurePassword }
@@ -155,9 +167,10 @@ function New-KeytabFromPassword {
                 }
             }
 
-        # Etype selection
-        $available = @(17,18)
-        $selection = Resolve-EtypeSelection -AvailableIds $available -Include $IncludeEtype -Exclude $ExcludeEtype
+        # Enforce password-path compatibility and resolve selection once
+        Validate-PasswordPathCompatibility -Policy $policy
+        $available = @(17,18) # password path supports AES only today
+        $selection = Resolve-EtypeSelection -AvailableIds $available -Policy $policy
         if ($selection.Selected.Count -eq 0) { throw "No Encryption types selected."}
         if ($selection.UnknownInclude.Count -gt 0) { Write-Warning "Unknown IncludeEtype: " + ($selection.UnknownInclude -join ', ')}
         if ($selection.UnknownExclude.Count -gt 0) { Write-Warning "Unknown ExcludeEtype: " + ($selection.UnknownExclude -join ', ')}
@@ -185,7 +198,7 @@ function New-KeytabFromPassword {
         $keySet = [pscustomobject]@{
             Kvno        =  [int]$Kvno
             Keys        = $keys
-            Source      = "PasswordS2K:$Compatibility/PBDKDF2-SHA1($Iterations)"
+            Source      = "PasswordS2K:$Compatibility/PBKDF2-SHA1($Iterations)"
             RetrievedAt = (Get-Date).ToUniversalTime()
         }
 
