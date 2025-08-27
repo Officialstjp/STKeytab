@@ -126,7 +126,7 @@ function Import-SigningCert {
 function Sign-ModuleFiles {
     $thumb = $env:CERT_THUMBPRINT
     if ([string]::IsNullOrWhiteSpace($thumb)) {
-        Write-Log "CERT_THUMBPRINT not set; skipping signing." 'WARN'
+    Write-Log "CERT_THUMBPRINT not set; skipping signing." 'WARNING'
         Add-GitHubEnv -Name "SKIP_SIGNING" -Value "true"
         return
     }
@@ -182,7 +182,7 @@ function Package-Module  {
 
 function Test-SignedModule {
     if ($env:SKIP_SIGNING -eq 'true') {
-        Write-Log "Signing skipped; not testing signed module." 'WARN'
+    Write-Log "Signing skipped; not testing signed module." 'WARNING'
         return
     }
 
@@ -219,8 +219,8 @@ switch ($Step) {
     'All'        {
         Ensure-Modules
         Invoke-PesterTests
-        Invoke-MyScriptAnalyzer
-        Import-SigningCert -CertificateBase64 $CertificateBase64 -Password $SigningCertPassword
+    Invoke-CiScriptAnalyzer
+    Import-SigningCert -CertificateBase64 $CertificateBase64 -SigningCertPassword $SigningCertPassword
         Sign-ModuleFiles
         Package-Module
         Test-SignedModule
