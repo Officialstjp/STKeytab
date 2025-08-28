@@ -249,10 +249,10 @@ function Validate-PasswordPathCompatibility {
     $nonAes = @($Policy.IncludeIds | Where-Object { $_ -notin $script:AesEtypes })
     if ($nonAes.Count -gt 0 -or $Policy.IncludeLegacyRC4 -or $Policy.AllowDeadCiphers) {
         try {
-            if (Get-Command -Name Write-SecurityWarning -ErrorAction SilentlyContinue) {
-                Write-SecurityWarning -RiskLevel 'High' -SamAccountName 'Password-S2K' -Suppress:$SuppressWarnings.IsPresent | Out-Null
-            }
-        } catch {}
+            Write-SecurityWarning -RiskLevel 'High' -SamAccountName 'Password-S2K' -Suppress:$SuppressWarnings.IsPresent | Out-Null
+        } catch {
+            Write-Error "Failed to write security warning: $_"
+        }
         $names = ($nonAes | ForEach-Object { Get-EtypeNameFromId $_ }) -join ', '
         $hint  = 'Password derivation supports AES only (17,18).' +
                  ' Remove legacy etypes or use the replication path if you must include RC4/DES.'
