@@ -12,7 +12,7 @@ Creates a GitHub release tagged for help distribution and uploads the CAB and
 HelpInfo.xml files. Updates module manifest HelpInfoURI to point to the release.
 
 .PARAMETER Version
-The version tag for the help release (e.g., "help-v1.2.0").
+The version tag for the help release (e.g., "help-v0.5.0").
 
 .PARAMETER ArtifactsPath
 Path to the artifacts directory containing CAB and HelpInfo.xml files.

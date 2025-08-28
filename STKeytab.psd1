@@ -6,7 +6,7 @@ Copyright (c) 2025 Stefan Ploch
 
 @{
     RootModule        = 'STKeytab.psm1'
-    ModuleVersion     = '0.4.0'
+    ModuleVersion     = '0.5.0'
     GUID              = 'c5a6e3a4-c5a6-7b8e-9a0b-f1d9e3f4e5b1'
     PowerShellVersion = '5.1'
     CompatiblePSEditions = @('Desktop','Core')
@@ -36,7 +36,7 @@ Copyright (c) 2025 Stefan Ploch
             Tags        = @('Kerberos','Keytab','ActiveDirectory','Security','DPAPI','AES')
             ProjectUri  = 'https://github.com/Officialstjp/STKeytab'
             LicenseUri  = 'https://github.com/Officialstjp/STKeytab/blob/main/LICENSE'
-            ReleaseNotes= 'v0.4.0: Complete PlatyPS documentation system with external help (MAML XML), comprehensive about topics, consolidated CI pipeline, and professional help infrastructure. See README.md changelog for full details.'
+            ReleaseNotes= 'v0.5.0: Enterprise AD lifecycle management with Reset-AccountPasswordWithKeytab and Set-AccountSpn, enhanced BigBrother policy integration, comprehensive test coverage, and production-ready parameter validation. See README.md changelog for full details.'
         }
     }
 }

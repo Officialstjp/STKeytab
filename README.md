@@ -1,6 +1,9 @@
 ## STKeytab
 
-Security-aware PowerShell toolkit for generating and working with MIT keytabs (0x0502) using replication-based key extraction or password-based derivation. Safe defaults, centralized security policy ("BigBrother"), optional determinism, and minimal dependencies.
+Security-aware PowerShell toolkit for generating and working with MIT keytabs (0x0502) using replication-based key extraction or - DSInternals-backed, "no password reset" keytab export for AD principals (including krbtgt with guarded flags). Similar to Impacket / Mimikatz key replication-extraction.
+- AD lifecycle management: atomic password reset + keytab generation with rollback support.
+- SPN conflict detection and transactional SPN management operations.
+- DPAPI-protect keytabs (user or machine scope) + restrictive ACLs baked in. Password-based derivation. Safe defaults, centralized security policy ("BigBrother"), optional determinism, and minimal dependencies.
 
 ## Table of contents
 - Quick start
@@ -23,7 +26,7 @@ Prerequisites
 - Windows PowerShell 5.1 for AD/DSInternals scenarios; PowerShell 7+ supported for non-AD flows.
 - RSAT: Active Directory tools (install on Windows Features) for the ActiveDirectory module.
 - DSInternals module for replication-based reads.
--
+
 
 Install modules
 ```powershell
@@ -41,6 +44,8 @@ Import-Module "$PWD\STKeytab.psd1" -Force
 ## Commands
 - New-Keytab: Create a keytab for an AD principal via replication (AES-only by default; RC4 is opt-in via policy flags).
 - New-KeytabFromPassword: Create a keytab from a password using AES S2K (PBKDF2-HMACSHA1; AES-only path with hard guardrails).
+- Reset-AccountPasswordWithKeytab: Atomically reset AD account password and generate corresponding keytab with rollback support.
+- Set-AccountSpn: Manage service principal names with conflict detection and transactional operations.
 - Read-Keytab, Test-Keytab: Parse and validate keytabs (keys masked by default).
 - Merge-Keytab: Merge keytabs with de-duplication and guardrails.
 - Protect-Keytab, Unprotect-Keytab: DPAPI protection for at-rest keytabs.
@@ -61,6 +66,10 @@ New-Keytab -SamAccountName WEB01$ -Domain contoso.com -ExcludeEtype ARCFOUR_HMAC
 
 # Deterministic output (stable bytes across runs)
 New-Keytab -SamAccountName WEB01$ -Domain contoso.com -FixedTimestampUtc (Get-Date '2024-01-01Z')
+
+# AD lifecycle management
+Reset-AccountPasswordWithKeytab -SamAccountName svc-web -AcknowledgeRisk -Justification "Quarterly rotation" -OutputPath .\svc-web.keytab
+Set-AccountSpn -SamAccountName svc-web -Add 'HTTP/web.contoso.com' -Remove 'HTTP/oldweb.contoso.com' -WhatIfOnly
 
 # Password-based (AES S2K) – user principal
 $sec = ConvertTo-SecureString 'P@ssw0rd!' -AsPlainText -Force
@@ -146,15 +155,38 @@ This module and others both support:
 - Reading/listing keytabs (here: Read-Keytab/Test-Keytab; others: klist -k/ktutil list).
 
 Others support; this doesn't (yet)
-- Account/SPN lifecycle (create computer/service accounts, add/remove SPNs, set msDS-SupportedEncryptionTypes, join realmd, rotate machine passwords on schedule) - msktutil/adcli + Samba join/export flows
+- Advanced service discovery and automation workflows.
+- Cross-platform toolchain integration and compatibility helpers.
 
 ### Planned next:
-- Reset-AccountPasswordWithKeytab (dry-run and rollback).
-- Set-AccountSpn with conflict detection and transactional behavior.
-- Interop helpers (Wireshark config, ktutil scripts).
-- HelpInfoURI and Update-Help hosting.
+- Enhanced interoperability with MIT/Heimdal toolchains.
+- Service account discovery and management helpers.
+- Workflow automation for enterprise environments.
 
 ## Changelog
+
+### [0.5.0] - 2025-08-28
+#### Added
+- **Reset-AccountPasswordWithKeytab**: AD lifecycle management with atomic password reset and keytab generation
+  - Mandatory risk acknowledgment and justification for audit trails
+  - Dry-run capability with detailed operation planning (`-WhatIfOnly`)
+  - Random password generation with cryptographic entropy
+  - Rollback guidance
+- **Set-AccountSpn**: Transactional SPN management with conflict detection
+  - SPN conflict detection across the domain before operations
+  - Atomic add/remove operations with automatic rollback on failure
+  - Detailed operation planning and impact assessment
+- **Enhanced BigBrother Integration**: Centralized security policy enforcement across all cmdlets
+  - AES-only enforcement on password derivation paths with hard guardrails
+  - Policy composition and validation for consistent security posture
+
+#### Changed
+- **Documentation**: Updated help and examples for new enterprise capabilities
+
+#### Technical
+- **New-StrongPassword**: Cryptographically secure password generation for account resets
+- **Parameter Compatibility**: Fixed parameter mismatches between interdependent functions
+- **Testing**: Test mocks for new Operations and policy validation
 
 ### [0.4.0] - 2025-08-26
 #### Added
