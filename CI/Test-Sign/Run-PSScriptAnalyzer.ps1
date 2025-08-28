@@ -36,7 +36,7 @@ foreach ($folder in $folders) {
 
         $results = Invoke-ScriptAnalyzer @analyzerParams
 
-        if ($results) {
+        if ($results -and $results.Count -gt 0) {
         Write-Host "Found $($results.Count) issue(s):" -ForegroundColor Red
 
         # Show detailed results with full messages
