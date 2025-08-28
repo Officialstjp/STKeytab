@@ -88,7 +88,7 @@ function Set-AccountSpn {
     )
 
     begin {
-        Get-RequiredModule -ModuleName 'ActiveDirectory' -ImportCommand 'Get-ADUser'
+        Get-RequiredModule -Name 'ActiveDirectory'
 
         if (-not ($Add -or $Remove -or $List)) {
             throw "Must specifiy at least one of: -Add, -Remove, or -List"
@@ -116,7 +116,7 @@ function Set-AccountSpn {
             if (-not $currentSpns) { $currentSpns = @() }
 
             if ($List) {
-                Write-Host "Current SPNs for $SamAccountName:" -ForegroundColor Cyan
+                Write-Host "Current SPNs for $SamAccountName`:" -ForegroundColor Cyan
                 if ($currentSpns.Count -eq 0) {
                     Write-Host "    (None)" -Foregroundcolor yellow
                 } else {

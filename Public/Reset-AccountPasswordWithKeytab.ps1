@@ -147,7 +147,7 @@ function Reset-AccountPasswordWithKeytab {
     )
 
     begin {
-        Get-RequiredModule -ModuleName 'ActiveDirectory' -ImportCommand 'Get-ADUser'
+        Get-RequiredModule -Name 'ActiveDirectory'
 
         # Compose policy for password path (enforce AES-only)
         try {
@@ -268,13 +268,12 @@ function Reset-AccountPasswordWithKeytab {
                     Password        = $NewPassword
                     Kvno            = $predictedKvno
                     Compatibility   = $Compatibility
-                    IncludeEtypes   = $etypeSelection.Selected
-                    Output          = $OutputPath
+                    IncludeEtype    = $etypeSelection.Selected
+                    OutputPath      = $OutputPath
                     RestrictAcl     = $RestrictAcl
                     Force           = $Force
                     Summary         = $Summary
                     PassThru        = $true
-                    SuppressWarnings = $SuppressWarnings
                 }
 
                 if ($FixedTimestampUtc) {
@@ -282,7 +281,7 @@ function Reset-AccountPasswordWithKeytab {
                 }
 
                 if ($JsonSummaryPath) {
-                    $keytabParams.JsonSummaryPath = $JsonSummaryPath
+                    $keytabParams.SummaryPath = $JsonSummaryPath
                 }
 
                 $keytabResult = New-KeytabFromPassword @keytabParams
