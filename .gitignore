@@ -30,5 +30,3 @@ secret/
 Apply-PSAnalyzerFixes.ps1
 PSScriptAnalyzer-FixStrategy.md
 
-# Todo
-Public/Set-AccountSpn.ps1

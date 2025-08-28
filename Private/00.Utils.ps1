@@ -76,4 +76,49 @@ function Get-CredentialFromEnv {
     [pscredential]::new($u,$sec)
 }
 
+function New-StrongPassword {
+    <#
+    .SYNOPSIS
+    Generate a cryptographically strong random password.
+    #>
+    [CmdletBinding()]
+    param (
+        [int]$Length = 64
+    )
+
+    # Character sets for pw generation
+    $uppercase =  'ABCDEFGHJKLMNPQRSTUVWXYZ' #excluding I, O for readability
+    $lowercase =  'abcdefghijkmnopqrstuvwxyz' # excluding l for readability
+    $numbers   =  '0123456789'
+    $special   =  '!@#$%^&*()-_=+[]{};:,.<>?'
+
+    $allChars = $uppercase + $lowercase + $numbers + $special
+
+    $rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::New()
+    try {
+        $bytes = New-Object byte[] $Length
+        $rng.GetBytes($bytes)
+
+        $password = ""
+        for ($i = 0; $i -lt $Length; $i++) {
+            $password += $allChars[$bytes[$i] % $allChars.Length]
+        }
+
+        # Ensure complexity requirements are met
+        $hasUpper = $password -cmatch '[A-Z]'
+        $hasLower = $password -cmatch '[a-z]'
+        $hasNumber = $password -cmatch '[0-9]'
+        $hasSymbol = $password -cmatch '[^A-Za-z0-9]'
+
+        if (-not ($hasUpper -and $hasLower -and $hasNumber -and $hasSymbol)) {
+            # Regenerate if complexity requirements not met
+            return New-StrongPassword -Length $Length
+        }
+
+        return ConvertTo-SecureString $password -AsPlainText -Force
+
+    } finally {
+        $rng.Dispose()
+    }
+}
 #endregion
