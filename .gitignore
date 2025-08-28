@@ -31,5 +31,4 @@ Apply-PSAnalyzerFixes.ps1
 PSScriptAnalyzer-FixStrategy.md
 
 # Todo
-Public/Reset-AccountPasswordWithKeytab.ps1
 Public/Set-AccountSpn.ps1
