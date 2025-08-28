@@ -36,23 +36,23 @@ foreach ($folder in $folders) {
 
         $results = Invoke-ScriptAnalyzer @analyzerParams
 
-        if ($results) {
-        Write-Host "Found $($results.Count) issue(s):" -ForegroundColor Red
+        if ($results -and $results.Count -gt 0) {
+            Write-Host "Found $($results.Count) issue(s):" -ForegroundColor Red
 
-        # Show detailed results with full messages
-        foreach ($issue in $results) {
-            Write-Host "" # Empty line for readability
-            Write-Host "[$($issue.Severity)] $($issue.RuleName)" -ForegroundColor Red
-            Write-Host "  File: $($issue.ScriptName):$($issue.Line)" -ForegroundColor Yellow
-            Write-Host "  Message: $($issue.Message)" -ForegroundColor White
-            if ($issue.SuggestedCorrections) {
-            Write-Host "  Suggestion: $($issue.SuggestedCorrections[0].Description)" -ForegroundColor Cyan
+            # Show detailed results with full messages
+            foreach ($issue in $results) {
+                Write-Host "" # Empty line for readability
+                Write-Host "[$($issue.Severity)] $($issue.RuleName)" -ForegroundColor Red
+                Write-Host "  File: $($issue.ScriptName):$($issue.Line)" -ForegroundColor Yellow
+                Write-Host "  Message: $($issue.Message)" -ForegroundColor White
+                if ($issue.SuggestedCorrections) {
+                Write-Host "  Suggestion: $($issue.SuggestedCorrections[0].Description)" -ForegroundColor Cyan
+                }
             }
-        }
 
-        $allIssues += $results
+            $allIssues += $results
         } else {
-        Write-Host "[+] No issues found" -ForegroundColor Green
+            Write-Host "[+] No issues found" -ForegroundColor Green
         }
     } else {
         Write-Host "[~] Path not found: $($folder.Path)" -ForegroundColor DarkYellow
