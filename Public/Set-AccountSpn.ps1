@@ -13,56 +13,56 @@ function Set-AccountSpn {
     Add, remove, or list SPNs on AD accounts with built-in conflict detection, dry-run capabilities
     and automatic rollback on failure. Provides transactional behaviour to ensure consistent state even if operations fail partway through.
 
-    .PARAMETER SamAccountName
-    The account's sAMAccountName to modify SPNs for.
+        .PARAMETER SamAccountName
+        The account's sAMAccountName to modify SPNs for.
 
-    .PARAMETER Add
-    SPNs to add to the account.
+        .PARAMETER Add
+        SPNs to add to the account.
 
-    .PARAMETER Remove
-    SPNs to remove from the account.
+        .PARAMETER Remove
+        SPNs to remove from the account.
 
-    .PARAMETER List
-    List current SPNs on the account.
+        .PARAMETER List
+        List current SPNs on the account.
 
-    .PARAMETER WhatIfOnly
-    Show operation plan without making changes.
+        .PARAMETER WhatIfOnly
+        Show operation plan without making changes.
 
-    .PARAMETER Domain
-    Domain to target for AD operations.
+        .PARAMETER Domain
+        Domain to target for AD operations.
 
-    .PARAMETER Server
-    Specific domain controller to use.
+        .PARAMETER Server
+        Specific domain controller to use.
 
-    .PARAMETER Credential
-    Alternate credentials for AD operations.
+        .PARAMETER Credential
+        Alternate credentials for AD operations.
 
-    .PARAMETER Force
-    Proceed even if some validations fail.
+        .PARAMETER Force
+        Proceed even if some validations fail.
 
-    .PARAMETER IgnoreConflicts
-    Proceed even if SPN conflicts are detected.
+        .PARAMETER IgnoreConflicts
+        Proceed even if SPN conflicts are detected.
 
-    .PARAMETER JsonSummaryPath
-    Path to write operation summary JSON.
+        .PARAMETER JsonSummaryPath
+        Path to write operation summary JSON.
 
-    .PARAMETER PassThru
-    Return detailed operation results.
+        .PARAMETER PassThru
+        Return detailed operation results.
 
-    .EXAMPLE
-    Set-AccountSpn -SamAccountName svc-web -Add 'HTTP/web.contoso.com', 'HTTP/web' -List
+        .EXAMPLE
+        Set-AccountSpn -SamAccountName svc-web -Add 'HTTP/web.contoso.com', 'HTTP/web' -List
 
-    Adds HTTP SPNs to svc-web and shows the final SPN list.
+        Adds HTTP SPNs to svc-web and shows the final SPN list.
 
-    .EXAMPLE
-    Set-AccountSpn -SamAccountName svc-old -Remove 'HTTP/oldserver.contoso.com' -WhatIfOnly
+        .EXAMPLE
+        Set-AccountSpn -SamAccountName svc-old -Remove 'HTTP/oldserver.contoso.com' -WhatIfOnly
 
-    Shows what would be removed without making changes.
+        Shows what would be removed without making changes.
 
-    .EXAMPLE
-    Set-AccountSpn -SamAccountName svc-app -List
+        .EXAMPLE
+        Set-AccountSpn -SamAccountName svc-app -List
 
-    Lists all current SPNs for svc-app.
+        Lists all current SPNs for svc-app.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
     param(
@@ -227,7 +227,10 @@ function Set-AccountSpn {
                 return $currentSpns
             }
 
-            if ($PSCmdlet.ShouldProcess($SamAccountName, "Modify SPNs (Add: $($actualSpnsToAdd.Count), Remove: $($actualSpnsToRemove.Count))")) {
+            # Bypass confirmation if Force is specified
+            $shouldProceed = $Force -or $PSCmdlet.ShouldProcess($SamAccountName, "Modify SPNs (Add: $($actualSpnsToAdd.Count), Remove: $($actualSpnsToRemove.Count))")
+
+            if ($shouldProceed) {
 
                 # 5. Execute operations with transactional behavior
                 $rollbackNeeded = $false

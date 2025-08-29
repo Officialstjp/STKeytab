@@ -15,87 +15,86 @@ function Reset-AccountPasswordWithKeytab {
     This ensures the keytab matches the account's actual password state without manual coordination.
     Only supports user accounts.
 
-    Uses BigBrother policy for etype selection with AES-only enforcement on the password derivation path.
     Requires explicit risk acknowledgment due to the high-impact nature of password changes.
 
-    .PARAMETER SamAccountName
-    The account's sAMAccountName to reset password for.
+        .PARAMETER SamAccountName
+        The account's sAMAccountName to reset password for.
 
-    .PARAMETER Realm
-    Kerberos realm name. If omitted, derives from the domain.
+        .PARAMETER Realm
+        Kerberos realm name. If omitted, derives from the domain.
 
-    .PARAMETER NewPassword
-    Specific password to set. If omitted, generates a cryptographically strong random password.
+        .PARAMETER NewPassword
+        Specific password to set. If omitted, generates a cryptographically strong random password.
 
-    .PARAMETER Kvno
-    Key version number to use in the keytab. If omitted, predicts the post-reset KVNO.
+        .PARAMETER Kvno
+        Key version number to use in the keytab. If omitted, predicts the post-reset KVNO.
 
-    .PARAMETER Compatibility
-    Salt generation policy: MIT, Heimdal, or Windows (default).
+        .PARAMETER Compatibility
+        Salt generation policy: MIT, Heimdal, or Windows (default).
 
-    .PARAMETER IncludeEtype
-    Encryption types to include. Default: AES256, AES128.
+        .PARAMETER IncludeEtype
+        Encryption types to include. Default: AES256, AES128.
 
-    .PARAMETER ExcludeEtype
-    Encryption types to exclude.
+        .PARAMETER ExcludeEtype
+        Encryption types to exclude.
 
-    .PARAMETER OutputPath
-    Path for the generated keytab file.
+        .PARAMETER OutputPath
+        Path for the generated keytab file.
 
-    .PARAMETER Domain
-    Domain to target for AD operations.
+        .PARAMETER Domain
+        Domain to target for AD operations.
 
-    .PARAMETER Server
-    Specific domain controller to use.
+        .PARAMETER Server
+        Specific domain controller to use.
 
-    .PARAMETER Credential
-    Alternate credentials for AD operations.
+        .PARAMETER Credential
+        Alternate credentials for AD operations.
 
-    .PARAMETER AcknowledgeRisk
-    Required acknowledgment that this operation changes the account password.
+        .PARAMETER AcknowledgeRisk
+        Required acknowledgment that this operation changes the account password.
 
-    .PARAMETER Justification
-    Required justification for audit logging.
+        .PARAMETER Justification
+        Required justification for audit logging.
 
-    .PARAMETER WhatIfOnly
-    Show operation plan without executing changes.
+        .PARAMETER WhatIfOnly
+        Show operation plan without executing changes.
 
-    .PARAMETER UpdateSupportedEtypes
-    Update the account's msDS-SupportedEncryptionTypes attribute.
+        .PARAMETER UpdateSupportedEtypes
+        Update the account's msDS-SupportedEncryptionTypes attribute.
 
-    .PARAMETER AESOnly
-    Restrict to AES encryption types only.
+        .PARAMETER AESOnly
+        Restrict to AES encryption types only.
 
-    .PARAMETER IncludeLegacyRC4
-    Include RC4 encryption type (not applicable for password path - AES only).
+        .PARAMETER IncludeLegacyRC4
+        Include RC4 encryption type (not applicable for password path - AES only).
 
-    .PARAMETER AllowDeadCiphers
-    Allow obsolete encryption types (not applicable for password path - AES only).
+        .PARAMETER AllowDeadCiphers
+        Allow obsolete encryption types (not applicable for password path - AES only).
 
-    .PARAMETER RestrictAcl
-    Apply user-only ACL to output files.
+        .PARAMETER RestrictAcl
+        Apply user-only ACL to output files.
 
-    .PARAMETER Force
-    Overwrite existing output files.
+        .PARAMETER Force
+        Overwrite existing output files.
 
-    .PARAMETER Summary
-    Generate JSON summary file.
+        .PARAMETER Summary
+        Generate JSON summary file.
 
-    .PARAMETER PassThru
-    Return operation result object.
+        .PARAMETER PassThru
+        Return operation result object.
 
-    .PARAMETER FixedTimestampUtc
-    Use fixed timestamp for deterministic output.
+        .PARAMETER FixedTimestampUtc
+        Use fixed timestamp for deterministic output.
 
-    .EXAMPLE
-    Reset-AccountPasswordWithKeytab -SamAccountName svc-web -AcknowledgeRisk -Justification "Quarterly rotation" -OutputPath .\svc-web.keytab
+        .EXAMPLE
+        Reset-AccountPasswordWithKeytab -SamAccountName svc-web -AcknowledgeRisk -Justification "Quarterly rotation" -OutputPath .\svc-web.keytab
 
-    Resets the password for svc-web and generates a corresponding keytab.
+        Resets the password for svc-web and generates a corresponding keytab.
 
-    .EXAMPLE
-    Reset-AccountPasswordWithKeytab -SamAccountName svc-app -WhatIfOnly -AcknowledgeRisk -Justification "Planning rotation"
+        .EXAMPLE
+        Reset-AccountPasswordWithKeytab -SamAccountName svc-app -WhatIfOnly -AcknowledgeRisk -Justification "Planning rotation"
 
-    Shows what would be done without making changes.
+        Shows what would be done without making changes.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact='High')]
     param(
@@ -121,11 +120,7 @@ function Reset-AccountPasswordWithKeytab {
         [pscredential]$Credential,
 
         # Safety & Policy
-        [Parameter(Mandatory)]
         [switch]$AcknowledgeRisk,
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
         [string]$Justification,
 
         [switch]$WhatIfOnly,
@@ -148,6 +143,14 @@ function Reset-AccountPasswordWithKeytab {
 
     begin {
         Get-RequiredModule -Name 'ActiveDirectory'
+
+        # Validate required risk acknowledgment (explicit check for better error messages)
+        if (-not $AcknowledgeRisk) {
+            throw "This operation requires explicit risk acknowledgment. Use -AcknowledgeRisk to proceed."
+        }
+        if (-not $Justification) {
+            throw "This operation requires a justification. Use -Justification to provide one."
+        }
 
         # Compose policy for password path (enforce AES-only)
         try {
