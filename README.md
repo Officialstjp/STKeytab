@@ -26,6 +26,7 @@
 - Canonical comparison: Compare keytabs with timestamp-insensitive and key-byte options
 - JSON interop: Export/import canonical JSON format for debugging and scripting
 
+The idea behind this module is a bridge between Windows AD's strengths and modern Kerberos standards, filling the gap that Microsoft hasn't addressed in 20+ years of ktpass stagnation.
 
 ## Quick start
 
