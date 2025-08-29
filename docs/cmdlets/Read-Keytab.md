@@ -1,6 +1,6 @@
 ﻿---
 external help file: STKeytab-help.xml
-Module Name: Stkeytab
+Module Name: STKeytab
 online version:
 schema: 2.0.0
 ---
@@ -35,7 +35,7 @@ Parse a keytab and return entries.
 Path to the keytab file (Pos 1).
 
 ```yaml
-Type: System.String
+Type: String
 Parameter Sets: (All)
 Aliases: FullName, PSPath, FilePath
 
@@ -50,7 +50,7 @@ Accept wildcard characters: False
 Include raw key bytes in each entry's RawKey property (sensitive).
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -65,7 +65,7 @@ Accept wildcard characters: False
 Max length of the displayed hex string for masked key preview.
 
 ```yaml
-Type: System.Int32
+Type: Int32
 Parameter Sets: (All)
 Aliases:
 
@@ -80,7 +80,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: System.Management.Automation.ActionPreference
+Type: ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

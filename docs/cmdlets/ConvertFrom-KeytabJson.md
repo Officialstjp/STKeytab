@@ -38,7 +38,7 @@ Reconstruct a keytab from JSON, overwriting the destination if present.
 Path to the canonical JSON file.
 
 ```yaml
-Type: System.String
+Type: String
 Parameter Sets: (All)
 Aliases: FullName, FilePath, PSPath
 
@@ -53,7 +53,7 @@ Accept wildcard characters: False
 Output keytab path to write.
 
 ```yaml
-Type: System.String
+Type: String
 Parameter Sets: (All)
 Aliases: OutFile, Out
 
@@ -68,7 +68,7 @@ Accept wildcard characters: False
 Overwrite OutputPath if it exists.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -83,7 +83,7 @@ Accept wildcard characters: False
 Use a fixed timestamp for written entries for deterministic output.
 
 ```yaml
-Type: System.DateTime
+Type: DateTime
 Parameter Sets: (All)
 Aliases:
 
@@ -98,7 +98,7 @@ Accept wildcard characters: False
 Apply a user-only ACL on the output file.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -114,7 +114,7 @@ Shows what would happen if the cmdlet runs.
 The cmdlet is not run.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases: wi
 
@@ -129,7 +129,7 @@ Accept wildcard characters: False
 Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
 
@@ -144,7 +144,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: System.Management.Automation.ActionPreference
+Type: ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

@@ -43,7 +43,7 @@ Output JSON with key material to the pipeline and save to a file.
 Path to the input keytab file.
 
 ```yaml
-Type: System.String
+Type: String
 Parameter Sets: (All)
 Aliases: FullName, FilePath, PSPath
 
@@ -59,7 +59,7 @@ Path to write the resulting JSON.
 If omitted, JSON is written to the pipeline.
 
 ```yaml
-Type: System.String
+Type: String
 Parameter Sets: (All)
 Aliases: OutFile, Out
 
@@ -75,7 +75,7 @@ Include raw key bytes in the JSON.
 Sensitive-avoid in source control.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -90,7 +90,7 @@ Accept wildcard characters: False
 Exclude timestamps from the canonical model.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -106,7 +106,7 @@ Shows what would happen if the cmdlet runs.
 The cmdlet is not run.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases: wi
 
@@ -121,7 +121,7 @@ Accept wildcard characters: False
 Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
 
@@ -136,7 +136,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: System.Management.Automation.ActionPreference
+Type: ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

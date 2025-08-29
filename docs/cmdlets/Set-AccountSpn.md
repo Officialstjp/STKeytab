@@ -1,91 +1,74 @@
-﻿---
+---
 external help file: STKeytab-help.xml
 Module Name: STKeytab
 online version:
 schema: 2.0.0
 ---
 
-# Protect-Keytab
+# Set-AccountSpn
 
 ## SYNOPSIS
-Protect a keytab file at rest using Windows DPAPI.
+Safely manage Service Principal Names (SPNs) for Active Directory accounts.
 
 ## SYNTAX
 
 ```
-Protect-Keytab [-Path] <String> [[-OutputPath] <String>] [-Scope <String>] [-Entropy <String>]
- [-EntropySecure <SecureString>] [-Force] [-DeletePlaintext] [-RestrictAcl]
- [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
+Set-AccountSpn [-SamAccountName] <String> [-Add <String[]>] [-Remove <String[]>] [-List] [-WhatIfOnly]
+ [-Domain <String>] [-Server <String>] [-Credential <PSCredential>] [-Force] [-IgnoreConflicts]
+ [-JsonSummaryPath <String>] [-PassThru] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Uses DPAPI (CurrentUser or LocalMachine scope) to encrypt a keytab file.
-Optional
-additional entropy can be provided.
-Can restrict ACL on the output and delete the
-plaintext original after successful protection.
+Add, remove, or list SPNs on AD accounts with built-in conflict detection, dry-run capabilities
+and automatic rollback on failure.
+Provides transactional behaviour to ensure consistent state even if operations fail partway through.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Protect-Keytab -Path .\user.keytab -OutputPath .\user.keytab.dpapi -Scope CurrentUser -RestrictAcl
-Protect a keytab with DPAPI in the current-user scope and set a restrictive ACL.
+Set-AccountSpn -SamAccountName svc-web -Add 'HTTP/web.contoso.com', 'HTTP/web' -List
 ```
+
+Adds HTTP SPNs to svc-web and shows the final SPN list.
+
+### EXAMPLE 2
+```
+Set-AccountSpn -SamAccountName svc-old -Remove 'HTTP/oldserver.contoso.com' -WhatIfOnly
+```
+
+Shows what would be removed without making changes.
+
+### EXAMPLE 3
+```
+Set-AccountSpn -SamAccountName svc-app -List
+```
+
+Lists all current SPNs for svc-app.
 
 ## PARAMETERS
 
-### -Path
-Path to the plaintext keytab file to protect (Pos 1).
+### -SamAccountName
+The account's sAMAccountName to modify SPNs for.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: In, FullName, FilePath
+Aliases:
 
 Required: True
 Position: 1
 Default value: None
-Accept pipeline input: True (ByPropertyName, ByValue)
-Accept wildcard characters: False
-```
-
-### -OutputPath
-Destination path for the protected file.
-Defaults to \<Path\>.dpapi (Pos 2).
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: Out, Output, OutFile
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: True (ByPropertyName, ByValue)
-Accept wildcard characters: False
-```
-
-### -Scope
-DPAPI scope: CurrentUser (default) or LocalMachine.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: CurrentUser
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Entropy
-Optional additional entropy string to bind to the protection.
+### -Add
+SPNs to add to the account.
 
 ```yaml
-Type: String
+Type: String[]
 Parameter Sets: (All)
 Aliases:
 
@@ -96,11 +79,86 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -EntropySecure
-{{ Fill EntropySecure Description }}
+### -Remove
+SPNs to remove from the account.
 
 ```yaml
-Type: SecureString
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -List
+List current SPNs on the account.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIfOnly
+Show operation plan without making changes.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Domain
+Domain to target for AD operations.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Server
+Specific domain controller to use.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Credential
+Alternate credentials for AD operations.
+
+```yaml
+Type: PSCredential
 Parameter Sets: (All)
 Aliases:
 
@@ -112,7 +170,7 @@ Accept wildcard characters: False
 ```
 
 ### -Force
-Overwrite OutputPath if it exists.
+Proceed even if some validations fail.
 
 ```yaml
 Type: SwitchParameter
@@ -126,8 +184,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -DeletePlaintext
-Remove the original plaintext file after successful protection.
+### -IgnoreConflicts
+Proceed even if SPN conflicts are detected.
 
 ```yaml
 Type: SwitchParameter
@@ -141,8 +199,23 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -RestrictAcl
-Apply a user-only ACL to the output file.
+### -JsonSummaryPath
+Path to write operation summary JSON.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PassThru
+Return detailed operation results.
 
 ```yaml
 Type: SwitchParameter
@@ -207,10 +280,8 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### System.String (file path) or objects with FilePath/FullName properties.
 ## OUTPUTS
 
-### System.String. Returns the OutputPath written.
 ## NOTES
 
 ## RELATED LINKS

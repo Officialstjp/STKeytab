@@ -1,6 +1,6 @@
 ﻿---
 external help file: STKeytab-help.xml
-Module Name: Stkeytab
+Module Name: STKeytab
 online version:
 schema: 2.0.0
 ---
@@ -47,7 +47,7 @@ Perform a structure-only comparison (no key-byte check).
 Path to the baseline (reference) keytab.
 
 ```yaml
-Type: System.String
+Type: String
 Parameter Sets: (All)
 Aliases: FullNameRef, FilePathRef
 
@@ -62,7 +62,7 @@ Accept wildcard characters: False
 Path to the candidate keytab to compare against the reference.
 
 ```yaml
-Type: System.String
+Type: String
 Parameter Sets: (All)
 Aliases: FullNameCand, FilePathCand
 
@@ -77,7 +77,7 @@ Accept wildcard characters: False
 Ignore per-entry timestamps when comparing (useful for reproducible checks).
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -93,7 +93,7 @@ Only compare structure (principal, name type, encryption type, KVNO).
 Do not compare key bytes.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -109,7 +109,7 @@ Include raw key bytes in difference output.
 Sensitive-avoid in shared logs.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -124,7 +124,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: System.Management.Automation.ActionPreference
+Type: ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

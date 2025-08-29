@@ -1,6 +1,6 @@
 ﻿---
 external help file: STKeytab-help.xml
-Module Name: Stkeytab
+Module Name: STKeytab
 online version:
 schema: 2.0.0
 ---
@@ -33,7 +33,7 @@ Returns $true when the keytab parses successfully.
 Path to the keytab file (Pos 1).
 
 ```yaml
-Type: System.String
+Type: String
 Parameter Sets: (All)
 Aliases: FullName, PSPath, FilePath
 
@@ -48,7 +48,7 @@ Accept wildcard characters: False
 Return a detailed object with counts and warnings instead of a boolean.
 
 ```yaml
-Type: System.Management.Automation.SwitchParameter
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -63,7 +63,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: System.Management.Automation.ActionPreference
+Type: ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 
