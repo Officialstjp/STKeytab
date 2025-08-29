@@ -37,7 +37,13 @@ function Get-ADReplAccount {
     if (-not (Get-Module -Name DSInternals)) {
         Import-Module -Name DSInternals -ErrorAction Stop | Out-Null
     }
-    return DSInternals\Get-ADReplAccount -SamAccountName $SamAccountName -Domain $Domain -Server $Server -Credential $Credential -ErrorAction Stop
+    $replParams = @{
+        SamAccountName = $SamAccountName
+    }
+    if ($Domain) { $replParams.Domain = $Domain }
+    if ($Server) { $replParams.Server = $Server }
+    if ($Credential) { $replParams.Credential = $Credential }
+    return DSInternals\Get-ADReplAccount @replParams -ErrorAction Stop
 }
 
 function Resolve-DomainContext {
