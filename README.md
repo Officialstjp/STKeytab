@@ -1,24 +1,5 @@
-## STKeytab
-
-STKeytab is a security-focused PowerShell module that creates and manages MIT Kerberos keytab files (format 0x0502). The module supports two primary workflows:
-
-1. Replication-based extraction: Extract Kerberos keys from Active Directory using DCSync-equivalent permissions via the DSInternals module
-2. Password-based derivation: Generate keytabs from passwords using AES string-to-key (PBKDF2-HMACSHA1) with MIT/Heimdal/Windows salt policies
-
-Key Features
-- Safe defaults: AES-only encryption (AES256, AES128) by default; RC4 requires explicit opt-in
-- Deterministic output: Optional fixed timestamps for byte-identical results across runs
-- Security guardrails: Risk acknowledgment required for sensitive operations (krbtgt, merges)
-- DPAPI protection: Encrypt keytabs at rest with Windows Data Protection API
-- Canonical comparison: Compare keytabs with timestamp-insensitive and key-byte options
-- JSON interop: Export/import canonical JSON format for debugging and scripting
-
-Principal Types Supported
-- User accounts: Standard domain users with UPN-based principals
-- Computer accounts: Machine accounts with HOST/ and service SPNs
-- krbtgt accounts: Domain controller service accounts (high-impact, gated operations)
-
 ## Table of contents
+- Introduction
 - Quick start
 - Commands
 - Documentation (PlatyPS)
@@ -30,6 +11,20 @@ Principal Types Supported
 - Changelog
 - Acceptable Use & Legal
 - License
+
+## Introduction
+
+**STKeytab** is a security-focused PowerShell module that creates and manages MIT Kerberos keytab files (format 0x0502) Active Directory accounts. The module supports two primary workflows:
+
+1. Replication-based extraction: Extract Kerberos keys from Active Directory using DCSync-equivalent permissions via the DSInternals module
+2. Password-based derivation: Generate keytabs from passwords using AES string-to-key (PBKDF2-HMACSHA1) with MIT/Heimdal/Windows salt policies
+
+**Key Features**
+- Safe defaults: AES-only encryption (AES256, AES128) by default; RC4 requires explicit opt-in
+- Deterministic output: Optional fixed timestamps for byte-identical results across runs
+- DPAPI protection: Encrypt keytabs at rest with Windows Data Protection API
+- Canonical comparison: Compare keytabs with timestamp-insensitive and key-byte options
+- JSON interop: Export/import canonical JSON format for debugging and scripting
 
 
 ## Quick start
@@ -54,7 +49,7 @@ Import-Module "$PWD\STKeytab.psd1" -Force
 
 ## Commands
 
-**Core keytab operations:**
+### Core keytab operations:
 - **New-Keytab**: Create keytabs for AD principals via replication with AES-only defaults, RC4 available through explicit policy flags
 
 ```powershell
@@ -81,9 +76,8 @@ New-KeytabFromPassword -Principal 'HTTP/web01.example.com@EXAMPLE.COM' -Realm EX
   -Compatibility Windows -IncludeEtype 18 -OutputPath .\http-web01.keytab -Force
 ```
 
----
 
-**AD lifecycle management:**
+### AD lifecycle management:
 - **Reset-AccountPasswordWithKeytab**: Atomically reset AD account passwords and generate corresponding keytabs with  rollback support
 - **Set-AccountSpn**: Manage service principal names with domain-wide conflict detection and fully transactional operations
 
@@ -95,9 +89,8 @@ Reset-AccountPasswordWithKeytab -SamAccountName svc-web -AcknowledgeRisk -Justif
 Set-AccountSpn -SamAccountName svc-web -Add 'HTTP/web.contoso.com' -Remove 'HTTP/oldweb.contoso.com' -WhatIfOnly
 ```
 
----
 
-**Analysis and manipulation:**
+### Analysis and manipulation:
 - **Read-Keytab, Test-Keytab**: Parse and validate keytabs with keys masked by default for security
 - **Merge-Keytab**: Combine multiple keytabs with intelligent de-duplication and safety guardrails
 - **Compare-Keytab**: Perform canonical diffs with timestamp-insensitive comparison and optional key-byte validation
@@ -112,9 +105,8 @@ Read-Keytab -Path .\web01.keytab
 Test-Keytab -Path .\web01.keytab -Detailed
 ```
 
----
 
-**Security and interoperability:**
+### Security and interoperability:
 - **Protect-Keytab, Unprotect-Keytab**: Apply DPAPI protection for at-rest security with user-restricted ACLs
 - **ConvertTo-/ConvertFrom-KeytabJson**: Export and import using canonical JSON format with secure key handling
 
@@ -139,17 +131,22 @@ This moduke includes comprehensive documentation authored in Markdown and mainta
 - **External help system**: Pre-compiled MAML XML provides 10x faster help loading compared to comment-based alternatives
 - **Automated maintenance**: CI pipeline validates documentation drift on pull requests and automatically updates help on push commits
 
-## Security model
-- **Policy composition**: Public cmdlets compose policies through Include/Exclude/AESOnly/IncludeLegacyRC4/AllowDeadCiphers parameters, with internal orchestration resolving final encryption types from available key material
+---
 
-**Encryption standards:**
-- AES256 and AES128 encryption types enabled by default
-- RC4 support available only through explicit opt-in with centralized policy governance
-- Legacy and obsolete ciphers excluded by default, with override controls for compatibility scenarios
+## Security model
+
+STKeytab implements AES-only defaults and explicit controls for legacy compatibility. The module uses a centralized policy system that composes encryption preferences through parameter combinations.
+
+**Parameter-based policy control:**
+- `-AESOnly`: Enforces AES encryption only, rejecting all legacy cipher requests (default behavior)
+- `-IncludeLegacyRC4`: Adds RC4 support when legacy interoperability is required
+- `-AllowDeadCiphers`: Permits obsolete encryption types for compatibility with older systems
+- `-IncludeEtype` / `-ExcludeEtype`: Fine-grained control over specific encryption types
+- Internal orchestration resolves the final encryption type selection based on available keys and policy settings
 
 **Sensitive operation controls:**
 - `-RevealKeys` flag required for exposing key material, with automatic security warnings to prevent accidental disclosure
-- `-AcknowledgeRisk` and `-Justification` parameters mandatory for high-impact operations like krbtgt key extraction
+- `-AcknowledgeRisk` and `-Justification` parameters mandatory for high-impact operations
 - Comprehensive audit trails with operator attribution and timestamp logging for compliance requirements
 
 **Data protection:**
@@ -157,13 +154,16 @@ This moduke includes comprehensive documentation authored in Markdown and mainta
 - Optional entropy with SecureString support for enhanced protection (LocalMachine scope not portable across systems)
 - Automatic ACL restriction to current user for keytab files when using protection feature
 
+Treat krbtgt keytab creation as a last‑resort, auditable, one-time emergency action.
+
 This module does **not** collect any telemetry or usage data.
+
 
 ## Determinism and reproducibility
 
-STKeytab provides deterministic keytab generation through the `-FixedTimestampUtc` parameter, ensuring byte-identical outputs across different runs and machines when given identical inputs. This approach is valuable for CI/CD pipelines, code review processes, and audit scenarios where reproducible artifacts are essential.
+STKeytab provides deterministic keytab generation through the `-FixedTimestampUtc` parameter, ensuring byte-identical outputs across different runs and machines when given identical inputs.
 
-When using fixed timestamps, the writer applies a stable entry ordering algorithm and uses the specified UTC timestamp consistently throughout the keytab structure. Given identical inputs including keys, KVNOs, encryption types, and SPNs, outputs will be completely reproducible, enabling confident diff-based validation and version control integration.
+When using fixed timestamps, the writer applies a stable entry ordering algorithm and uses the specified UTC timestamp consistently throughout the keytab structure. Given identical inputs including keys, KVNOs, encryption types, and SPNs, outputs will be completely reproducible.
 
 ## Troubleshooting
 
@@ -172,22 +172,11 @@ When using fixed timestamps, the writer applies a stable entry ordering algorith
 - **Permission errors**: Ensure appropriate domain privileges (DCSync) for replication-based extraction and lifecycle management operations
 
 
-## Features & Roadmap
-
-**Standard capabilities shared with other tools:**
-- **Password-based S2K generation**: Similar to ktutil functionality but with AES-only enforcement for enhanced security
-- **Keytab reading and validation**: Comparable to klist -k and ktutil list operations with enhanced security masking
-
-**Capabilities provided by other tools but not yet implemented:**
-- Advanced service discovery and automation workflows
-- Cross-platform toolchain integration and compatibility helpers for mixed Unix/Windows deployments
-
-### Development roadmap
+## Development roadmap
 
 **Next release priorities:**
 - Enhanced interoperability with MIT and Heimdal toolchains for cross-platform integration
 - Service account discovery and management helpers
-
 
 ## CI/CD
 - Docs workflow builds/validates PlatyPS help; auto-commits on push with [skip ci]. See .github/workflows/docs.yml and CI/Build-Docs.ps1.

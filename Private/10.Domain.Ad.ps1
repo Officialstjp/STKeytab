@@ -174,9 +174,9 @@ function Get-KerberosKeyMaterialFromAccount {
 
     $addKeySet = {
         param(
-        $kvnoVal,
-        [hashtable]$etypeMapLocal,
-        $sourceLabel
+            $kvnoVal,
+            [hashtable]$etypeMapLocal,
+            $sourceLabel
         )
 
         if (-not $kvnoVal) { return }
@@ -255,10 +255,6 @@ function Get-KerberosKeyMaterialFromAccount {
     }
 
     if ($keySets.Count -eq 0) {
-        throw "No Kerberos key material extracted for '$SamAccountName'."
-    }
-
-    if ($keySets.Count -eq 0)  {
         throw "No Kerberos key material extracted for '$SamAccountName'."
     }
 
