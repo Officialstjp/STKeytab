@@ -145,7 +145,7 @@ function Package-Module  {
         $manifestPath = Join-Path $RepoRoot 'STKeytab.psd1'
         $manifest = Import-PowerShellDataFile -Path $manifestPath
         $version = $manifest.ModuleVersion
-        $signedSuffix = if ($env:SKIP_SIGNING) { 'Unsigned' } else { 'Signed' }
+        $signedSuffix = if ($env:SKIP_SIGNING -eq $true) { 'Unsigned' } else { 'Signed' }
         $packageName = "STKeytab-v$version-$signedSuffix"
         Write-Log "Creating package: $packageName"
 
