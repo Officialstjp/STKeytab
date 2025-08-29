@@ -1,0 +1,110 @@
+TOPIC
+    about_STKeytab_Determinism
+
+SHORT DESCRIPTION
+    How to produce byte-identical keytabs across runs using fixed timestamps and stable ordering.
+
+LONG DESCRIPTION
+    Determinism in the STKeytab module refers to the ability to produce byte-identical keytab files when given the same inputs across multiple runs, different machines, or different time periods.
+
+    What Makes Output Deterministic
+    Deterministic output requires eliminating all sources of variation:
+
+    - Fixed timestamps: All entries use the same timestamp instead of current time
+    - Stable ordering: Entries are sorted consistently by principal name and encryption type
+    - Consistent encoding: UTF-8 encoding and standardized salt generation
+    - Reproducible key derivation: Password-based paths use fixed iteration counts
+
+    The Role of FixedTimestampUtc
+    The -FixedTimestampUtc parameter is the primary control for deterministic behavior:
+
+    - When specified: All keytab entries receive the provided UTC timestamp
+    - When omitted: Entries use the current system time (non-deterministic)
+    - Format: DateTime object in UTC (e.g., Get-Date '2024-01-01Z')
+    - Scope: Affects both replication-based and password-based keytab generation
+
+    Stable Entry Ordering
+    The module ensures consistent entry ordering regardless of input order:
+
+    1. Entries are sorted by principal name (case-insensitive)
+    2. Within each principal, entries are sorted by encryption type ID
+    3. Within each encryption type, entries are sorted by KVNO (descending)
+
+    This ordering is applied during keytab file generation and is independent of the order in which keys were extracted or provided.
+
+    CI and Code Review Benefits
+    Deterministic keytabs provide several advantages in development workflows:
+
+    - Reproducible builds: CI systems can cache and reuse identical outputs
+    - Meaningful diffs: Changes in source code produce predictable changes in binary differences
+    - Code review: Reviewers can verify that functional changes produce expected binary differences
+    - Testing: Test assertions can compare exact byte sequences instead of structural equivalents
+
+GUIDANCE
+    Use deterministic output in these scenarios:
+
+    Testing and CI (Recommended)
+    Use fixed timestamps for all automated testing to ensure test reproducibility.
+
+    Code Review and Documentation
+    Use fixed timestamps when generating example keytabs for documentation.
+
+    Operational Use (Use Current Time)
+    Omit -FixedTimestampUtc for production keytabs to record actual generation time.
+
+    JSON Export Determinism
+    The ConvertTo-KeytabJson command supports deterministic JSON export:
+
+    - Default behavior: Includes timestamps from keytab entries
+    - -IgnoreTimestamp: Omits timestamp fields for stable comparisons
+    - Stable sorting: JSON objects are consistently ordered regardless of input order
+
+EXAMPLES
+    Example 1: Deterministic Replication-Based Keytab
+
+    PS C:\> New-Keytab -SamAccountName WEB01$ -Domain contoso.com -FixedTimestampUtc (Get-Date '2024-01-01Z') -OutputPath .\deterministic.keytab -Force
+
+    Creates a byte-identical keytab every time it's run with the same inputs.
+
+    Example 2: Deterministic Password-Based Keytab
+
+    PS C:\> $password = ConvertTo-SecureString 'P@ssw0rd!' -AsPlainText -Force
+    PS C:\> New-KeytabFromPassword -SamAccountName user1 -Realm EXAMPLE.COM -Password $password -Kvno 3 -Iterations 4096 -FixedTimestampUtc (Get-Date '2024-01-01Z') -OutputPath .\user1.keytab -Force
+
+    Generates identical output across runs using fixed timestamp and iteration count.
+
+    Example 3: Deterministic JSON Comparison
+
+    PS C:\> ConvertTo-KeytabJson -Path .\keytab1.keytab -IgnoreTimestamp | Out-File comparison1.json
+    PS C:\> ConvertTo-KeytabJson -Path .\keytab2.keytab -IgnoreTimestamp | Out-File comparison2.json
+    PS C:\> Compare-Object (Get-Content comparison1.json) (Get-Content comparison2.json)
+
+    Compares keytab contents without timestamp variations.
+
+NOTE
+    Deterministic output is opt-in via the -FixedTimestampUtc parameter. When this parameter is omitted, keytabs use current system time for operational auditability.
+
+    The timestamp in keytab entries serves as a creation time record and can be useful for troubleshooting and lifecycle management in production environments.
+
+TROUBLESHOOTING NOTE
+    "Keytabs differ despite same inputs": Verify that -FixedTimestampUtc is specified with the same value for all runs.
+
+    "JSON comparison shows timestamp differences": Use -IgnoreTimestamp when exporting JSON for deterministic comparisons.
+
+    "Different KVNO values": KVNO is determined by Active Directory state during replication and may change between runs. Use password-based generation for fully deterministic KVNO control.
+
+SEE ALSO
+    about_STKeytab
+    New-Keytab
+    New-KeytabFromPassword
+    ConvertTo-KeytabJson
+    Compare-Keytab
+
+KEYWORDS
+    Deterministic output
+    Fixed timestamp
+    Reproducible builds
+    Byte-identical
+    CI testing
+    Code review
+    Stable ordering

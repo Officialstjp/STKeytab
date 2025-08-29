@@ -7,7 +7,7 @@ Key Version Number (KVNO) handling, discovery, and multi-version scenarios in ke
 # LONG DESCRIPTION
 Key Version Number (KVNO) is a critical component of Kerberos authentication that tracks the version of cryptographic keys for a principal. The STKeytab module handles KVNO in different ways depending on the generation method and principal type.
 
-## What is KVNO
+## What is KVNO?
 KVNO serves several important purposes in Kerberos:
 
 - Version tracking: Identifies which version of a principal's key is being used
@@ -25,7 +25,7 @@ When extracting keys via Active Directory replication:
 - Automatic detection: No manual KVNO specification required
 - Multi-version support: Can include previous KVNO values for compatibility
 
-### Caller-Specified (New-KeytabFromPassword)  
+### Caller-Specified (New-KeytabFromPassword)
 When generating from passwords:
 
 - Explicit specification: Caller provides KVNO via -Kvno parameter
@@ -39,7 +39,7 @@ The krbtgt account requires special KVNO considerations:
 krbtgt keys may need multiple KVNO values for compatibility:
 
 - Current keys: Active KVNO for new ticket issuance
-- Previous keys: KVNO-1 for validating recently issued tickets  
+- Previous keys: KVNO-1 for validating recently issued tickets
 - Older keys: KVNO-2 for extended compatibility windows
 
 ### Include Flags
@@ -55,7 +55,7 @@ Understanding when and how KVNO changes helps predict authentication behavior:
 - Old KVNO values become invalid for new authentication
 - Existing tickets remain valid until expiration
 
-### Computer Account Password Changes  
+### Computer Account Password Changes
 - Automatic changes: AD changes computer passwords automatically (usually every 30 days)
 - Manual changes: May occur during domain join or administrative actions
 - Service impact: Services using old keytabs will fail authentication
@@ -74,7 +74,7 @@ KVNO mismatches can cause authentication failures and security issues:
 - Race conditions: Password changes during keytab generation
 - Rollback scenarios: Restoring old KVNO values inadvertently
 
-### Mitigation Strategies  
+### Mitigation Strategies
 - Test authentication after keytab deployment
 - Monitor authentication logs for KVNO-related errors
 - Coordinate password changes with keytab updates

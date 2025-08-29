@@ -1,13 +1,22 @@
 ## STKeytab
 
-A security-first PowerShell toolkit for generating and managing MIT keytab files (0x0502)
+STKeytab is a security-focused PowerShell module that creates and manages MIT Kerberos keytab files (format 0x0502). The module supports two primary workflows:
 
-**Capabilities**:
-- **DSInternals-backed extraction**: Password-reset-free keytab export for AD principals, including krbtgt with guarded security flags, using replication-based extraction similar to Impacket and Mimikatz approaches
-- **Password-based S2K**: Generate keytabs from passwords using AES S2K (PBKDF2-HMACSHA1). Supports MIT, Heimdal and Windows salt flavors
-- **DPAPI protection integration**: Native keytab encryption using CurrentUser or LocalMachine scopes with restrictive ACL enforcement built-in
-- **Deterministic output generation**: Reproducible artifacts with canonical JSON export and structured diff capabilities featuring timestamp-insensitive comparison
-- **Advanced KVNO control**: Explicit key version number management for S2K derivation and multi-KVNO emission for krbtgt keys (current, old, older versions) derived generation and atomic AD lifecycle management.
+1. Replication-based extraction: Extract Kerberos keys from Active Directory using DCSync-equivalent permissions via the DSInternals module
+2. Password-based derivation: Generate keytabs from passwords using AES string-to-key (PBKDF2-HMACSHA1) with MIT/Heimdal/Windows salt policies
+
+Key Features
+- Safe defaults: AES-only encryption (AES256, AES128) by default; RC4 requires explicit opt-in
+- Deterministic output: Optional fixed timestamps for byte-identical results across runs
+- Security guardrails: Risk acknowledgment required for sensitive operations (krbtgt, merges)
+- DPAPI protection: Encrypt keytabs at rest with Windows Data Protection API
+- Canonical comparison: Compare keytabs with timestamp-insensitive and key-byte options
+- JSON interop: Export/import canonical JSON format for debugging and scripting
+
+Principal Types Supported
+- User accounts: Standard domain users with UPN-based principals
+- Computer accounts: Machine accounts with HOST/ and service SPNs
+- krbtgt accounts: Domain controller service accounts (high-impact, gated operations)
 
 ## Table of contents
 - Quick start
