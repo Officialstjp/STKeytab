@@ -141,7 +141,7 @@ try {
                 # Stage only if there are changes
                 $status = & git status --porcelain
                 if ($status) {
-                    & git add --all -- docs $Locale 2>$null
+                    & git add docs $Locale 2>$null
                     & git config user.name  "s-githa"
                     & git config user.email "s-githa@local.local"
                     & git commit -m $CommitMessage
