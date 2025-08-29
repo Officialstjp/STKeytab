@@ -33,7 +33,13 @@ try { Get-ChildItem -Path $TestOutDir -File | Remove-Item -Force } catch {
 function global:New-MockAccount {
     param(
         [int]$Kvno = 7,
-        [hashtable]$Etypes = @{ 'AES256_CTS_HMAC_SHA1_96' = (16..47); 'AES128_CTS_HMAC_SHA1_96' = (1..16); 'ARCFOUR_HMAC' = (50..65) }
+        [hashtable]$Etypes = @{ 'AES256_CTS_HMAC_SHA1_96' = (16..47) # 18
+                                'AES128_CTS_HMAC_SHA1_96' = (1..16) # 17
+                                'ARCFOUR_HMAC' = (50..65) # 23
+                                'DSA_SHA1_CMS' = (30..45)  # 9
+                                10 = (46..49)
+                                11 = (50..65)
+                                12 = (66..79) }
     )
     $keys = @()
     foreach ($k in $Etypes.GetEnumerator()) {
@@ -170,6 +176,17 @@ Describe 'Encryption type filtering' {
             if (Test-Path $json) { Remove-Item $json -Force }
         }
     }
+    It 'includes dead Ciphers if requested' {
+        $out = Join-Path $global:TestOutDir ("ktest_dead_ciphers.keytab")
+        try {
+            $obj = New-Keytab -SuppressWarnings -SamAccountName 'WEB01$' -IncludeEtype @(9, 10, 11, 12, 17) -Type Computer -Domain contoso.com -Server dc01.contoso.com -OutputPath $out -Force -AllowDeadCiphers -PassThru -Confirm:$false
+            $obj.Etypes | Should -Be @(9, 10, 11, 12, 17)
+        } finally {
+            if (Test-Path $out) { Remove-Item $out -Force }
+            $json = [IO.Path]::ChangeExtension($out,'json')
+            if (Test-Path $json) { Remove-Item $json -Force }
+        }
+    }
 }
 
 Describe 'Advanced options' {
@@ -187,74 +204,6 @@ Describe 'Advanced options' {
         Test-Path $out | Should -BeFalse
     }
 
-    It 'creates JSON summary when requested' {
-        $out = Join-Path $global:TestOutDir ("ktest_summary.keytab")
-        try {
-            New-Keytab -SuppressWarnings -SamAccountName 'WEB01$' -Type Computer -Domain contoso.com -Server dc01.contoso.com -OutputPath $out -Force -Summary -Confirm:$false | Out-Null
-            $json = [IO.Path]::ChangeExtension($out,'json')
-            Test-Path $json | Should -BeTrue
-            $content = Get-Content $json | ConvertFrom-Json
-            $content.Principals | Should -Not -BeNullOrEmpty
-        } finally {
-            if (Test-Path $out) { Remove-Item $out -Force }
-            $json = [IO.Path]::ChangeExtension($out,'json')
-            if (Test-Path $json) { Remove-Item $json -Force }
-        }
-    }
-}
-
-Describe 'Etype filtering' {
-    BeforeEach {
-    Mock Get-RequiredModule { } -ModuleName STKeytab
-        Mock Get-ADComputer { [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 } } -ModuleName STKeytab
-        Mock Get-ADReplAccount {
-            New-MockAccount -Etypes @{ 'AES256_CTS_HMAC_SHA1_96' = (1..32); 'AES128_CTS_HMAC_SHA1_96' = (1..16); 'ARCFOUR_HMAC' = (1..16) }
-        } -ModuleName STKeytab
-    }
-    It 'includes only requested etypes via -IncludeEtype' {
-        $out = Join-Path $global:TestOutDir ("ktest_inc.keytab")
-        try {
-            $obj = New-Keytab -SuppressWarnings -SamAccountName 'WEB01$' -Type Computer -Domain contoso.com -Server dc01.contoso.com -OutputPath $out -Force -IncludeEtype 18 -PassThru -Confirm:$false
-            $obj.Etypes | Should -Be @(18)
-        } finally {
-            if (Test-Path $out) { Remove-Item $out -Force }
-            $json = [IO.Path]::ChangeExtension($out,'json')
-            if (Test-Path $json) { Remove-Item $json -Force }
-        }
-    }
-    It 'excludes specified etypes via -ExcludeEtype' {
-        $out = Join-Path $global:TestOutDir ("ktest_exc.keytab")
-        try {
-            $obj = New-Keytab -SuppressWarnings -SamAccountName 'WEB01$' -Type Computer -Domain contoso.com -Server dc01.contoso.com -OutputPath $out -Force -ExcludeEtype 18 -PassThru -Confirm:$false
-            $obj.Etypes | Should -Not -Contain 18
-        } finally {
-            if (Test-Path $out) { Remove-Item $out -Force }
-            $json = [IO.Path]::ChangeExtension($out,'json')
-            if (Test-Path $json) { Remove-Item $json -Force }
-        }
-    }
-    It 'warns for missing requested etypes' {
-        $out = Join-Path $global:TestOutDir ("ktest_missing.keytab")
-        try {
-            $warnings = @()
-            New-Keytab -SuppressWarnings -SamAccountName 'WEB01$' -Type Computer -Domain contoso.com -Server dc01.contoso.com -OutputPath $out -Force -IncludeEtype 18,999 -WarningVariable warnings -WarningAction Continue -Confirm:$false | Out-Null
-            (($warnings -join ' ') -match 'Requested Etypes not present') | Should -BeTrue
-        } finally {
-            if (Test-Path $out) { Remove-Item $out -Force }
-            $json = [IO.Path]::ChangeExtension($out,'json')
-            if (Test-Path $json) { Remove-Item $json -Force }
-        }
-    }
-}
-
-Describe 'Kvno & summary' {
-    BeforeEach {
-    Mock Get-RequiredModule { } -ModuleName STKeytab
-        Mock Get-ADComputer {
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 4 }
-        } -ModuleName STKeytab
-        Mock Get-ADReplAccount { New-MockAccount -Kvno 4 } -ModuleName STKeytab
-    }
     It 'writes JSON summary including kvno when requested' {
         $out = Join-Path $global:TestOutDir ("ktest_kvno.keytab")
         try {
@@ -262,29 +211,8 @@ Describe 'Kvno & summary' {
             $jsonPath = [IO.Path]::ChangeExtension($out,'json')
             Test-Path $jsonPath | Should -BeTrue
             $j = Get-Content -Raw -LiteralPath $jsonPath | ConvertFrom-Json
-            $j.Kvnos | Should -Contain 4
+            $j.Kvnos | Should -Contain 7
             $j.PrincipalCount | Should -BeGreaterThan 0
-        } finally {
-            if (Test-Path $out) { Remove-Item $out -Force }
-            $json = [IO.Path]::ChangeExtension($out,'json')
-            if (Test-Path $json) { Remove-Item $json -Force }
-        }
-    }
-}
-
-Describe 'Force & WhatIf behavior' {
-    BeforeEach {
-    Mock Get-RequiredModule { } -ModuleName STKeytab
-        Mock Get-ADComputer {
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
-        } -ModuleName STKeytab
-        Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
-    }
-    It 'does not create file when -WhatIf used' {
-        $out = Join-Path $global:TestOutDir ("ktest_whatif2.keytab")
-        try {
-            New-Keytab -SuppressWarnings -SamAccountName 'WEB01$' -Type Computer -Domain contoso.com -Server dc01.contoso.com -OutputPath $out -WhatIf -Confirm:$false | Out-Null
-            Test-Path $out | Should -BeFalse
         } finally {
             if (Test-Path $out) { Remove-Item $out -Force }
             $json = [IO.Path]::ChangeExtension($out,'json')
@@ -301,16 +229,6 @@ Describe 'Force & WhatIf behavior' {
             $json = [IO.Path]::ChangeExtension($out,'json')
             if (Test-Path $json) { Remove-Item $json -Force }
         }
-    }
-}
-
-Describe 'PassThru object contract' {
-    BeforeEach {
-    Mock Get-RequiredModule { } -ModuleName STKeytab
-        Mock Get-ADComputer {
-            [pscustomobject]@{ servicePrincipalName = @('host/web01.contoso.com'); 'msDS-KeyVersionNumber' = 7 }
-        } -ModuleName STKeytab
-        Mock Get-ADReplAccount { New-MockAccount } -ModuleName STKeytab
     }
     It 'returns expected PassThru members' {
         $out = Join-Path $global:TestOutDir ("ktest_passthru.keytab")
