@@ -94,18 +94,12 @@ Describe 'Reset-AccountPasswordWithKeytab' {
             { Reset-AccountPasswordWithKeytab -SamAccountName 'svc-test' -IncludeLegacyRC4 -AcknowledgeRisk -Justification 'Test' -WhatIfOnly } | Should -Throw '*AES*'
         }
 
-        It 'requires risk acknowledgment' {
-            # Test that AcknowledgeRisk is marked as mandatory by checking parameter attributes
-            $param = (Get-Command Reset-AccountPasswordWithKeytab).Parameters['AcknowledgeRisk']
-            $mandatoryAttr = $param.Attributes | Where-Object { $_ -is [System.Management.Automation.ParameterAttribute] }
-            $mandatoryAttr.Mandatory | Should -Contain $true
+        It 'throws when no risk acknowledgment is provided' {
+            { Reset-AccountPasswordWithKeytab -SamAccountName 'svc-test' -Justification 'Test' -WhatIfOnly } | Should -Throw '*risk acknowledgment*'
         }
 
-        It 'requires justification' {
-            # Test that Justification is marked as mandatory by checking parameter attributes
-            $param = (Get-Command Reset-AccountPasswordWithKeytab).Parameters['Justification']
-            $mandatoryAttr = $param.Attributes | Where-Object { $_ -is [System.Management.Automation.ParameterAttribute] }
-            $mandatoryAttr.Mandatory | Should -Contain $true
+        It 'throws when no justification is provided' {
+            { Reset-AccountPasswordWithKeytab -SamAccountName 'svc-test' -AcknowledgeRisk -WhatIfOnly } | Should -Throw '*justification*'
         }
 
         It 'calls AD cmdlets in correct order' {

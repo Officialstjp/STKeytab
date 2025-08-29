@@ -143,6 +143,7 @@ function Reset-AccountPasswordWithKeytab {
 
     begin {
         Get-RequiredModule -Name 'ActiveDirectory'
+        $ErrorActionPreference = 'Stop'
 
         # Validate required risk acknowledgment (explicit check for better error messages)
         if (-not $AcknowledgeRisk) {
