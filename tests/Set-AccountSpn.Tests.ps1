@@ -32,6 +32,8 @@ Describe 'Set-AccountSpn' {
         It 'detects SPN conflicts' {
             Mock Get-ADUser {
                 param($Identity, $Filter, $Properties)
+                # Suppress unused parameter warnings for mock parameters
+                $null = $Identity, $Properties
                 if ($Filter) {
                     # Conflict search - return an account that has the conflicting SPN
                     @([pscustomobject]@{

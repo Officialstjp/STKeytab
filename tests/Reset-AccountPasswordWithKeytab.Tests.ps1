@@ -14,6 +14,8 @@ Describe 'Reset-AccountPasswordWithKeytab' {
             Mock Resolve-DomainContext { 'test.com' }
             Mock Get-PolicyIntent {
                 param($IncludeEtype, $ExcludeEtype, $AESOnly, $IncludeLegacyRC4, $AllowDeadCiphers, $PathKind)
+                # Suppress unused parameter warnings for mock parameters
+                $null = $IncludeEtype, $ExcludeEtype, $AESOnly, $AllowDeadCiphers
                 $includeIds = @(17,18)  # Default AES
                 if ($IncludeLegacyRC4) {
                     $includeIds += 23  # Add RC4
@@ -48,6 +50,8 @@ Describe 'Reset-AccountPasswordWithKeytab' {
             }
             Mock Resolve-Path {
                 param($Path)
+                # Suppress unused parameter warning for mock parameter
+                $null = $Path
                 [pscustomobject]@{ Path = 'C:\temp' }
             }
             Mock Get-ADUser {
@@ -62,6 +66,8 @@ Describe 'Reset-AccountPasswordWithKeytab' {
             Mock Set-ADObject { }
             Mock New-KeytabFromPassword {
                 param($SamAccountName, $Password, $Realm, $Kvno, $OutputPath, $SuppressWarnings, $IncludeEtype, $ExcludeEtype, $FixedTimestampUtc)
+                # Suppress unused parameter warnings for mock parameters
+                $null = $Password, $Realm, $Kvno, $SuppressWarnings, $IncludeEtype, $ExcludeEtype, $FixedTimestampUtc
                 [pscustomobject]@{
                     SamAccountName = $SamAccountName
                     OutputPath = $OutputPath
