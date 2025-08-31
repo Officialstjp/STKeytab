@@ -138,7 +138,7 @@ function Write-SecurityWarning {
     )
 
     if ($Suppress -or ($env:STCRYPT_SUPPRESS_SECURITY_WARNING -eq '1')) {
-        return ""
+        return
     }
 
     # Normalize internal width (content width inside borders)
@@ -179,8 +179,6 @@ function Write-SecurityWarning {
     } else {
         Write-Host $bannerText
     }
-
-    return $bannerText
 }
 
 #endregion
