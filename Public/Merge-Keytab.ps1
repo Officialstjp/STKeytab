@@ -49,8 +49,7 @@ function Merge-Keytab {
         [string]$OutputPath,
 
         [switch]$Force,
-        [switch]$RestrictAcl,
-        [switch]$AcknowledgeRisk
+        [switch]$RestrictAcl
     )
     begin {
         $inAbs = $InputPaths | ForEach-Object { Resolve-PathUniversal -Path $_ -Purpose Input }
@@ -69,6 +68,10 @@ function Merge-Keytab {
     }
     process {
         if ($PSCmdlet.ShouldProcess("Merging keytabs: $($InputPaths -join ', ')")) {
+            # Honor -Force for overwriting destination
+            if ((Test-Path -LiteralPath $out) -and -not $Force) {
+                throw "Output already exists: '$out'. Use -Force to overwrite."
+            }
             foreach ($p in $InputPaths) {
                 $parsed = Read-Keytab -Path $p -RevealKeys
                 foreach ($entry in $parsed) {

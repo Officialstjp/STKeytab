@@ -13,7 +13,7 @@ Decrypt a DPAPI-protected keytab file.
 ## SYNTAX
 
 ```
-Unprotect-Keytab [-Path] <String> [[-OutputPath] <String>] [-Scope <String>] [-Entropy <String>]
+Unprotect-Keytab [-InputPath] <String> [[-OutputPath] <String>] [-Scope <String>] [-Entropy <String>]
  [-EntropySecure <SecureString>] [-Force] [-RestrictAcl] [-ProgressAction <ActionPreference>] [-WhatIf]
  [-Confirm] [<CommonParameters>]
 ```
@@ -34,13 +34,13 @@ Decrypt a DPAPI-protected keytab into a plaintext keytab.
 
 ## PARAMETERS
 
-### -Path
-Path to the DPAPI-protected input file (Pos 1).
+### -InputPath
+{{ Fill InputPath Description }}
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
-Aliases: In, FullName, FilePath
+Aliases: Path, In, FullName, FilePath
 
 Required: True
 Position: 1
@@ -54,7 +54,7 @@ Destination for the decrypted keytab.
 Defaults to removing .dpapi extension (Pos 2).
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases: Out, Output, OutFile
 
@@ -69,7 +69,7 @@ Accept wildcard characters: False
 DPAPI scope used for decryption: CurrentUser (default) or LocalMachine.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -84,7 +84,7 @@ Accept wildcard characters: False
 Additional entropy string that was used during protection (if any).
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -99,7 +99,7 @@ Accept wildcard characters: False
 {{ Fill EntropySecure Description }}
 
 ```yaml
-Type: SecureString
+Type: System.Security.SecureString
 Parameter Sets: (All)
 Aliases:
 
@@ -114,7 +114,7 @@ Accept wildcard characters: False
 Overwrite OutputPath if it exists.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -129,7 +129,7 @@ Accept wildcard characters: False
 Apply a user-only ACL to the output file.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -145,7 +145,7 @@ Shows what would happen if the cmdlet runs.
 The cmdlet is not run.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: wi
 
@@ -160,7 +160,7 @@ Accept wildcard characters: False
 Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
 
@@ -175,7 +175,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: ActionPreference
+Type: System.Management.Automation.ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

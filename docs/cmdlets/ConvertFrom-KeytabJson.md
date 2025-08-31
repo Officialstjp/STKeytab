@@ -13,7 +13,7 @@ Convert canonical JSON back into a keytab file (requires key bytes).
 ## SYNTAX
 
 ```
-ConvertFrom-KeytabJson [-JsonPath] <String> [-OutputPath <String>] [-Force] [-FixedTimestampUtc <DateTime>]
+ConvertFrom-KeytabJson [-JsonPath] <String> [[-OutputPath] <String>] [-Force] [-FixedTimestampUtc <DateTime>]
  [-RestrictAcl] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
@@ -38,7 +38,7 @@ Reconstruct a keytab from JSON, overwriting the destination if present.
 Path to the canonical JSON file.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases: FullName, FilePath, PSPath
 
@@ -53,14 +53,14 @@ Accept wildcard characters: False
 Output keytab path to write.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases: OutFile, Out
 
 Required: False
-Position: Named
+Position: 2
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName, ByValue)
 Accept wildcard characters: False
 ```
 
@@ -68,7 +68,7 @@ Accept wildcard characters: False
 Overwrite OutputPath if it exists.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -83,7 +83,7 @@ Accept wildcard characters: False
 Use a fixed timestamp for written entries for deterministic output.
 
 ```yaml
-Type: DateTime
+Type: System.DateTime
 Parameter Sets: (All)
 Aliases:
 
@@ -98,7 +98,7 @@ Accept wildcard characters: False
 Apply a user-only ACL on the output file.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -114,7 +114,7 @@ Shows what would happen if the cmdlet runs.
 The cmdlet is not run.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: wi
 
@@ -129,7 +129,7 @@ Accept wildcard characters: False
 Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
 
@@ -144,7 +144,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: ActionPreference
+Type: System.Management.Automation.ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

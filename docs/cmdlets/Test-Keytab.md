@@ -33,7 +33,7 @@ Returns $true when the keytab parses successfully.
 Path to the keytab file (Pos 1).
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases: FullName, PSPath, FilePath
 
@@ -48,7 +48,7 @@ Accept wildcard characters: False
 Return a detailed object with counts and warnings instead of a boolean.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -63,7 +63,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: ActionPreference
+Type: System.Management.Automation.ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

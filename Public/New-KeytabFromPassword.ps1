@@ -16,73 +16,73 @@ function New-KeytabFromPassword {
     replication; the caller controls KVNO. Ensure KVNO matches the account’s actual key version when using
     these keytabs with AD.
 
-        .PARAMETER Realm
-        Kerberos realm (usually the AD domain in uppercase).
+    .PARAMETER Realm
+    Kerberos realm (usually the AD domain in uppercase).
 
-        .PARAMETER SamAccountName
-        Account name when deriving a user or computer principal (use -Principal for service names).
+    .PARAMETER SamAccountName
+    Account name when deriving a user or computer principal (use -Principal for service names).
 
-        .PARAMETER Principal
-        Full principal (e.g., http/web01.contoso.com@CONTOSO.COM) for service principals.
+    .PARAMETER Principal
+    Full principal (e.g., http/web01.contoso.com@CONTOSO.COM) for service principals.
 
-        .PARAMETER Password
-        SecureString password to derive keys from. Alternatively use -Credential.
+    .PARAMETER Password
+    SecureString password to derive keys from. Alternatively use -Credential.
 
-        .PARAMETER Credential
-        PSCredential; the password part is used if -Password not provided.
+    .PARAMETER Credential
+    PSCredential; the password part is used if -Password not provided.
 
-        .PARAMETER Compatibility
-        Salt policy for string-to-key: MIT, Heimdal, or Windows.
+    .PARAMETER Compatibility
+    Salt policy for string-to-key: MIT, Heimdal, or Windows.
 
-        .PARAMETER IncludeEtype
-        Encryption types to include. Defaults to AES-256 and AES-128 (18,17).
+    .PARAMETER IncludeEtype
+    Encryption types to include. Defaults to AES-256 and AES-128 (18,17).
 
-        .PARAMETER ExcludeEtype
-        Encryption types to exclude from selection.
+    .PARAMETER ExcludeEtype
+    Encryption types to exclude from selection.
 
-        .PARAMETER IncludeLegacyRC4
-        Includes the RC4 encryption type (23).
+    .PARAMETER IncludeLegacyRC4
+    Includes the RC4 encryption type (23).
 
-        .PARAMETER OutputPath
-        Path to write the generated keytab.
+    .PARAMETER OutputPath
+    Path to write the generated keytab.
 
-        .PARAMETER Kvno
-        Key Version Number to stamp into entries (default 1). Ensure this matches the account’s actual KVNO.
+    .PARAMETER Kvno
+    Key Version Number to stamp into entries (default 1). Ensure this matches the account’s actual KVNO.
 
-        .PARAMETER Iterations
-        PBKDF2 iteration count (default 4096).
+    .PARAMETER Iterations
+    PBKDF2 iteration count (default 4096).
 
-        .PARAMETER RestrictAcl
-        Apply a user-only ACL on outputs.
+    .PARAMETER RestrictAcl
+    Apply a user-only ACL on outputs.
 
-        .PARAMETER Force
-        Overwrite OutputPath if it exists.
+    .PARAMETER Force
+    Overwrite OutputPath if it exists.
 
-        .PARAMETER Summary
-        Generate a JSON summary file.
+    .PARAMETER Summary
+    Generate a JSON summary file.
 
-        .PARAMETER SummaryPath
-        Path to write a JSON summary; defaults next to OutputPath when -Summary or -PassThru is specified.
+    .PARAMETER SummaryPath
+    Path to write a JSON summary; defaults next to OutputPath when -Summary or -PassThru is specified.
 
-        .PARAMETER PassThru
-        Return a summary object in addition to writing files.
+    .PARAMETER PassThru
+    Return a summary object in addition to writing files.
 
-        .PARAMETER FixedTimestampUtc
-        Use a fixed timestamp for deterministic output. Determinism is opt-in and not auto-populated.
+    .PARAMETER FixedTimestampUtc
+    Use a fixed timestamp for deterministic output. Determinism is opt-in and not auto-populated.
 
-        .INPUTS
-        None. Parameters are bound by name.
+    .INPUTS
+    None. Parameters are bound by name.
 
-        .OUTPUTS
-        System.String (OutputPath) or summary object when -PassThru.
+    .OUTPUTS
+    System.String (OutputPath) or summary object when -PassThru.
 
-        .EXAMPLE
-        New-KeytabFromPassword -Realm CONTOSO.COM -SamAccountName user1 -Password (Read-Host -AsSecureString) -OutputPath .\user1.keytab
-        Generate a user keytab from a password with default AES types.
+    .EXAMPLE
+    New-KeytabFromPassword -Realm CONTOSO.COM -SamAccountName user1 -Password (Read-Host -AsSecureString) -OutputPath .\user1.keytab
+    Generate a user keytab from a password with default AES types.
 
-        .EXAMPLE
-        New-KeytabFromPassword -Realm CONTOSO.COM -Principal http/web01.contoso.com@CONTOSO.COM -Credential (Get-Credential) -IncludeEtype 18 -Kvno 3 -OutputPath .\http.keytab
-        Generate a service keytab with AES-256 only and KVNO 3.
+    .EXAMPLE
+    New-KeytabFromPassword -Realm CONTOSO.COM -Principal http/web01.contoso.com@CONTOSO.COM -Credential (Get-Credential) -IncludeEtype 18 -Kvno 3 -OutputPath .\http.keytab
+    Generate a service keytab with AES-256 only and KVNO 3.
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'User', ConfirmImpact='Medium')]
     param(

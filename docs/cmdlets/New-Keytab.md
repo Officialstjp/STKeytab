@@ -13,13 +13,12 @@ Create a keytab for an AD user, computer, or krbtgt using replication-safe extra
 ## SYNTAX
 
 ```
-New-Keytab [-SamAccountName] <String> [-Type <String>] [[-Domain] <String>] [[-IncludeEtype] <Object[]>]
+New-Keytab [-SamAccountName] <String> [[-Type] <String>] [[-Domain] <String>] [[-IncludeEtype] <Object[]>]
  [[-ExcludeEtype] <Object[]>] [[-OutputPath] <String>] [[-SummaryPath] <String>] [[-Server] <String>]
  [[-Justification] <String>] [[-Credential] <PSCredential>] [[-EnvFile] <String>] [-RestrictAcl] [-Force]
- [-PassThru] [-Summary] [-IncludeOldKvno] [-IncludeOlderKvno] [-AcknowledgeRisk] [-VerboseDiagnostics]
- [-SuppressWarnings] [-FixedTimestampUtc <DateTime>] [-IncludeShortHost] [-AdditionalSpn <String[]>]
- [-IncludeLegacyRC4] [-AESOnly] [-AllowDeadCiphers] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
- [<CommonParameters>]
+ [-PassThru] [-Summary] [-AcknowledgeRisk] [-VerboseDiagnostics] [-SuppressWarnings]
+ [[-FixedTimestampUtc] <DateTime>] [-IncludeShortHost] [[-AdditionalSpn] <String[]>] [-IncludeLegacyRC4]
+ [-AESOnly] [-AllowDeadCiphers] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -49,7 +48,7 @@ Create a deterministic user keytab with AES types only.
 The account's sAMAccountName (user, computer$, or krbtgt) (Pos 1).
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -65,12 +64,12 @@ Principal type.
 Auto infers from name; User, Computer, or Krbtgt can be forced.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
+Position: 2
 Default value: Auto
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -81,12 +80,12 @@ Domain NetBIOS or FQDN.
 When omitted, attempts discovery (Pos 2).
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 2
+Position: 3
 Default value: None
 Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
@@ -97,12 +96,12 @@ Encryption type IDs to include.
 Default: 18,17,23 (AES-256, AES-128, RC4 opt-in) (Pos 3).
 
 ```yaml
-Type: Object[]
+Type: System.Object[]
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 3
+Position: 4
 Default value: @(18,17,23)
 Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
@@ -113,22 +112,7 @@ Encryption type IDs to exclude.
 (Pos 4).
 
 ```yaml
-Type: Object[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: True (ByPropertyName)
-Accept wildcard characters: False
-```
-
-### -OutputPath
-Path to write the keytab file (Pos 5).
-
-```yaml
-Type: String
+Type: System.Object[]
 Parameter Sets: (All)
 Aliases:
 
@@ -139,16 +123,31 @@ Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
+### -OutputPath
+Path to write the keytab file (Pos 5).
+
+```yaml
+Type: System.String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 6
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
 ### -SummaryPath
 {{ Fill SummaryPath Description }}
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases: JsonSummaryPath
 
 Required: False
-Position: 6
+Position: 7
 Default value: None
 Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
@@ -158,22 +157,7 @@ Accept wildcard characters: False
 Domain Controller to target for replication (optional) (Pos 7).
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 7
-Default value: None
-Accept pipeline input: True (ByPropertyName)
-Accept wildcard characters: False
-```
-
-### -Justification
-Free-text justification string for auditing high-risk operations (Pos 8).
-
-```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -184,11 +168,11 @@ Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
-### -Credential
-Alternate credentials to access AD/replication (Pos 9).
+### -Justification
+Free-text justification string for auditing high-risk operations (Pos 8).
 
 ```yaml
-Type: PSCredential
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -199,11 +183,11 @@ Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
-### -EnvFile
-Optional .env file to load credentials from (Pos 10).
+### -Credential
+Alternate credentials to access AD/replication (Pos 9).
 
 ```yaml
-Type: String
+Type: System.Management.Automation.PSCredential
 Parameter Sets: (All)
 Aliases:
 
@@ -214,11 +198,26 @@ Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
+### -EnvFile
+Optional .env file to load credentials from (Pos 10).
+
+```yaml
+Type: System.String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 11
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
 ### -RestrictAcl
 Apply a user-only ACL to outputs.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -233,7 +232,7 @@ Accept wildcard characters: False
 Overwrite existing OutputPath.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -248,7 +247,7 @@ Accept wildcard characters: False
 Return a small object summary in addition to writing files.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -263,37 +262,7 @@ Accept wildcard characters: False
 Write a JSON summary file.
 
 ```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -IncludeOldKvno
-Include previous KVNO keys when available.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -IncludeOlderKvno
-Include older KVNO keys (krbtgt scenarios).
-
-```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -308,7 +277,7 @@ Accept wildcard characters: False
 Required for krbtgt extraction.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -323,7 +292,7 @@ Accept wildcard characters: False
 Emit additional diagnostics during extraction.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -338,7 +307,7 @@ Accept wildcard characters: False
 Suppress risk warnings.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -353,12 +322,12 @@ Accept wildcard characters: False
 Use a fixed timestamp for deterministic output.
 
 ```yaml
-Type: DateTime
+Type: System.DateTime
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
+Position: 12
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -368,7 +337,7 @@ Accept wildcard characters: False
 For computer accounts, include HOST/shortname SPN.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -383,12 +352,12 @@ Accept wildcard characters: False
 Additional SPNs (service/host) to include for computer accounts.
 
 ```yaml
-Type: String[]
+Type: System.String[]
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
+Position: 13
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -398,7 +367,7 @@ Accept wildcard characters: False
 Includes the RC4 encryption type (23).
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -413,7 +382,7 @@ Accept wildcard characters: False
 {{ Fill AESOnly Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -428,7 +397,7 @@ Accept wildcard characters: False
 {{ Fill AllowDeadCiphers Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -444,7 +413,7 @@ Shows what would happen if the cmdlet runs.
 The cmdlet is not run.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: wi
 
@@ -459,7 +428,7 @@ Accept wildcard characters: False
 Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
 
@@ -474,7 +443,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: ActionPreference
+Type: System.Management.Automation.ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

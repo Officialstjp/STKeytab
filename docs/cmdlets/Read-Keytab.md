@@ -35,7 +35,7 @@ Parse a keytab and return entries.
 Path to the keytab file (Pos 1).
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases: FullName, PSPath, FilePath
 
@@ -50,7 +50,7 @@ Accept wildcard characters: False
 Include raw key bytes in each entry's RawKey property (sensitive).
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -65,7 +65,7 @@ Accept wildcard characters: False
 Max length of the displayed hex string for masked key preview.
 
 ```yaml
-Type: Int32
+Type: System.Int32
 Parameter Sets: (All)
 Aliases:
 
@@ -80,7 +80,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: ActionPreference
+Type: System.Management.Automation.ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

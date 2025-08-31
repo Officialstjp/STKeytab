@@ -13,7 +13,7 @@ Merge multiple keytabs into a single file with de-duplication and safety checks.
 ## SYNTAX
 
 ```
-Merge-Keytab [[-InputPaths] <String[]>] [[-OutputPath] <String>] [-Force] [-RestrictAcl] [-AcknowledgeRisk]
+Merge-Keytab [[-InputPaths] <String[]>] [[-OutputPath] <String>] [-Force] [-RestrictAcl]
  [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
@@ -37,7 +37,7 @@ Merge two keytabs into a single file, overwriting the destination if present.
 One or more paths to input keytabs to merge.
 
 ```yaml
-Type: String[]
+Type: System.String[]
 Parameter Sets: (All)
 Aliases: Input, In
 
@@ -52,7 +52,7 @@ Accept wildcard characters: False
 Destination path of the merged keytab.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases: Output, Out
 
@@ -67,7 +67,7 @@ Accept wildcard characters: False
 Overwrite OutputPath if it exists.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -82,22 +82,7 @@ Accept wildcard characters: False
 Apply a user-only ACL on the merged output file.
 
 ```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -AcknowledgeRisk
-Required to proceed when krbtgt entries are detected in inputs.
-
-```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -113,7 +98,7 @@ Shows what would happen if the cmdlet runs.
 The cmdlet is not run.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: wi
 
@@ -128,7 +113,7 @@ Accept wildcard characters: False
 Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
 
@@ -143,7 +128,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: ActionPreference
+Type: System.Management.Automation.ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

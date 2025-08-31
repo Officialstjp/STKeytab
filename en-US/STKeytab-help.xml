@@ -232,7 +232,7 @@ Perform a structure-only comparison (no key-byte check).</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="OutFile, Out">
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="2" aliases="OutFile, Out">
           <maml:name>OutputPath</maml:name>
           <maml:description>
             <maml:para>Output keytab path to write.</maml:para>
@@ -327,7 +327,7 @@ Perform a structure-only comparison (no key-byte check).</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="OutFile, Out">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="2" aliases="OutFile, Out">
         <maml:name>OutputPath</maml:name>
         <maml:description>
           <maml:para>Output keytab path to write.</maml:para>
@@ -738,17 +738,6 @@ Output JSON with key material to the pipeline and save to a file.</dev:code>
           </dev:type>
           <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>AcknowledgeRisk</maml:name>
-          <maml:description>
-            <maml:para>Required to proceed when krbtgt entries are detected in inputs.</maml:para>
-          </maml:description>
-          <dev:type>
-            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>False</dev:defaultValue>
-        </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="wi">
           <maml:name>WhatIf</maml:name>
           <maml:description>
@@ -826,18 +815,6 @@ Output JSON with key material to the pipeline and save to a file.</dev:code>
         <maml:name>RestrictAcl</maml:name>
         <maml:description>
           <maml:para>Apply a user-only ACL on the merged output file.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">System.Management.Automation.SwitchParameter</command:parameterValue>
-        <dev:type>
-          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>False</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>AcknowledgeRisk</maml:name>
-        <maml:description>
-          <maml:para>Required to proceed when krbtgt entries are detected in inputs.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">System.Management.Automation.SwitchParameter</command:parameterValue>
         <dev:type>
@@ -948,102 +925,6 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="10" aliases="none">
-          <maml:name>EnvFile</maml:name>
-          <maml:description>
-            <maml:para>Optional .env file to load credentials from (Pos 10).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="2" aliases="none">
-          <maml:name>Domain</maml:name>
-          <maml:description>
-            <maml:para>Domain NetBIOS or FQDN. When omitted, attempts discovery (Pos 2).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="3" aliases="none">
-          <maml:name>IncludeEtype</maml:name>
-          <maml:description>
-            <maml:para>Encryption type IDs to include. Default: 18,17,23 (AES-256, AES-128, RC4 opt-in) (Pos 3).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Object[]</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>@(18,17,23)</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="4" aliases="none">
-          <maml:name>ExcludeEtype</maml:name>
-          <maml:description>
-            <maml:para>Encryption type IDs to exclude. (Pos 4).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Object[]</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="5" aliases="none">
-          <maml:name>OutputPath</maml:name>
-          <maml:description>
-            <maml:para>Path to write the keytab file (Pos 5).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="6" aliases="JsonSummaryPath">
-          <maml:name>SummaryPath</maml:name>
-          <maml:description>
-            <maml:para>{{ Fill SummaryPath Description }}</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="7" aliases="none">
-          <maml:name>Server</maml:name>
-          <maml:description>
-            <maml:para>Domain Controller to target for replication (optional) (Pos 7).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="8" aliases="none">
-          <maml:name>Justification</maml:name>
-          <maml:description>
-            <maml:para>Free-text justification string for auditing high-risk operations (Pos 8).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="9" aliases="none">
           <maml:name>Credential</maml:name>
           <maml:description>
             <maml:para>Alternate credentials to access AD/replication (Pos 9).</maml:para>
@@ -1055,7 +936,43 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="11" aliases="none">
+          <maml:name>EnvFile</maml:name>
+          <maml:description>
+            <maml:para>Optional .env file to load credentials from (Pos 10).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="12" aliases="none">
+          <maml:name>FixedTimestampUtc</maml:name>
+          <maml:description>
+            <maml:para>Use a fixed timestamp for deterministic output.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.DateTime</command:parameterValue>
+          <dev:type>
+            <maml:name>System.DateTime</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="13" aliases="none">
+          <maml:name>AdditionalSpn</maml:name>
+          <maml:description>
+            <maml:para>Additional SPNs (service/host) to include for computer accounts.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
           <maml:name>Type</maml:name>
           <maml:description>
             <maml:para>Principal type. Auto infers from name; User, Computer, or Krbtgt can be forced.</maml:para>
@@ -1066,6 +983,90 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
             <maml:uri />
           </dev:type>
           <dev:defaultValue>Auto</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="3" aliases="none">
+          <maml:name>Domain</maml:name>
+          <maml:description>
+            <maml:para>Domain NetBIOS or FQDN. When omitted, attempts discovery (Pos 2).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="4" aliases="none">
+          <maml:name>IncludeEtype</maml:name>
+          <maml:description>
+            <maml:para>Encryption type IDs to include. Default: 18,17,23 (AES-256, AES-128, RC4 opt-in) (Pos 3).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>@(18,17,23)</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="5" aliases="none">
+          <maml:name>ExcludeEtype</maml:name>
+          <maml:description>
+            <maml:para>Encryption type IDs to exclude. (Pos 4).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="6" aliases="none">
+          <maml:name>OutputPath</maml:name>
+          <maml:description>
+            <maml:para>Path to write the keytab file (Pos 5).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="7" aliases="JsonSummaryPath">
+          <maml:name>SummaryPath</maml:name>
+          <maml:description>
+            <maml:para>{{ Fill SummaryPath Description }}</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="8" aliases="none">
+          <maml:name>Server</maml:name>
+          <maml:description>
+            <maml:para>Domain Controller to target for replication (optional) (Pos 7).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="9" aliases="none">
+          <maml:name>Justification</maml:name>
+          <maml:description>
+            <maml:para>Free-text justification string for auditing high-risk operations (Pos 8).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>RestrictAcl</maml:name>
@@ -1112,28 +1113,6 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
           <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>IncludeOldKvno</maml:name>
-          <maml:description>
-            <maml:para>Include previous KVNO keys when available.</maml:para>
-          </maml:description>
-          <dev:type>
-            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>False</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>IncludeOlderKvno</maml:name>
-          <maml:description>
-            <maml:para>Include older KVNO keys (krbtgt scenarios).</maml:para>
-          </maml:description>
-          <dev:type>
-            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>False</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>AcknowledgeRisk</maml:name>
           <maml:description>
             <maml:para>Required for krbtgt extraction.</maml:para>
@@ -1167,18 +1146,6 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
           <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>FixedTimestampUtc</maml:name>
-          <maml:description>
-            <maml:para>Use a fixed timestamp for deterministic output.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.DateTime</command:parameterValue>
-          <dev:type>
-            <maml:name>System.DateTime</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>IncludeShortHost</maml:name>
           <maml:description>
             <maml:para>For computer accounts, include HOST/shortname SPN.</maml:para>
@@ -1188,18 +1155,6 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
             <maml:uri />
           </dev:type>
           <dev:defaultValue>False</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>AdditionalSpn</maml:name>
-          <maml:description>
-            <maml:para>Additional SPNs (service/host) to include for computer accounts.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String[]</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String[]</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>IncludeLegacyRC4</maml:name>
@@ -1283,7 +1238,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
         <maml:name>Type</maml:name>
         <maml:description>
           <maml:para>Principal type. Auto infers from name; User, Computer, or Krbtgt can be forced.</maml:para>
@@ -1295,7 +1250,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>Auto</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="2" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="3" aliases="none">
         <maml:name>Domain</maml:name>
         <maml:description>
           <maml:para>Domain NetBIOS or FQDN. When omitted, attempts discovery (Pos 2).</maml:para>
@@ -1307,7 +1262,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="3" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="4" aliases="none">
         <maml:name>IncludeEtype</maml:name>
         <maml:description>
           <maml:para>Encryption type IDs to include. Default: 18,17,23 (AES-256, AES-128, RC4 opt-in) (Pos 3).</maml:para>
@@ -1319,7 +1274,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>@(18,17,23)</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="4" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="5" aliases="none">
         <maml:name>ExcludeEtype</maml:name>
         <maml:description>
           <maml:para>Encryption type IDs to exclude. (Pos 4).</maml:para>
@@ -1331,7 +1286,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="5" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="6" aliases="none">
         <maml:name>OutputPath</maml:name>
         <maml:description>
           <maml:para>Path to write the keytab file (Pos 5).</maml:para>
@@ -1343,7 +1298,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="6" aliases="JsonSummaryPath">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="7" aliases="JsonSummaryPath">
         <maml:name>SummaryPath</maml:name>
         <maml:description>
           <maml:para>{{ Fill SummaryPath Description }}</maml:para>
@@ -1355,7 +1310,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="7" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="8" aliases="none">
         <maml:name>Server</maml:name>
         <maml:description>
           <maml:para>Domain Controller to target for replication (optional) (Pos 7).</maml:para>
@@ -1367,7 +1322,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="8" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="9" aliases="none">
         <maml:name>Justification</maml:name>
         <maml:description>
           <maml:para>Free-text justification string for auditing high-risk operations (Pos 8).</maml:para>
@@ -1379,7 +1334,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="9" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="10" aliases="none">
         <maml:name>Credential</maml:name>
         <maml:description>
           <maml:para>Alternate credentials to access AD/replication (Pos 9).</maml:para>
@@ -1391,7 +1346,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="10" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="11" aliases="none">
         <maml:name>EnvFile</maml:name>
         <maml:description>
           <maml:para>Optional .env file to load credentials from (Pos 10).</maml:para>
@@ -1452,30 +1407,6 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>IncludeOldKvno</maml:name>
-        <maml:description>
-          <maml:para>Include previous KVNO keys when available.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">System.Management.Automation.SwitchParameter</command:parameterValue>
-        <dev:type>
-          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>False</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>IncludeOlderKvno</maml:name>
-        <maml:description>
-          <maml:para>Include older KVNO keys (krbtgt scenarios).</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">System.Management.Automation.SwitchParameter</command:parameterValue>
-        <dev:type>
-          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>False</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>AcknowledgeRisk</maml:name>
         <maml:description>
           <maml:para>Required for krbtgt extraction.</maml:para>
@@ -1511,7 +1442,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="12" aliases="none">
         <maml:name>FixedTimestampUtc</maml:name>
         <maml:description>
           <maml:para>Use a fixed timestamp for deterministic output.</maml:para>
@@ -1535,7 +1466,7 @@ Merge two keytabs into a single file, overwriting the destination if present.</d
         </dev:type>
         <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="13" aliases="none">
         <maml:name>AdditionalSpn</maml:name>
         <maml:description>
           <maml:para>Additional SPNs (service/host) to include for computer accounts.</maml:para>
@@ -1680,7 +1611,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
     <command:syntax>
       <command:syntaxItem>
         <maml:name>New-KeytabFromPassword</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Realm</maml:name>
           <maml:description>
             <maml:para>Kerberos realm (usually the AD domain in uppercase) (Pos 1).</maml:para>
@@ -1692,19 +1623,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="10" aliases="none">
-          <maml:name>Iterations</maml:name>
-          <maml:description>
-            <maml:para>PBKDF2 iteration count (default 4096) (Pos 10).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Int32</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Int32</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>4096</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>SamAccountName</maml:name>
           <maml:description>
             <maml:para>Account name when deriving a user or computer principal (use Principal for service names) (Pos 2).</maml:para>
@@ -1716,55 +1635,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
-          <maml:name>Password</maml:name>
-          <maml:description>
-            <maml:para>SecureString password to derive keys from. Alternatively use -Credential (Pos 3).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Security.SecureString</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Security.SecureString</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="4" aliases="Comp">
-          <maml:name>Compatibility</maml:name>
-          <maml:description>
-            <maml:para>Salt policy for string-to-key: MIT, Heimdal, or Windows (Pos 4).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>MIT</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="5" aliases="none">
-          <maml:name>IncludeEtype</maml:name>
-          <maml:description>
-            <maml:para>Encryption types to include. Defaults to AES-256 and AES-128 (18,17) (Pos 5).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Object[]</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="6" aliases="none">
-          <maml:name>ExcludeEtype</maml:name>
-          <maml:description>
-            <maml:para>Encryption types to exclude from selection (Pos 6).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Object[]</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="7" aliases="none">
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>OutputPath</maml:name>
           <maml:description>
             <maml:para>Path to write the generated keytab (Pos 7).</maml:para>
@@ -1776,29 +1647,17 @@ Create a deterministic user keytab with AES types only.</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="8" aliases="JsonSummaryPath">
-          <maml:name>SummaryPath</maml:name>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Password</maml:name>
           <maml:description>
-            <maml:para>{{ Fill SummaryPath Description }}</maml:para>
+            <maml:para>SecureString password to derive keys from. Alternatively use -Credential (Pos 3).</maml:para>
           </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <command:parameterValue required="true" variableLength="false">System.Security.SecureString</command:parameterValue>
           <dev:type>
-            <maml:name>System.String</maml:name>
+            <maml:name>System.Security.SecureString</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="9" aliases="none">
-          <maml:name>Kvno</maml:name>
-          <maml:description>
-            <maml:para>Key Version Number to stamp into entries (default 1) (Pos 9).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Int32</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Int32</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>1</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Credential</maml:name>
@@ -1811,6 +1670,66 @@ Create a deterministic user keytab with AES types only.</dev:code>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="Comp">
+          <maml:name>Compatibility</maml:name>
+          <maml:description>
+            <maml:para>Salt policy for string-to-key: MIT, Heimdal, or Windows (Pos 4).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>MIT</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>IncludeEtype</maml:name>
+          <maml:description>
+            <maml:para>Encryption types to include. Defaults to AES-256 and AES-128 (18,17) (Pos 5).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ExcludeEtype</maml:name>
+          <maml:description>
+            <maml:para>Encryption types to exclude from selection (Pos 6).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Kvno</maml:name>
+          <maml:description>
+            <maml:para>Key Version Number to stamp into entries (default 1) (Pos 9).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>1</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Iterations</maml:name>
+          <maml:description>
+            <maml:para>PBKDF2 iteration count (default 4096) (Pos 10).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>4096</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>RestrictAcl</maml:name>
@@ -1844,6 +1763,18 @@ Create a deterministic user keytab with AES types only.</dev:code>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="JsonSummaryPath">
+          <maml:name>SummaryPath</maml:name>
+          <maml:description>
+            <maml:para>{{ Fill SummaryPath Description }}</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>PassThru</maml:name>
@@ -1938,7 +1869,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
       </command:syntaxItem>
       <command:syntaxItem>
         <maml:name>New-KeytabFromPassword</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Realm</maml:name>
           <maml:description>
             <maml:para>Kerberos realm (usually the AD domain in uppercase) (Pos 1).</maml:para>
@@ -1950,19 +1881,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="10" aliases="none">
-          <maml:name>Iterations</maml:name>
-          <maml:description>
-            <maml:para>PBKDF2 iteration count (default 4096) (Pos 10).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Int32</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Int32</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>4096</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Principal</maml:name>
           <maml:description>
             <maml:para>Full principal (e.g., http/web01.contoso.com@CONTOSO.COM) for service principals (Pos 2).</maml:para>
@@ -1974,43 +1893,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="4" aliases="Comp">
-          <maml:name>Compatibility</maml:name>
-          <maml:description>
-            <maml:para>Salt policy for string-to-key: MIT, Heimdal, or Windows (Pos 4).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>MIT</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="5" aliases="none">
-          <maml:name>IncludeEtype</maml:name>
-          <maml:description>
-            <maml:para>Encryption types to include. Defaults to AES-256 and AES-128 (18,17) (Pos 5).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Object[]</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="6" aliases="none">
-          <maml:name>ExcludeEtype</maml:name>
-          <maml:description>
-            <maml:para>Encryption types to exclude from selection (Pos 6).</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
-          <dev:type>
-            <maml:name>System.Object[]</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="7" aliases="none">
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>OutputPath</maml:name>
           <maml:description>
             <maml:para>Path to write the generated keytab (Pos 7).</maml:para>
@@ -2022,19 +1905,43 @@ Create a deterministic user keytab with AES types only.</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="8" aliases="JsonSummaryPath">
-          <maml:name>SummaryPath</maml:name>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="Comp">
+          <maml:name>Compatibility</maml:name>
           <maml:description>
-            <maml:para>{{ Fill SummaryPath Description }}</maml:para>
+            <maml:para>Salt policy for string-to-key: MIT, Heimdal, or Windows (Pos 4).</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
           <dev:type>
             <maml:name>System.String</maml:name>
             <maml:uri />
           </dev:type>
+          <dev:defaultValue>MIT</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>IncludeEtype</maml:name>
+          <maml:description>
+            <maml:para>Encryption types to include. Defaults to AES-256 and AES-128 (18,17) (Pos 5).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="9" aliases="none">
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ExcludeEtype</maml:name>
+          <maml:description>
+            <maml:para>Encryption types to exclude from selection (Pos 6).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.Object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Kvno</maml:name>
           <maml:description>
             <maml:para>Key Version Number to stamp into entries (default 1) (Pos 9).</maml:para>
@@ -2045,6 +1952,18 @@ Create a deterministic user keytab with AES types only.</dev:code>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>1</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Iterations</maml:name>
+          <maml:description>
+            <maml:para>PBKDF2 iteration count (default 4096) (Pos 10).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>4096</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>RestrictAcl</maml:name>
@@ -2078,6 +1997,18 @@ Create a deterministic user keytab with AES types only.</dev:code>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="JsonSummaryPath">
+          <maml:name>SummaryPath</maml:name>
+          <maml:description>
+            <maml:para>{{ Fill SummaryPath Description }}</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>PassThru</maml:name>
@@ -2172,7 +2103,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
       </command:syntaxItem>
     </command:syntax>
     <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Realm</maml:name>
         <maml:description>
           <maml:para>Kerberos realm (usually the AD domain in uppercase) (Pos 1).</maml:para>
@@ -2184,7 +2115,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>SamAccountName</maml:name>
         <maml:description>
           <maml:para>Account name when deriving a user or computer principal (use Principal for service names) (Pos 2).</maml:para>
@@ -2196,7 +2127,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Principal</maml:name>
         <maml:description>
           <maml:para>Full principal (e.g., http/web01.contoso.com@CONTOSO.COM) for service principals (Pos 2).</maml:para>
@@ -2208,7 +2139,19 @@ Create a deterministic user keytab with AES types only.</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>OutputPath</maml:name>
+        <maml:description>
+          <maml:para>Path to write the generated keytab (Pos 7).</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Password</maml:name>
         <maml:description>
           <maml:para>SecureString password to derive keys from. Alternatively use -Credential (Pos 3).</maml:para>
@@ -2232,7 +2175,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="4" aliases="Comp">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="Comp">
         <maml:name>Compatibility</maml:name>
         <maml:description>
           <maml:para>Salt policy for string-to-key: MIT, Heimdal, or Windows (Pos 4).</maml:para>
@@ -2244,7 +2187,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
         </dev:type>
         <dev:defaultValue>MIT</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="5" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>IncludeEtype</maml:name>
         <maml:description>
           <maml:para>Encryption types to include. Defaults to AES-256 and AES-128 (18,17) (Pos 5).</maml:para>
@@ -2256,7 +2199,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="6" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>ExcludeEtype</maml:name>
         <maml:description>
           <maml:para>Encryption types to exclude from selection (Pos 6).</maml:para>
@@ -2268,31 +2211,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="7" aliases="none">
-        <maml:name>OutputPath</maml:name>
-        <maml:description>
-          <maml:para>Path to write the generated keytab (Pos 7).</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-        <dev:type>
-          <maml:name>System.String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="8" aliases="JsonSummaryPath">
-        <maml:name>SummaryPath</maml:name>
-        <maml:description>
-          <maml:para>{{ Fill SummaryPath Description }}</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-        <dev:type>
-          <maml:name>System.String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="9" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Kvno</maml:name>
         <maml:description>
           <maml:para>Key Version Number to stamp into entries (default 1) (Pos 9).</maml:para>
@@ -2304,7 +2223,7 @@ Create a deterministic user keytab with AES types only.</dev:code>
         </dev:type>
         <dev:defaultValue>1</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="10" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Iterations</maml:name>
         <maml:description>
           <maml:para>PBKDF2 iteration count (default 4096) (Pos 10).</maml:para>
@@ -2351,6 +2270,18 @@ Create a deterministic user keytab with AES types only.</dev:code>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="JsonSummaryPath">
+        <maml:name>SummaryPath</maml:name>
+        <maml:description>
+          <maml:para>{{ Fill SummaryPath Description }}</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>PassThru</maml:name>
@@ -2509,10 +2440,10 @@ Generate a service keytab with AES-256 only and KVNO 3.</dev:code>
     <command:syntax>
       <command:syntaxItem>
         <maml:name>Protect-Keytab</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="1" aliases="In, FullName, FilePath">
-          <maml:name>Path</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="1" aliases="Path, In, FullName, FilePath">
+          <maml:name>InputPath</maml:name>
           <maml:description>
-            <maml:para>Path to the plaintext keytab file to protect (Pos 1).</maml:para>
+            <maml:para>{{ Fill InputPath Description }}</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
           <dev:type>
@@ -2639,10 +2570,10 @@ Generate a service keytab with AES-256 only and KVNO 3.</dev:code>
       </command:syntaxItem>
     </command:syntax>
     <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="1" aliases="In, FullName, FilePath">
-        <maml:name>Path</maml:name>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="1" aliases="Path, In, FullName, FilePath">
+        <maml:name>InputPath</maml:name>
         <maml:description>
-          <maml:para>Path to the plaintext keytab file to protect (Pos 1).</maml:para>
+          <maml:para>{{ Fill InputPath Description }}</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
         <dev:type>
@@ -3210,18 +3141,6 @@ Parse a keytab and return entries.</dev:code>
           <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>JsonSummaryPath</maml:name>
-          <maml:description>
-            <maml:para>{{ Fill JsonSummaryPath Description }}</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-          <dev:type>
-            <maml:name>System.String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Summary</maml:name>
           <maml:description>
             <maml:para>Generate JSON summary file.</maml:para>
@@ -3231,6 +3150,18 @@ Parse a keytab and return entries.</dev:code>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="JsonSummaryPath">
+          <maml:name>SummaryPath</maml:name>
+          <maml:description>
+            <maml:para>Path to write operation summary JSON. Defaults next to Output when omitted.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>PassThru</maml:name>
@@ -3544,18 +3475,6 @@ Parse a keytab and return entries.</dev:code>
         <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>JsonSummaryPath</maml:name>
-        <maml:description>
-          <maml:para>{{ Fill JsonSummaryPath Description }}</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
-        <dev:type>
-          <maml:name>System.String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Summary</maml:name>
         <maml:description>
           <maml:para>Generate JSON summary file.</maml:para>
@@ -3566,6 +3485,18 @@ Parse a keytab and return entries.</dev:code>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="JsonSummaryPath">
+        <maml:name>SummaryPath</maml:name>
+        <maml:description>
+          <maml:para>Path to write operation summary JSON. Defaults next to Output when omitted.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>PassThru</maml:name>
@@ -3797,9 +3728,20 @@ Parse a keytab and return entries.</dev:code>
           <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>JsonSummaryPath</maml:name>
+          <maml:name>Summary</maml:name>
           <maml:description>
-            <maml:para>Path to write operation summary JSON.</maml:para>
+            <maml:para>Write a summary file with operation results.</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="JsonSummaryPath">
+          <maml:name>SummaryPath</maml:name>
+          <maml:description>
+            <maml:para>Path to write operation summary JSON. Defaults next to Output when omitted.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
           <dev:type>
@@ -3977,9 +3919,21 @@ Parse a keytab and return entries.</dev:code>
         <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>JsonSummaryPath</maml:name>
+        <maml:name>Summary</maml:name>
         <maml:description>
-          <maml:para>Path to write operation summary JSON.</maml:para>
+          <maml:para>Write a summary file with operation results.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">System.Management.Automation.SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="JsonSummaryPath">
+        <maml:name>SummaryPath</maml:name>
+        <maml:description>
+          <maml:para>Path to write operation summary JSON. Defaults next to Output when omitted.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
         <dev:type>
@@ -4211,10 +4165,10 @@ Returns $true when the keytab parses successfully.</dev:code>
     <command:syntax>
       <command:syntaxItem>
         <maml:name>Unprotect-Keytab</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="1" aliases="In, FullName, FilePath">
-          <maml:name>Path</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="1" aliases="Path, In, FullName, FilePath">
+          <maml:name>InputPath</maml:name>
           <maml:description>
-            <maml:para>Path to the DPAPI-protected input file (Pos 1).</maml:para>
+            <maml:para>{{ Fill InputPath Description }}</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
           <dev:type>
@@ -4330,10 +4284,10 @@ Returns $true when the keytab parses successfully.</dev:code>
       </command:syntaxItem>
     </command:syntax>
     <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="1" aliases="In, FullName, FilePath">
-        <maml:name>Path</maml:name>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="1" aliases="Path, In, FullName, FilePath">
+        <maml:name>InputPath</maml:name>
         <maml:description>
-          <maml:para>Path to the DPAPI-protected input file (Pos 1).</maml:para>
+          <maml:para>{{ Fill InputPath Description }}</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">System.String</command:parameterValue>
         <dev:type>

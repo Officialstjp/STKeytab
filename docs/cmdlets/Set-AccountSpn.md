@@ -1,4 +1,4 @@
----
+﻿---
 external help file: STKeytab-help.xml
 Module Name: STKeytab
 online version:
@@ -14,8 +14,8 @@ Safely manage Service Principal Names (SPNs) for Active Directory accounts.
 
 ```
 Set-AccountSpn [-SamAccountName] <String> [-Add <String[]>] [-Remove <String[]>] [-List] [-WhatIfOnly]
- [-Domain <String>] [-Server <String>] [-Credential <PSCredential>] [-Force] [-IgnoreConflicts]
- [-JsonSummaryPath <String>] [-PassThru] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
+ [-Domain <String>] [-Server <String>] [-Credential <PSCredential>] [-Force] [-IgnoreConflicts] [-Summary]
+ [-SummaryPath <String>] [-PassThru] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
@@ -53,7 +53,7 @@ Lists all current SPNs for svc-app.
 The account's sAMAccountName to modify SPNs for.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -68,7 +68,7 @@ Accept wildcard characters: False
 SPNs to add to the account.
 
 ```yaml
-Type: String[]
+Type: System.String[]
 Parameter Sets: (All)
 Aliases:
 
@@ -83,7 +83,7 @@ Accept wildcard characters: False
 SPNs to remove from the account.
 
 ```yaml
-Type: String[]
+Type: System.String[]
 Parameter Sets: (All)
 Aliases:
 
@@ -98,7 +98,7 @@ Accept wildcard characters: False
 List current SPNs on the account.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -113,7 +113,7 @@ Accept wildcard characters: False
 Show operation plan without making changes.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -128,7 +128,7 @@ Accept wildcard characters: False
 Domain to target for AD operations.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -143,7 +143,7 @@ Accept wildcard characters: False
 Specific domain controller to use.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -158,7 +158,7 @@ Accept wildcard characters: False
 Alternate credentials for AD operations.
 
 ```yaml
-Type: PSCredential
+Type: System.Management.Automation.PSCredential
 Parameter Sets: (All)
 Aliases:
 
@@ -173,7 +173,7 @@ Accept wildcard characters: False
 Proceed even if some validations fail.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -188,7 +188,7 @@ Accept wildcard characters: False
 Proceed even if SPN conflicts are detected.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -199,13 +199,28 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -JsonSummaryPath
-Path to write operation summary JSON.
+### -Summary
+Write a summary file with operation results.
 
 ```yaml
-Type: String
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SummaryPath
+Path to write operation summary JSON. Defaults next to Output when omitted.
+
+```yaml
+Type: System.String
+Parameter Sets: (All)
+Aliases: JsonSummaryPath
 
 Required: False
 Position: Named
@@ -218,7 +233,7 @@ Accept wildcard characters: False
 Return detailed operation results.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -234,7 +249,7 @@ Shows what would happen if the cmdlet runs.
 The cmdlet is not run.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: wi
 
@@ -249,7 +264,7 @@ Accept wildcard characters: False
 Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
 
@@ -264,7 +279,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: ActionPreference
+Type: System.Management.Automation.ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

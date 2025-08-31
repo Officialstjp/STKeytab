@@ -13,7 +13,7 @@ Protect a keytab file at rest using Windows DPAPI.
 ## SYNTAX
 
 ```
-Protect-Keytab [-Path] <String> [[-OutputPath] <String>] [-Scope <String>] [-Entropy <String>]
+Protect-Keytab [-InputPath] <String> [[-OutputPath] <String>] [-Scope <String>] [-Entropy <String>]
  [-EntropySecure <SecureString>] [-Force] [-DeletePlaintext] [-RestrictAcl]
  [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
@@ -35,13 +35,13 @@ Protect a keytab with DPAPI in the current-user scope and set a restrictive ACL.
 
 ## PARAMETERS
 
-### -Path
-Path to the plaintext keytab file to protect (Pos 1).
+### -InputPath
+{{ Fill InputPath Description }}
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
-Aliases: In, FullName, FilePath
+Aliases: Path, In, FullName, FilePath
 
 Required: True
 Position: 1
@@ -55,7 +55,7 @@ Destination path for the protected file.
 Defaults to \<Path\>.dpapi (Pos 2).
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases: Out, Output, OutFile
 
@@ -70,7 +70,7 @@ Accept wildcard characters: False
 DPAPI scope: CurrentUser (default) or LocalMachine.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -85,7 +85,7 @@ Accept wildcard characters: False
 Optional additional entropy string to bind to the protection.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -100,7 +100,7 @@ Accept wildcard characters: False
 {{ Fill EntropySecure Description }}
 
 ```yaml
-Type: SecureString
+Type: System.Security.SecureString
 Parameter Sets: (All)
 Aliases:
 
@@ -115,7 +115,7 @@ Accept wildcard characters: False
 Overwrite OutputPath if it exists.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -130,7 +130,7 @@ Accept wildcard characters: False
 Remove the original plaintext file after successful protection.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -145,7 +145,7 @@ Accept wildcard characters: False
 Apply a user-only ACL to the output file.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -161,7 +161,7 @@ Shows what would happen if the cmdlet runs.
 The cmdlet is not run.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: wi
 
@@ -176,7 +176,7 @@ Accept wildcard characters: False
 Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
 
@@ -191,7 +191,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: ActionPreference
+Type: System.Management.Automation.ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

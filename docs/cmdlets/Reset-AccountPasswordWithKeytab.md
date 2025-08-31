@@ -1,4 +1,4 @@
----
+﻿---
 external help file: STKeytab-help.xml
 Module Name: STKeytab
 online version:
@@ -16,8 +16,8 @@ Reset an AD account password and generate a corresponding keytab in one atomic o
 Reset-AccountPasswordWithKeytab [-SamAccountName] <String> [-Realm <String>] [-NewPassword <SecureString>]
  [-Kvno <Int32>] [-Compatibility <String>] [-IncludeEtype <Object[]>] [-ExcludeEtype <Object[]>]
  [-OutputPath <String>] [-Domain <String>] [-Server <String>] [-Credential <PSCredential>] [-AcknowledgeRisk]
- -Justification <String> [-WhatIfOnly] [-UpdateSupportedEtypes <Int32[]>] [-AESOnly] [-IncludeLegacyRC4]
- [-AllowDeadCiphers] [-RestrictAcl] [-Force] [-JsonSummaryPath <String>] [-Summary] [-PassThru]
+ [-Justification <String>] [-WhatIfOnly] [-UpdateSupportedEtypes <Int32[]>] [-AESOnly] [-IncludeLegacyRC4]
+ [-AllowDeadCiphers] [-RestrictAcl] [-Force] [-Summary] [-SummaryPath <String>] [-PassThru]
  [-FixedTimestampUtc <DateTime>] [-SuppressWarnings] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
@@ -53,7 +53,7 @@ Shows what would be done without making changes.
 The account's sAMAccountName to reset password for.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -69,7 +69,7 @@ Kerberos realm name.
 If omitted, derives from the domain.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -85,7 +85,7 @@ Specific password to set.
 If omitted, generates a cryptographically strong random password.
 
 ```yaml
-Type: SecureString
+Type: System.Security.SecureString
 Parameter Sets: (All)
 Aliases:
 
@@ -101,7 +101,7 @@ Key version number to use in the keytab.
 If omitted, predicts the post-reset KVNO.
 
 ```yaml
-Type: Int32
+Type: System.Int32
 Parameter Sets: (All)
 Aliases:
 
@@ -116,7 +116,7 @@ Accept wildcard characters: False
 Salt generation policy: MIT, Heimdal, or Windows (default).
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -132,7 +132,7 @@ Encryption types to include.
 Default: AES256, AES128.
 
 ```yaml
-Type: Object[]
+Type: System.Object[]
 Parameter Sets: (All)
 Aliases:
 
@@ -147,7 +147,7 @@ Accept wildcard characters: False
 Encryption types to exclude.
 
 ```yaml
-Type: Object[]
+Type: System.Object[]
 Parameter Sets: (All)
 Aliases:
 
@@ -162,7 +162,7 @@ Accept wildcard characters: False
 Path for the generated keytab file.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -177,7 +177,7 @@ Accept wildcard characters: False
 Domain to target for AD operations.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -192,7 +192,7 @@ Accept wildcard characters: False
 Specific domain controller to use.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
@@ -207,7 +207,7 @@ Accept wildcard characters: False
 Alternate credentials for AD operations.
 
 ```yaml
-Type: PSCredential
+Type: System.Management.Automation.PSCredential
 Parameter Sets: (All)
 Aliases:
 
@@ -222,11 +222,11 @@ Accept wildcard characters: False
 Required acknowledgment that this operation changes the account password.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: Named
 Default value: False
 Accept pipeline input: False
@@ -237,11 +237,11 @@ Accept wildcard characters: False
 Required justification for audit logging.
 
 ```yaml
-Type: String
+Type: System.String
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False
@@ -252,7 +252,7 @@ Accept wildcard characters: False
 Show operation plan without executing changes.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -267,7 +267,7 @@ Accept wildcard characters: False
 Update the account's msDS-SupportedEncryptionTypes attribute.
 
 ```yaml
-Type: Int32[]
+Type: System.Int32[]
 Parameter Sets: (All)
 Aliases:
 
@@ -282,7 +282,7 @@ Accept wildcard characters: False
 Restrict to AES encryption types only.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -297,7 +297,7 @@ Accept wildcard characters: False
 Include RC4 encryption type (not applicable for password path - AES only).
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -312,7 +312,7 @@ Accept wildcard characters: False
 Allow obsolete encryption types (not applicable for password path - AES only).
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -327,7 +327,7 @@ Accept wildcard characters: False
 Apply user-only ACL to output files.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -342,28 +342,13 @@ Accept wildcard characters: False
 Overwrite existing output files.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -JsonSummaryPath
-{{ Fill JsonSummaryPath Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -372,7 +357,7 @@ Accept wildcard characters: False
 Generate JSON summary file.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -383,11 +368,26 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -SummaryPath
+Path to write operation summary JSON. Defaults next to Output when omitted.
+
+```yaml
+Type: System.String
+Parameter Sets: (All)
+Aliases: JsonSummaryPath
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -PassThru
 Return operation result object.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -402,7 +402,7 @@ Accept wildcard characters: False
 Use fixed timestamp for deterministic output.
 
 ```yaml
-Type: DateTime
+Type: System.DateTime
 Parameter Sets: (All)
 Aliases:
 
@@ -417,7 +417,7 @@ Accept wildcard characters: False
 {{ Fill SuppressWarnings Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
@@ -433,7 +433,7 @@ Shows what would happen if the cmdlet runs.
 The cmdlet is not run.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: wi
 
@@ -448,7 +448,7 @@ Accept wildcard characters: False
 Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: SwitchParameter
+Type: System.Management.Automation.SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
 
@@ -463,7 +463,7 @@ Accept wildcard characters: False
 {{ Fill ProgressAction Description }}
 
 ```yaml
-Type: ActionPreference
+Type: System.Management.Automation.ActionPreference
 Parameter Sets: (All)
 Aliases: proga
 

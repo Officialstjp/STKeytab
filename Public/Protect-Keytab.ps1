@@ -76,6 +76,9 @@ function Protect-Keytab {
     }
     process {
         if ($PSCmdlet.ShouldProcess($in, 'Protect keytab (DPAPI)')) {
+            if ((Test-Path -LiteralPath $out) -and -not $Force) {
+                throw "Output already exists: '$out'. Use -Force to overwrite."
+            }
             $bytes = [IO.File]::ReadAllBytes($in)
             $entropyBytes = $null
             try {
