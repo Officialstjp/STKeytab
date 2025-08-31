@@ -45,36 +45,40 @@ function Unprotect-Keytab {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=0)]
-        [Alias('In','FullName','FilePath')]
+        [Alias('Path','In','FullName','FilePath')]
         [ValidateNotNullOrEmpty()]
-        [string]$Path,
+        [string]$InputPath,
 
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName, Position=1)]
         [Alias('Out','Output', 'OutFile')]
-        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         [ValidateSet('CurrentUser','LocalMachine')]
         [string]$Scope = 'CurrentUser',
 
-    [string]$Entropy,
-    [SecureString]$EntropySecure,
+        [string]$Entropy,
+        [SecureString]$EntropySecure,
         [switch]$Force,
         [switch]$RestrictAcl
     )
     begin {
-        if (-not (Test-Path -LiteralPath $Path)) { throw "File not found: $Path" }
-        if (-not $OutputPath) {
-            if ($Path -like '*.dpapi') { $OutputPath = $Path.Substring(0, $Path.Length - 6) } else { $OutputPath = "$Path.unprotected.keytab" }
+        $in = Resolve-PathUniversal -Path $InputPath -Purpose Input
+        $base = [IO.Path]::GetFileName($in)
+        if ($OutputPath) {
+            $out = Resolve-PathUniversal -Path $OutputPath -Purpose Output
+        } else {
+            if ($base -like '*.dpapi') { $ext = $null; $baseName = $base.Substring(0, $base.Length - 6) }
+            $out = Resolve-OutputPath -InputPath $in -BaseName $baseName -CreateDirectory
         }
+        $plain = $null
     }
     process {
-        if ($PSCmdlet.ShouldProcess($Path, 'Unprotecting keytab (DPAPI)')) {
-            if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) {
-                throw "Output file '$OutputPath' already exists. Use -Force to overwrite."
+        if ($PSCmdlet.ShouldProcess($in, 'Unprotecting keytab (DPAPI)')) {
+            if ((Test-Path -LiteralPath $out) -and -not $Force) {
+                throw "Output file '$out' already exists. Use -Force to overwrite."
             }
 
-            $bytes = [IO.File]::ReadAllBytes($Path)
+            $bytes = [IO.File]::ReadAllBytes($in)
             $entropyBytes = $null
             try {
                 if ($EntropySecure) {
@@ -99,19 +103,16 @@ function Unprotect-Keytab {
 
             try {
                 $plain = [System.Security.Cryptography.ProtectedData]::Unprotect($bytes, $entropyBytes, $scopeEnum)
-                [IO.File]::WriteAllBytes($OutputPath, $plain)
-                if ($RestrictAcl) { Set-UserOnlyAcl -Path $OutputPath }
+                [IO.File]::WriteAllBytes($out, $plain)
+                if ($RestrictAcl) { Set-UserOnlyAcl -Path $out }
             } finally {
                 if ($bytes) { [Array]::Clear($bytes, 0, $bytes.Length) }
                 if ($plain) { [Array]::Clear($plain, 0, $plain.Length) }
                 if ($entropyBytes) { [Array]::Clear($entropyBytes, 0, $entropyBytes.Length) }
             }
-            if ($RestrictAcl) {
-                Set-UserOnlyAcl -Path $OutputPath
-            }
         }
     }
     end {
-        return $OutputPath
+        return $out
     }
 }

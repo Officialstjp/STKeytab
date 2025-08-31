@@ -11,8 +11,8 @@ function Merge-Keytab {
 
     .DESCRIPTION
     Reads input keytabs (with key material), de-duplicates entries across principal, KVNO,
-    and encryption types, and writes a consolidated keytab. Merges containing krbtgt entries
-    are blocked unless -AcknowledgeRisk is provided. Inputs must carry key bytes (e.g., from
+    and encryption types, and writes a consolidated keytab. If krbtgt entries are detected,
+    an additional confirmation prompt is shown. Inputs must carry key bytes (e.g., from
     Read-Keytab -RevealKeys) to produce a valid merged output.
 
         .PARAMETER InputPaths
@@ -26,9 +26,6 @@ function Merge-Keytab {
 
         .PARAMETER RestrictAcl
         Apply a user-only ACL on the merged output file.
-
-        .PARAMETER AcknowledgeRisk
-        Required to proceed when krbtgt entries are detected in inputs.
 
         .INPUTS
         System.String[] (file paths) or objects with Input/Output properties.
@@ -49,7 +46,6 @@ function Merge-Keytab {
 
         [Parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Position=1)]
         [Alias('Output','Out')]
-        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         [switch]$Force,
@@ -57,9 +53,17 @@ function Merge-Keytab {
         [switch]$AcknowledgeRisk
     )
     begin {
-        if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) {
-        throw "Output file '$OutputPath' already exists. Use -Force to overwrite."
+        $inAbs = $InputPaths | ForEach-Object { Resolve-PathUniversal -Path $_ -Purpose Input }
+        if ($OutputPath) {
+            $out = Resolve-PathUniversal -Path $OutputPath -Purpose Output
+        } else {
+            $ext = '.keytab'
+            $name = New-MergeOutputFileName -InputPaths $inAbs -Extension $ext
+            $mergebase = [IO.Path]::GetFileNameWithoutExtension($name)
+            $dir = Split-Path $inAbs[0] -Parent
+            $out = Resolve-OutputPath -Directory $dir -BaseName $mergeBase -Extension $ext -CreateDirectory
         }
+
         $entries = New-Object System.Collections.Generic.List[object]
         $krbtgtPresent = $false
     }
@@ -75,8 +79,12 @@ function Merge-Keytab {
                 }
             }
 
-            if ($krbtgtPresent -and -not $AcknowledgeRisk) {
-                throw "Merged set contains krbtgt entries; re-run with -AcknowledgeRisk to proceed."
+            if ($krbtgtPresent) {
+                # Display krbtgt banner and confirm
+                Write-SecurityWarning -RiskLevel 'krbtgt' -SamAccountName 'krbtgt' | Out-Null
+                if (-not $PSCmdlet.ShouldContinue('You are about to merge key material containing KRBTGT keys. Proceed?', 'High Impact Merge')) {
+                    return
+                }
             }
 
             # Deduplicate on (Realm|ComponentsJoined|NameType|Kvno|EtypeId|KeyLength|KeyHex)
@@ -119,10 +127,10 @@ function Merge-Keytab {
             }
 
             # Write merged keytab
-            $null = New-KeytabFile -Path $OutputPath -PrincipalDescriptors $principalDescriptors -KeySets $keySets -RestrictAcl:$RestrictAcl
+            $null = New-KeytabFile -Path $out -PrincipalDescriptors $principalDescriptors -KeySets $keySets -RestrictAcl:$RestrictAcl
         }
     }
     end {
-        $OutputPath
+        $out
     }
 }

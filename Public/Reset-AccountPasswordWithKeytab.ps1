@@ -80,6 +80,9 @@ function Reset-AccountPasswordWithKeytab {
         .PARAMETER Summary
         Generate JSON summary file.
 
+        .PARAMETER SummaryPath
+        Path to write operation summary JSON. Defaults next to Output when omitted.
+
         .PARAMETER PassThru
         Return operation result object.
 
@@ -110,8 +113,6 @@ function Reset-AccountPasswordWithKeytab {
 
         [object[]]$IncludeEtype = @(18,17),
         [object[]]$ExcludeEtype,
-
-        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         # AD Integration
@@ -134,8 +135,10 @@ function Reset-AccountPasswordWithKeytab {
         # Output options
         [switch]$RestrictAcl,
         [switch]$Force,
-        [string]$JsonSummaryPath,
         [switch]$Summary,
+        [Alias('JsonSummaryPath')]
+        [string]$SummaryPath,
+
         [switch]$PassThru,
         [datetime]$FixedTimestampUtc,
         [switch]$SuppressWarnings
@@ -170,8 +173,14 @@ function Reset-AccountPasswordWithKeytab {
             Write-SecurityWarning -RiskLevel 'High' -SamAccountName $SamAccountName | Out-Null
         }
 
-        if (-not $OutputPath) {
-            $OutputPath = Join-Path (Get-Location) "$SamAccountName.keytab"
+        if ($OutputPath) {
+            $out = Resolve-PathUniversal -Path $OutputPath -Purpose Output
+        } else {
+            $out = Resolve-OutputPath -Directory (Get-Location).Path -BaseName ($SamAccountName.TrimEnd('$')) -Extension '.keytab' -CreateDirectory
+        }
+
+        if ($Summary.IsPresent -and (-not $SummaryPath)) {
+            $SummaryPath = "$($out)_summary_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
         }
     }
 
@@ -217,7 +226,7 @@ function Reset-AccountPasswordWithKeytab {
                 PredictedKvno = $predictedKvno
                 SelectedEtypes = $etypeSelection.Selected
                 EtypeNames = @($etypeSelection.Selected | ForEach-Object { Get-EtypeNameFromId $_ })
-                OutputPath = (Resolve-Path -Path (Split-Path $OutputPath -Parent)).Path + '\' + (Split-Path $OutputPath -Leaf) # resolve to ensure path
+                OutputPath = (Resolve-Path -Path (Split-Path $out -Parent)).Path + '\' + (Split-Path $out -Leaf) # resolve to ensure path
                 UpdateSupportedEtypes = $UpdateSupportedEtypes
                 Justification = $Justification
                 Timestamp = (Get-Date).ToUniversalTime().ToString('o')
@@ -251,7 +260,7 @@ function Reset-AccountPasswordWithKeytab {
                 # 5. Update supported encryption types if requested
                 if ($UpdateSupportedEtypes) {
                     Write-Verbose "Updating msDS-SupportedEncryptionTypes"
-                    $etypeSum = ($UpdateSupportedEtypes | Measure-Object -Sum).Sum
+                    $etypeSum = [int]($UpdateSupportedEtypes | Measure-Object -Sum).Sum
 
                     $replaceParams = @{
                         Identity = $account
@@ -273,7 +282,7 @@ function Reset-AccountPasswordWithKeytab {
                     Kvno            = $predictedKvno
                     Compatibility   = $Compatibility
                     IncludeEtype    = $etypeSelection.Selected
-                    OutputPath      = $OutputPath
+                    OutputPath      = $out
                     RestrictAcl     = $RestrictAcl
                     Force           = $Force
                     Summary         = $Summary
@@ -284,8 +293,8 @@ function Reset-AccountPasswordWithKeytab {
                     $keytabParams.FixedTimestampUtc = $FixedTimestampUtc
                 }
 
-                if ($JsonSummaryPath) {
-                    $keytabParams.SummaryPath = $JsonSummaryPath
+                if ($SummaryPath) {
+                    $keytabParams.SummaryPath = $SummaryPath
                 }
 
                 $keytabResult = New-KeytabFromPassword @keytabParams

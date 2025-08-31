@@ -44,18 +44,18 @@ function Read-Keytab {
         [int]$MaxKeyHex = 64
     )
     begin {
-        if (-not (Test-Path -LiteralPath $Path)) { throw "File '$Path' not found" }
         if ($RevealKeys) { Write-Warning 'RevealKeys is sensitive: raw key bytes will be returned in entries.' }
+        $in = Resolve-PathUniversal -Path $Path -Purpose Input
     }
     process {
-        $bytes = [IO.File]::ReadAllBytes($Path)
+        $bytes = [IO.File]::ReadAllBytes($in)
 
-        if ($bytes.Length -lt 2 -or $bytes[0] -ne 0x05 -or $bytes[1] -ne 0x02) { throw "'$Path' is not a valid keytab (expected 0x05 0x02 at start)" }
+        if ($bytes.Length -lt 2 -or $bytes[0] -ne 0x05 -or $bytes[1] -ne 0x02) { throw "'$in' is not a valid keytab (expected 0x05 0x02 at start)" }
 
         $pos = 2
         $list = New-Object System.Collections.Generic.List[object]
         while ($pos -lt $bytes.Length) {
-            if ($pos + 4 -gt $bytes.Length) { throw "Unexpected end of file at position $pos in '$Path'" }
+            if ($pos + 4 -gt $bytes.Length) { throw "Unexpected end of file at position $pos in '$in'" }
             $entryLength = [int](
                 ($bytes[$pos]      -shl 24)   -bor
                 ($bytes[$pos+1]    -shl 16)   -bor

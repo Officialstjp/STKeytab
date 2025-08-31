@@ -44,7 +44,7 @@ Copyright (c) 2025 Stefan Ploch
         - New-Keytab for:
             - User principal: verify output keytab file exists and Test-Keytab returns true; Summary JSON content fields.
             - Computer principal: mock Get-ADComputer servicePrincipalName; pass AdditionalSpn; verify principal descriptors count and output exists.
-            - Krbtgt with -IncludeOldKvno: verify multiple kvnos present; requires -AcknowledgeRisk.
+            - krbtgt detection: verify multiple kvnos present when old creds exist; internal confirmation is suppressed via -Confirm:$false.
 
     - Integration tests: Merge-Keytab
         - Create two keytabs for same principal/kvno/etype with same key; merge and verify dedup and output file exists.
@@ -296,7 +296,7 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
             Mock Get-ADDomain { [pscustomobject]@{ DNSRoot='ex.com'; NetBIOSName='EX' } }
         }
 
-        It 'Creates user keytab and summary' {
+    It 'Creates user keytab and summary' {
             $out = Join-Path $TestOutDir 'user.keytab'
             $json = Join-Path $TestOutDir 'user.json'
             $r = New-Keytab -SuppressWarnings -SamAccountName 'svc-app' -Type User -Domain 'ex.com' -OutputPath $out -JsonSummaryPath $json -PassThru -Confirm:$false
@@ -315,7 +315,7 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
             (Test-Keytab -Path $out) | Should -BeTrue
         }
 
-        It 'Creates krbtgt keytab with IncludeOldKvno when acknowledged' {
+    It 'Creates krbtgt keytab and includes old KVNO when available' {
             Mock Get-ADObject { [pscustomobject]@{ 'msDS-KeyVersionNumber' = 5; DistinguishedName = 'CN=krbtgt,DC=ex,DC=com' } }
             $old = [pscustomobject]@{ Key = (51..82 | ForEach-Object {[byte]$_}); KeyType = 18 }
             $acct = [pscustomobject]@{
@@ -331,7 +331,7 @@ Describe 'New-Keytab orchestration (mocked dependencies)' {
             }
             Mock Get-ADReplAccount { $acct }
             $out = Join-Path $TestOutDir 'krbtgt.keytab'
-            $r = New-Keytab -SuppressWarnings -SamAccountName 'krbtgt' -Type Krbtgt -Domain 'ex.com' -OutputPath $out -IncludeOldKvno -AcknowledgeRisk -Confirm:$false
+            $r = New-Keytab -SuppressWarnings -SamAccountName 'krbtgt' -Type User -Domain 'ex.com' -OutputPath $out -Confirm:$false
             Test-Path $out | Should -BeTrue
             $parsed = Read-Keytab -Path $out
             ($parsed | Select-Object -ExpandProperty Kvno | Sort-Object -Unique) | Should -Be @(4,5)
@@ -369,11 +369,11 @@ Describe 'Merge-Keytab' {
             New-KeytabFile -Path $f2c -PrincipalDescriptors @($pd) -KeySets $ks2c | Out-Null
 
             $merged = Join-Path $TestOutDir 'merged.keytab'
-            (Merge-Keytab -InputPaths @($f1,$f2) -OutputPath $merged -Force -AcknowledgeRisk) | Out-Null
+            (Merge-Keytab -InputPaths @($f1,$f2) -OutputPath $merged -Force -Confirm:$false) | Out-Null
             Test-Path $merged | Should -BeTrue
             # Conflict case
             $merged2 = Join-Path $TestOutDir 'merged-conflict.keytab'
-            { Merge-Keytab -InputPaths @($f1,$f2c) -OutputPath $merged2 -Force -AcknowledgeRisk } | Should -Throw "*Conflicting key material*"
+            { Merge-Keytab -InputPaths @($f1,$f2c) -OutputPath $merged2 -Force -Confirm:$false } | Should -Throw "*Conflicting key material*"
         }
     }
 }

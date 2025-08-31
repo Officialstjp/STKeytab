@@ -46,9 +46,6 @@ function New-KeytabFromPassword {
         .PARAMETER OutputPath
         Path to write the generated keytab.
 
-        .PARAMETER JsonSummaryPath
-        Path to write a JSON summary; defaults next to OutputPath when -Summary or -PassThru is specified.
-
         .PARAMETER Kvno
         Key Version Number to stamp into entries (default 1). Ensure this matches the account’s actual KVNO.
 
@@ -62,7 +59,10 @@ function New-KeytabFromPassword {
         Overwrite OutputPath if it exists.
 
         .PARAMETER Summary
-        Emit a JSON summary file.
+        Generate a JSON summary file.
+
+        .PARAMETER SummaryPath
+        Path to write a JSON summary; defaults next to OutputPath when -Summary or -PassThru is specified.
 
         .PARAMETER PassThru
         Return a summary object in addition to writing files.
@@ -87,26 +87,31 @@ function New-KeytabFromPassword {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'User', ConfirmImpact='Medium')]
     param(
         # Identity
-        [Parameter(Mandatory, Position=0)][ValidateNotNullOrEmpty()][string]$Realm,
-        [Parameter(ParameterSetName='User', Mandatory, Position=1)][ValidateNotNullOrEmpty()][string]$SamAccountName,
-        [Parameter(ParameterSetName='Principal', Mandatory, Position=1)][ValidateNotNullOrEmpty()][string]$Principal,
+        [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Realm,
+        [Parameter(ParameterSetName='User', Mandatory)][ValidateNotNullOrEmpty()][string]$SamAccountName,
+        [Parameter(ParameterSetName='Principal', Mandatory)][ValidateNotNullOrEmpty()][string]$Principal,
+        [string]$OutputPath,
 
         # Secret
-        [Parameter(ParameterSetName='User', Position=2)][SecureString]$Password,
+        [Parameter(ParameterSetName='User')][SecureString]$Password,
         [Parameter(ParameterSetName='User')][pscredential]$Credential,
 
         # Options
-        [Parameter(Position=3)][Alias('Comp')][ValidateSet('MIT','Heimdal','Windows')][string]$Compatibility = 'MIT',
-        [Parameter(Position=4)][object[]]$IncludeEtype = @(17,18),
-        [Parameter(Position=5)][object[]]$ExcludeEtype,
-        [Parameter(Position=6)][ValidateNotNullOrEmpty()][string]$OutputPath,
-        [Parameter(Position=7)][Alias('JsonSummaryPath')][string]$SummaryPath,
-        [Parameter(Position=8)][int]$Kvno = 1,
-        [Parameter(Position=9)][ValidateRange(1, 10000000)][int]$Iterations = 4096,
+        [Alias('Comp')][ValidateSet('MIT','Heimdal','Windows')][string]$Compatibility = 'MIT',
+        [object[]]$IncludeEtype = @(17,18),
+        [object[]]$ExcludeEtype,
+
+
+        [int]$Kvno = 1,
+        [ValidateRange(1, 10000000)][int]$Iterations = 4096,
 
         [switch]$RestrictAcl,
         [switch]$Force,
+
         [switch]$Summary,
+        [Alias('JsonSummaryPath')]
+        [string]$SummaryPath,
+
         [switch]$PassThru,
         [datetime]$FixedTimestampUtc,
 
@@ -128,6 +133,16 @@ function New-KeytabFromPassword {
         # Then, build policy intent with single source of truth (BigBrother)
         $policy = Get-PolicyIntent -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype -AESOnly:$AESOnly `
                     -IncludeLegacyRC4:$IncludeLegacyRC4 -AllowDeadCiphers:$AllowDeadCiphers -PathKind 'Password'
+
+        if ($OutputPath) {
+            $out = Resolve-PathUniversal -Path $OutputPath -Purpose Output
+        } else {
+            $out = Resolve-OutputPath -Directory (Get-Location).Path -BaseName ($SamAccountName.TrimEnd('$')) -Extension '.keytab' -CreateDirectory
+        }
+
+        if ($Summary.IsPresent -and (-not $SummaryPath)) {
+            $SummaryPath = "$($out)_summary_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
+        }
     }
     process {
         if ($Credential -and -not $Password) { $Password = $Credential.GetNetworkCredential().SecurePassword }
@@ -221,14 +236,14 @@ function New-KeytabFromPassword {
             if ($PassThru) { return $out } else { $out; return }
         }
 
-        if (-not $OutputPath) {
+        if (-not $out) {
             $base = ($princDesc.Components -join '_')
-            $OutputPath = Join-Path -Path $PSScriptRoot -ChildPath ("{0}.keytab" -f $base)
+            $out = Join-Path -Path (Get-Location) -ChildPath ("{0}.keytab" -f $base)
         }
-        if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) { throw "Output file '$OutputPath' exists. Use -Force." }
+        if ((Test-Path -LiteralPath $out) -and -not $Force) { throw "Output file '$out' exists. Use -Force." }
 
-        if ($PSCmdlet.ShouldProcess($princDesc.Display, "Create password-derived keytab file '$OutputPath'")) {
-            $final = New-KeytabFile -Path $OutputPath -PrincipalDescriptors @($princDesc) -KeySets @($keySet) -RestrictAcl:$RestrictAcl @tsArg
+        if ($PSCmdlet.ShouldProcess($princDesc.Display, "Create password-derived keytab file '$out'")) {
+            $final = New-KeytabFile -Path $out -PrincipalDescriptors @($princDesc) -KeySets @($keySet) -RestrictAcl:$RestrictAcl @tsArg
 
             if ($summary -or $PassThru) {
                 if (-not $SummaryPath) { $SummaryPath = [IO.Path]::ChangeExtension($final,'.json') }

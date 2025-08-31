@@ -65,6 +65,8 @@ function Compare-Keytab {
     begin {
         Set-StrictMode -Version Latest
         if ($RevealKeys) { Write-Warning 'RevealKeys is sensitive: raw key bytes may appear in differences.' }
+        $inRef = Resolve-PathUniversal -Path $ReferencePath -Purpose Input
+        $inCand = Resolve-PathUniversal -Path $CandidatePath -Purpose Input
 
         function New-JoinKey {
             param([pscustomobject]$E)
@@ -87,8 +89,8 @@ function Compare-Keytab {
     }
     process {
         $readKeys = -not $IgnoreKeyBytes
-        $refParsed  = Read-Keytab -Path $ReferencePath -RevealKeys:$readKeys
-        $candParsed = Read-Keytab -Path $CandidatePath  -RevealKeys:$readKeys
+        $refParsed  = Read-Keytab -Path $inRef -RevealKeys:$readKeys
+        $candParsed = Read-Keytab -Path $inCand -RevealKeys:$readKeys
         $refEntries  = if ($refParsed -is [System.Array]) { $refParsed } elseif ($refParsed.Entries) { $refParsed.Entries } else { @($refParsed) }
         $candEntries = if ($candParsed -is [System.Array]) { $candParsed } elseif ($candParsed.Entries) { $candParsed.Entries } else { @($candParsed) }
 

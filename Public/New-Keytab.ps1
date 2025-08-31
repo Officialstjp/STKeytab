@@ -19,7 +19,7 @@ function New-Keytab {
         The account's sAMAccountName (user, computer$, or krbtgt).
 
         .PARAMETER Type
-        Principal type. Auto infers from name; User, Computer, or Krbtgt can be forced.
+    Principal type. Auto infers from name; User or Computer can be forced. krbtgt is detected automatically.
 
         .PARAMETER Domain
         Domain NetBIOS or FQDN. When omitted, attempts discovery.
@@ -36,9 +36,6 @@ function New-Keytab {
 
         .PARAMETER OutputPath
         Path to write the keytab file.
-
-        .PARAMETER JsonSummaryPath
-        Optional path to write a JSON summary. Defaults next to OutputPath when summaries are requested.
 
         .PARAMETER Server
         Domain Controller to target for replication (optional).
@@ -64,14 +61,15 @@ function New-Keytab {
         .PARAMETER Summary
         Write a JSON summary file.
 
+        .PARAMETER SummaryPath
+        Optional path to write a JSON summary. Defaults next to OutputPath when summaries are requested.
+
         .PARAMETER IncludeOldKvno
         Include previous KVNO keys when available.
 
         .PARAMETER IncludeOlderKvno
         Include older KVNO keys (krbtgt scenarios).
 
-        .PARAMETER AcknowledgeRisk
-        Required for krbtgt extraction.
 
         .PARAMETER VerboseDiagnostics
         Emit additional diagnostics during extraction.
@@ -105,30 +103,28 @@ function New-Keytab {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
     param(
         # Common
-        [Parameter(Position=0, Mandatory, ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNullOrEmpty()]
         [string]$SamAccountName,
 
-        [ValidateSet('Auto','User','Computer','Krbtgt')]
+        [ValidateSet('Auto','User','Computer')]
         [string]$Type = 'Auto',
 
-        [Parameter(Position=1, ValueFromPipelineByPropertyName)][string]$Domain,
-        [Parameter(Position=2, ValueFromPipelineByPropertyName)][object[]]$IncludeEtype = @(18,17),
-        [Parameter(Position=3, ValueFromPipelineByPropertyName)][object[]]$ExcludeEtype,
+        [Parameter(ValueFromPipelineByPropertyName)][string]$Domain,
+        [Parameter(ValueFromPipelineByPropertyName)][object[]]$IncludeEtype = @(18,17),
+        [Parameter(ValueFromPipelineByPropertyName)][object[]]$ExcludeEtype,
 
-        [Parameter(Position=4, ValueFromPipelineByPropertyName)][ValidateNotNullOrEmpty()][string]$OutputPath,
-        [Parameter(Position=5, ValueFromPipelineByPropertyName)][Alias('JsonSummaryPath')][string]$SummaryPath,
-        [Parameter(Position=6, ValueFromPipelineByPropertyName)][string]$Server,
-        [Parameter(Position=7, ValueFromPipelineByPropertyName)][string]$Justification,
-        [Parameter(Position=8, ValueFromPipelineByPropertyName)][pscredential]$Credential,
-        [Parameter(Position=9, ValueFromPipelineByPropertyName)][string]$EnvFile,
+        [Parameter(ValueFromPipelineByPropertyName)][ValidateNotNullOrEmpty()][string]$OutputPath,
+        [Parameter(ValueFromPipelineByPropertyName)][Alias('JsonSummaryPath')][string]$SummaryPath,
+        [Parameter(ValueFromPipelineByPropertyName)][string]$Server,
+        [Parameter(ValueFromPipelineByPropertyName)][string]$Justification,
+        [Parameter(ValueFromPipelineByPropertyName)][pscredential]$Credential,
+        [Parameter(ValueFromPipelineByPropertyName)][string]$EnvFile,
 
         [switch]$RestrictAcl,
         [switch]$Force,
         [switch]$PassThru,
         [switch]$Summary,
-        [switch]$IncludeOldKvno,
-        [switch]$IncludeOlderKvno,
         [switch]$AcknowledgeRisk,
         [switch]$VerboseDiagnostics,
         [switch]$SuppressWarnings,
@@ -182,31 +178,20 @@ function New-Keytab {
             }
         }
 
+        if ($OutputPath) {
+            $out = Resolve-PathUniversal -Path $OutputPath -Purpose Output
+        } else {
+            $out = Resolve-OutputPath -Directory (Get-Location).Path -BaseName ($SamAccountName.TrimEnd('$')) -Extension '.keytab' -CreateDirectory
+        }
+
         $type = $Type
         if ($type -eq 'Auto') {
-        $norm = $SamAccountName.ToUpperInvariant()
-        if ($norm -eq 'KRBTGT') { $type = 'Krbtgt' }
-        elseif ($SamAccountName -match '\$$') { $type = 'Computer' }
-        else { $type = 'User' }
+            $norm = $SamAccountName.ToUpperInvariant()
+            if ($SamAccountName -match '\$$') { $type = 'Computer' } else { $type = 'User' }
         }
     }
     process {
         switch ($type) {
-            'Krbtgt' {
-                if (-not $AcknowledgeRisk) { throw "Extraction of krbtgt is High/Critical impact. Re-run with -AcknowledgeRisk after justification review." }
-                if ($PSCmdlet.ShouldProcess('krbtgt',"Create krbtgt keytab (multi-KVNO possible)")) {
-                    if (-not $SuppressWarnings.IsPresent) { Write-SecurityWarning 'krbtgt' -SamAccountName 'krbtgt' | Out-Null }
-                $extra = @{}
-                if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { $extra.FixedTimestampUtc = $FixedTimestampUtc }
-                $inc = ($script:__nk_policy ? $script:__nk_policy.IncludeIds : $IncludeEtype)
-                $exc = ($script:__nk_policy ? $script:__nk_policy.ExcludeIds : $ExcludeEtype)
-                return New-PrincipalKeytabInternal -SamAccountName 'krbtgt' -Domain $Domain -Server $Server -Credential $Credential `
-                                                        -OutputPath $OutputPath -IncludeEtype $inc -ExcludeEtype $exc -Policy $script:__nk_policy -IsKrbtgt `
-                                                        -IncludeOldKvno:$IncludeOldKvno -IncludeOlderKvno:$IncludeOlderKvno -RestrictAcl:$RestrictAcl -Force:$Force `
-                                                        -JsonSummaryPath $SummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
-                                                        -VerboseDiagnostics:$VerboseDiagnostics @extra
-                }
-            }
             'Computer' {
                 $domainFqdn = Resolve-DomainContext -Domain $Domain
                 $realm = $domainFqdn.ToUpperInvariant()
@@ -224,29 +209,29 @@ function New-Keytab {
                 if ($desc.Count -eq 0) { throw "No SPN principals resolved for computer '$compName'." }
 
                 if ($PSCmdlet.ShouldProcess($compName,"Create computer keytab")) {
-                    if (-not $SuppressWarnings.IsPresent) { Write-SecurityWarning -RiskLevel 'High' -SamAccountName ("{0}$" -f $compName) | Out-Null }
                     $extra = @{}
                     if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { $extra.FixedTimestampUtc = $FixedTimestampUtc }
                     $inc = ($script:__nk_policy ? $script:__nk_policy.IncludeIds : $IncludeEtype)
                     $exc = ($script:__nk_policy ? $script:__nk_policy.ExcludeIds : $ExcludeEtype)
-                    return New-PrincipalKeytabInternal -SamAccountName ("{0}$" -f $compName) -Domain $domainFqdn -Server $Server -Credential $Credential `
-                                                    -OutputPath $OutputPath -IncludeEtype $inc -ExcludeEtype $exc -Policy $script:__nk_policy -RestrictAcl:$RestrictAcl -Force:$Force `
-                                                    -JsonSummaryPath $SummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification `
+                    $result = New-PrincipalKeytabInternal -SamAccountName ("{0}$" -f $compName) -Domain $domainFqdn -Server $Server -Credential $Credential `
+                                                    -OutputPath $out -IncludeEtype $inc -ExcludeEtype $exc -Policy $script:__nk_policy -RestrictAcl:$RestrictAcl -Force:$Force `
+                                                    -JsonSummaryPath $SummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification -AcknowledgeRisk:$AcknowledgeRisk `
                                                     -PrincipalDescriptorsOverride $desc -VerboseDiagnostics:$VerboseDiagnostics @extra
+                    return $result
                 }
             }
             'User' {
                 $userName = $SamAccountName
                 if ($PSCmdlet.ShouldProcess($userName,"Create user keytab")) {
-                    if (-not $SuppressWarnings.IsPresent) { Write-SecurityWarning -RiskLevel 'Medium' -SamAccountName $userName | Out-Null }
                     $extra = @{}
                     if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { $extra.FixedTimestampUtc = $FixedTimestampUtc }
                     $inc = ($script:__nk_policy ? $script:__nk_policy.IncludeIds : $IncludeEtype)
                     $exc = ($script:__nk_policy ? $script:__nk_policy.ExcludeIds : $ExcludeEtype)
-                    return New-PrincipalKeytabInternal -SamAccountName $userName -Domain $Domain -Server $Server -Credential $Credential `
-                                                    -OutputPath $OutputPath -IncludeEtype $inc -ExcludeEtype $exc -Policy $script:__nk_policy `
-                                                    -RestrictAcl:$RestrictAcl -Force:$Force -JsonSummaryPath $SummaryPath -PassThru:$PassThru `
+                    $result = New-PrincipalKeytabInternal -SamAccountName $userName -Domain $Domain -Server $Server -Credential $Credential `
+                                                    -OutputPath $out -IncludeEtype $inc -ExcludeEtype $exc -Policy $script:__nk_policy `
+                                                    -RestrictAcl:$RestrictAcl -Force:$Force -JsonSummaryPath $SummaryPath -PassThru:$PassThru -AcknowledgeRisk:$AcknowledgeRisk `
                                                     -Summary:$Summary -Justification $Justification -VerboseDiagnostics:$VerboseDiagnostics @extra
+                    return $result
                 }
             }
         }

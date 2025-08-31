@@ -46,9 +46,8 @@ function ConvertFrom-KeytabJson {
         [ValidateNotNullOrEmpty()]
         [string]$JsonPath,
 
-        [Parameter()]
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName, Position=1)]
         [Alias('OutFile', 'Out')]
-        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         [switch]$Force,
@@ -56,12 +55,16 @@ function ConvertFrom-KeytabJson {
         [switch]$RestrictAcl
     )
     begin {
-        if (-not (Test-Path -LiteralPath $JsonPath)) { throw "File not found: $JsonPath" }
-        if (-not $OutputPath) { $OutputPath = "$JsonPath.keytab" }
+        $in = Resolve-PathUniversal -Path $JsonPath -Purpose Input
+        if ($OutputPath) {
+            $out = Resolve-PathUniversal -Path $OutputPath -Purpose Output
+        } else {
+            $out = Resolve-OutputPath -InputPath $in -Extension '.keytab' -CreateDirectory
+        }
     }
     process {
-        $entries = Get-Content -LiteralPath $JsonPath -Raw | ConvertFrom-Json
-        if (-not $entries) { throw "No entries found in JSON '$jsonPath'."}
+        $entries = Get-Content -LiteralPath $in -Raw | ConvertFrom-Json
+        if (-not $entries) { throw "No entries found in JSON '$in'."}
 
         # Group into principal descriptors and key sets
         $byPrincipal = $entries | Group-Object { '{0}|{1}|{2}' -f $_.Realm, ($_.Components -join '/'), $_.NameType }
@@ -95,17 +98,17 @@ function ConvertFrom-KeytabJson {
             $keySetsByPrincipal += $keySetSets
         }
 
-        if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) { throw "Output exists. Use -force to overwrite"}
+        if ((Test-Path -LiteralPath $out) -and -not $Force) { throw "Output exists. Use -force to overwrite"}
 
         $tsArg = @{}
         if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) {
             $tsArg.FixedTimestampUtc = $FixedTimestampUtc
         }
-        if ($PSCmdlet.ShouldProcess($OutputPath, "Write keytab from JSON")) {
-            New-KeytabFile -Path $OutputPath -PrincipalDescriptors $principalDescriptors -KeySets ($keySetsByPrincipal | Select-Object -First 1) -RestrictAcl:$RestrictAcl @tsArg
+        if ($PSCmdlet.ShouldProcess($out, "Write keytab from JSON")) {
+            New-KeytabFile -Path $out -PrincipalDescriptors $principalDescriptors -KeySets ($keySetsByPrincipal | Select-Object -First 1) -RestrictAcl:$RestrictAcl @tsArg
         }
     }
     end {
-        return $OutputPath
+        return $out
     }
 }

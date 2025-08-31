@@ -43,8 +43,11 @@ function Set-AccountSpn {
         .PARAMETER IgnoreConflicts
         Proceed even if SPN conflicts are detected.
 
-        .PARAMETER JsonSummaryPath
-        Path to write operation summary JSON.
+        .PARAMETER Summary
+        Write a summary file with operation results.
+
+        .PARAMETER SummaryPath
+        Path to write operation summary JSON. Defaults next to Output when omitted.
 
         .PARAMETER PassThru
         Return detailed operation results.
@@ -83,7 +86,10 @@ function Set-AccountSpn {
         # Safety & Control
         [switch]$Force,
         [switch]$IgnoreConflicts,
-        [string]$JsonSummaryPath,
+        [switch]$Summary,
+        [Alias('JsonSummaryPath')]
+        [string]$SummaryPath,
+
         [switch]$PassThru
     )
 
@@ -97,6 +103,10 @@ function Set-AccountSpn {
         # Normalize inputs
         $spnsToAdd = @($Add | Where-Object { $_ })
         $spnsToRemove = @($Remove | Where-Object { $_ })
+
+        if (-not $SummaryPath) {
+            $SummaryPath = Resolve-OutputPath -Directory (Get-Location).Path -BaseName "Set-AccountSpn_summary" -Extension ".json" -CreateDirectory
+        }
     }
 
     process {
@@ -243,7 +253,7 @@ function Set-AccountSpn {
 
                         $removeParams = @{
                             Identity = $account
-                            Remove = @{servicePrincipalName = $spn}
+                            Remove = @{servicePrincipalName = @($spn)}
                         }
                         if ($Server) { $removeParams.Server = $Server }
                         if ($Credential) { $removeParams.Credential = $Credential }
@@ -259,7 +269,7 @@ function Set-AccountSpn {
 
                         $addParams = @{
                             Identity = $account
-                            Add = @{servicePrincipalName = $spn}
+                            Add = @{servicePrincipalName = @($spn)}
                         }
                         if ($Server) { $addParams.Server = $Server }
                         if ($Credential) { $addParams.Credential = $Credential }
@@ -291,8 +301,8 @@ function Set-AccountSpn {
                         Timestamp = (Get-Date).ToUniversalTime().ToString('o')
                     }
 
-                    if ($JsonSummaryPath) {
-                        $result | ConvertTo-Json -Depth 3 | Set-Content -Path $JsonSummaryPath -Encoding UTF8
+                    if ($Summary.IsPresent -and $SummaryPath) {
+                        $result | ConvertTo-Json -Depth 3 | Set-Content -Path $SummaryPath -Encoding UTF8
                     }
 
                     Write-Host "SPN operations completed successfully for $SamAccountName" -ForegroundColor Green

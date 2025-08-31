@@ -39,7 +39,7 @@ function Test-Keytab {
         [switch]$Detailed
     )
     begin {
-        if (-not (Test-Path -LiteralPath $Path)) { throw "File not found: $Path" }
+        $in = Resolve-PathUniversal -Path $Path -Purpose Input
         $result = @{
             IsValid       = $false
             EntryCount    = 0
@@ -49,7 +49,7 @@ function Test-Keytab {
     }
     process {
         try {
-            $parsed = Read-Keytab -Path $Path
+            $parsed = Read-Keytab -Path $in
             $result.EntryCount = $parsed.Count
             $unknown = @()
             foreach ($e in $parsed) {

@@ -47,9 +47,7 @@ function ConvertTo-KeytabJson {
         [ValidateNotNullOrEmpty()]
         [string]$Path,
 
-        [Parameter()]
         [Alias('OutFile', 'Out')]
-        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         [switch]$RevealKeys,
@@ -57,6 +55,12 @@ function ConvertTo-KeytabJson {
     )
     begin {
         if ($RevealKeys) { Write-Warning 'RevealKeys is sensitive: raw key bytes will be included in JSON output.' }
+        $in = Resolve-PathUniversal -Path $Path -Purpose Input
+        if ($OutputPath) {
+            $out = Resolve-PathUniversal -Path $OutputPath -Purpose Output
+        } else {
+            $out = Resolve-OutputPath -InputPath $in -Extension '.json' -CreateDirectory
+        }
     }
     process {
         if ($PSCmdlet.ShouldProcess($Path, 'Converting keytab to JSON')) {
@@ -68,9 +72,9 @@ function ConvertTo-KeytabJson {
                 foreach ($e in $canon) { $e.PSObject.Properties.Remove('Key') | Out-Null }
             }
             $json = $canon | ConvertTo-Json -Depth 6
-            if ($OutputPath) {
-                $json | Set-Content -LiteralPath $OutputPath -Encoding UTF8
-                return $OutputPath
+            if ($out) {
+                $json | Set-Content -LiteralPath $out -Encoding UTF8
+                return $out
             }
         }
     }

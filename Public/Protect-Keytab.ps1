@@ -49,13 +49,12 @@ function Protect-Keytab {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position=0)]
-        [Alias('In','FullName','FilePath')]
+        [Alias('Path','In','FullName','FilePath')]
         [ValidateNotNullOrEmpty()]
-        [string]$Path,
+        [string]$InputPath,
 
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName, Position=1)]
         [Alias('Out','Output', 'OutFile')]
-        [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
         [Validateset('CurrentUser','LocalMachine')]
@@ -68,15 +67,16 @@ function Protect-Keytab {
         [switch]$RestrictAcl
     )
     begin {
-        if (-not (Test-Path -LiteralPath $Path)) { throw "File not found: $Path" }
-        if (-not $OutputPath) { $OutputPath = "$Path.dpapi" }
-        if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) {
-            throw "Output file '$OutputPath' already exists. Use -Force to overwrite."
+        $in = Resolve-PathUniversal -Path $InputPath -Purpose Input
+        if ($OutputPath) {
+            $out = Resolve-PathUniversal -Path $OutputPath -Purpose Output
+        } else {
+            $out = Resolve-OutputPath -InputPath $in -Extension '.dpapi' -AppendExtension -CreateDirectory
         }
     }
     process {
-        if ($PSCmdlet.ShouldProcess($Path, 'Protect keytab (DPAPI)')) {
-            $bytes = [IO.File]::ReadAllBytes($Path)
+        if ($PSCmdlet.ShouldProcess($in, 'Protect keytab (DPAPI)')) {
+            $bytes = [IO.File]::ReadAllBytes($in)
             $entropyBytes = $null
             try {
                 if ($EntropySecure) {
@@ -101,8 +101,8 @@ function Protect-Keytab {
 
             try {
                 $protected = [System.Security.Cryptography.ProtectedData]::Protect($bytes, $entropyBytes, $scopeEnum)
-                [IO.File]::WriteAllBytes($OutputPath, $protected)
-                if ($RestrictAcl) { Set-UserOnlyAcl -Path $OutputPath }
+                [IO.File]::WriteAllBytes($out, $protected)
+                if ($RestrictAcl) { Set-UserOnlyAcl -Path $out }
             } finally {
                 if ($bytes) { [Array]::Clear($bytes, 0, $bytes.Length) }
                 if ($protected) { [Array]::Clear($protected, 0, $protected.Length) }
@@ -112,9 +112,9 @@ function Protect-Keytab {
     }
     end {
         if ($DeletePlaintext) {
-            try { Remove-Item -LiteralPath $Path -Force } catch { Write-Warning "Failed to delete plaintext '$Path': $($_.Exception.Message)" }
+            try { Remove-Item -LiteralPath $in -Force } catch { Write-Warning "Failed to delete plaintext '$in': $($_.Exception.Message)" }
         }
-        return $OutputPath
+        return $out
     }
 }
 
