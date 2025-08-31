@@ -156,7 +156,7 @@ function New-KeytabFile {
 
     [IO.File]::WriteAllBytes($tmp, $memStream.ToArray())
     Move-Item -LiteralPath $tmp -Destination $full -Force
-    if ($RestrictAcl) { Set-UserOnlyAcl -Path $full }
+    if ($RestrictAcl) { $null = Set-UserOnlyAcl -Path $full }
     $full
 }
 #endregion

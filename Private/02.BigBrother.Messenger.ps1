@@ -138,7 +138,7 @@ function Write-SecurityWarning {
     )
 
     if ($Suppress -or ($env:STCRYPT_SUPPRESS_SECURITY_WARNING -eq '1')) {
-        return
+        if ($AsString) { return "" } else { return }
     }
 
     # Normalize internal width (content width inside borders)
