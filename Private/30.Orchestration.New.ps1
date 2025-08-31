@@ -36,7 +36,8 @@ function New-PrincipalKeytabInternal {
 		[string]$Justification,
 		[switch]$PassThru,
 		[switch]$Summary,
-		[switch]$IsKrbtgt,
+	    [switch]$IsKrbtgt,
+		[switch]$AcknowledgeRisk,
 		[switch]$IncludeOldKvno,
 		[switch]$IncludeOlderKvno,
 		[object[]]$PrincipalDescriptorsOverride,
@@ -56,17 +57,20 @@ function New-PrincipalKeytabInternal {
 	$realm = $DomainFQDN.ToUpperInvariant()
 
 	$acct = Get-ReplicatedAccount -SamAccountName $SamAccountName -DomainFQDN $domainFQDN -Server $Server -Credential $Credential
-	$material = Get-KerberosKeyMaterialFromAccount -Account $acct -SamAccountName $SamAccountName -Server $Server -IsKrbtgt:$IsKrbtgt
+	# Detect krbtgt implicitly if not explicitly passed
+	$isKrbtgtEffective = $IsKrbtgt.IsPresent -or ($SamAccountName.ToUpperInvariant() -eq 'KRBTGT')
+	$material = Get-KerberosKeyMaterialFromAccount -Account $acct -SamAccountName $SamAccountName -Server $Server -IsKrbtgt:$isKrbtgtEffective
 	if ($VerboseDiagnostics) { $material.Diagnostics | ForEach-Object { Write-Verbose $_ } }
 
 	# Filter Kvno sets if krbtgt and old kvnos when explicitly requested
 	$keySets = @($material.KeySets | Sort-Object -Property Kvno -Descending)
-	if ($IsKrbtgt) {
+	if ($isKrbtgtEffective) {
+		# Include current and up to two previous KVNOs when present
 		$wanted = @()
+		[int]$curr = [int]$keySets[0].Kvno
+		$candidates = @($curr, ($curr - 1), ($curr - 2))
 		foreach ($keySet in $keySets) {
-			if ($keySet.Kvno -eq $keySets[0].Kvno) { $wanted += $keySet; continue }
-			if ($IncludeOldKvno   -and $keySet.Kvno -eq ($keySets[0].Kvno - 1)) { $wanted += $keySet; continue }
-			if ($IncludeOlderKvno -and $keySet.Kvno -eq ($keySets[0].Kvno - 2)) { $wanted += $keySet; continue }
+			if ($candidates -contains [int]$keySet.Kvno) { $wanted += $keySet }
 		}
 		$keySets = $wanted
 		if ($keySets.Count -eq 0) { throw "No key sets selected for krbtgt after KVNO filtering" }
@@ -91,7 +95,7 @@ function New-PrincipalKeytabInternal {
 		} elseif ($material.PrincipalType -eq 'Computer') {
 			# Build from SPNs for the computer; default includes FQDN forms
 			@((Get-ComputerPrincipalDescriptors -ComputerName ($SamAccountName.TrimEnd('$')) -DomainFqdn $domainFQDN))
-		} elseif ($IsKrbtgt) {
+	} elseif ($isKrbtgtEffective) {
 			,(Get-KrbtgtPrincipalDescriptor -Realm $realm)
 		} else {
 			throw "Unable to build principals for type '$($material.PrincipalType)'."
@@ -99,9 +103,19 @@ function New-PrincipalKeytabInternal {
 	}
 
 	$risk = $material.RiskLevel
-	if ($IsKrbtgt -and -not $PSBoundParameters.ContainsKey('IncludeOldKvno')) {
-		Write-Verbose "krbtgt: only current KVNO included (use -IncludeOldKvno / -IncludeOlderKvno to extend)."
+	# Security banner and if so, krbtgt confirmation before writing files
+	if (-not $SuppressWarnings) {
+		Write-SecurityWarning -RiskLevel $risk -SamAccountName $SamAccountName | Out-Null
 	}
+	if ($risk -eq 'krbtgt') {
+		# Bypass prompt when explicitly acknowledged or when confirmation is suppressed globally (CI: -Confirm:$false)
+		if ($AcknowledgeRisk.IsPresent -or ($ConfirmPreference -eq 'None')) {
+			# proceed silently
+		} else {
+			if (-not $PSCmdlet.ShouldContinue('You are about to create or handle KRBTGT key material. Proceed?', 'High Impact Operation')) { return }
+		}
+	}
+	# krbtgt includes old KVNOs automatically (current, -1, -2 when available)
 	if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) {
 		$finalPath = New-KeytabFile -Path $OutputPath -PrincipalDescriptors $principalDescriptors -KeySets $keySets -EtypeFilter $selection.Selected -RestrictAcl:$RestrictAcl -FixedTimestampUtc $FixedTimestampUtc
 	} else {

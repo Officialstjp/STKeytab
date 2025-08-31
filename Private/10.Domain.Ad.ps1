@@ -298,13 +298,73 @@ function Get-KerberosKeyMaterialFromAccount {
         $upperDn = $null
     }
 
+    # Determine privileged user membership (Domain Admins, Enterprise Admins, Schema Admins, Administrators)
+    $isPrivileged = $false
+    if ($principalType -eq 'User' -and -not $IsKrbtgt) {
+        try {
+            $isPrivileged = Test-IsPrivilegedUser -Identity $SamAccountName -Server $Server
+        } catch {
+            Write-Verbose ("Privilege check failed: {0}" -f $_.Exception.Message)
+        }
+    }
+
     [pscustomobject]@{
         SamAccountName = $SamAccountName
         PrincipalType  = $principalType
         KeySets        = $finalSets
         Diagnostics    = $diag
-        RiskLevel      = (Get-RiskLevelForPrincipal -SamAccountName $SamAccountName -PrincipalType $principalType -isDC $isDC)
+        RiskLevel      = (
+            ($SamAccountName.ToUpperInvariant() -eq 'KRBTGT') ? 'krbtgt' : (
+                ($principalType -eq 'Computer' -and $isDC) ? 'High' : (
+                    ($principalType -eq 'User' -and $isPrivileged) ? 'High' : 'Medium'
+                )
+            )
+        )
     }
 }
 
+#endregion
+
+
+#region Privilege Helpers
+function Test-IsPrivilegedUser {
+    <#
+        .SYNOPSIS
+        Checks if a user is a member (directly or transitively) of high-privilege groups.
+
+        .DESCRIPTION
+        Uses Get-ADPrincipalGroupMembership to resolve transitive group membership and flags
+        membership in Domain Admins, Enterprise Admins, Schema Admins, or Administrators.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Identity,
+        [string]$Server,
+        [pscredential]$Credential
+    )
+
+    $params = @{ Identity = $Identity; ErrorAction = 'Stop' }
+    if ($Server) { $params.Server = $Server }
+    if ($Credential) { $params.Credential = $Credential }
+
+    try {
+        $groups = Get-ADPrincipalGroupMembership @params
+    } catch {
+        Write-Verbose ("Get-ADPrincipalGroupMembership failed for '{0}': {1}" -f $Identity, $_.Exception.Message)
+        return $false
+    }
+    if (-not $groups) { return $false }
+
+    $highNames = @('Domain Admins','Enterprise Admins','Schema Admins','Administrators')
+    foreach ($g in $groups) {
+        $name = ($g.SamAccountName ?? $g.Name)
+        if ($name -and ($name -in $highNames)) { return $true }
+        # also check some well-known RIDs where possible
+        if ($g.ObjectSID) {
+            $sidText = $g.ObjectSID.Value
+            if ($sidText -match '-512$' -or $sidText -match '-519$' -or $sidText -match '-518$' -or $sidText -match '-544$') { return $true }
+        }
+    }
+    return $false
+}
 #endregion
