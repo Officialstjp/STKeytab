@@ -18,6 +18,8 @@ temp/
 # artifacts for now
 artifacts/
 
+docs/private/
+
 # Sensitive artifacts that shouldn't be committed
 *.keytab
 *.dpapi
