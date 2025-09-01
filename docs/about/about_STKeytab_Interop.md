@@ -39,12 +39,18 @@ Modern Kerberos implementations support different encryption types with varying 
 - AES256-CTS-HMAC-SHA1-96 (etype 18): Best compatibility and security
 - AES128-CTS-HMAC-SHA1-96 (etype 17): Good compatibility, adequate security
 
+### Modern Standards (RFC 8009)
+- AES256-CTS-HMAC-SHA384-192 (etype 20): Enhanced security, limited platform support
+- AES128-CTS-HMAC-SHA256-128 (etype 19): Enhanced security, limited platform support
+- Note: AES-SHA2 types require newer Kerberos implementations (MIT 1.15+, Windows Server 2019+)
+
 ### Legacy Support Only
 - RC4-HMAC (etype 23): Deprecated, cryptographically weak
 - DES-based etypes: Obsolete, not supported by this module
 
 ### Cross-Platform Recommendations
-- Use AES256 and AES128 for new deployments
+- Use AES256-SHA1 and AES128-SHA1 for compatibility
+- Use AES-SHA2 types when all systems support RFC 8009
 - Include RC4 only when required for legacy system compatibility
 - Test keytabs against target systems before production deployment
 

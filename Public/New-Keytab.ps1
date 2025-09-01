@@ -19,7 +19,7 @@ function New-Keytab {
         The account's sAMAccountName (user, computer$, or krbtgt).
 
         .PARAMETER Type
-    Principal type. Auto infers from name; User or Computer can be forced. krbtgt is detected automatically.
+        Principal type. Auto infers from name; User or Computer can be forced. krbtgt is detected automatically.
 
         .PARAMETER Domain
         Domain NetBIOS or FQDN. When omitted, attempts discovery.
@@ -33,6 +33,15 @@ function New-Keytab {
 
         .PARAMETER IncludeLegacyRC4
         Includes the RC4 encryption type (23).
+
+        .PARAMETER AllowDeadCiphers
+        Allow the use of deprecated or weak encryption types (other than 17,18,19,20,23). No support guaranteed.
+
+        .PARAMETER AESOnly
+        Restrict to AES encryption types only (18,17).
+
+        .PARAMETER ModernCrypto
+        Include modern AES-SHA2 encryption types (19,20) in addition to defaults. Requires newer Kerberos implementations.
 
         .PARAMETER OutputPath
         Path to write the keytab file.
@@ -64,13 +73,6 @@ function New-Keytab {
         .PARAMETER SummaryPath
         Optional path to write a JSON summary. Defaults next to OutputPath when summaries are requested.
 
-        .PARAMETER IncludeOldKvno
-        Include previous KVNO keys when available.
-
-        .PARAMETER IncludeOlderKvno
-        Include older KVNO keys (krbtgt scenarios).
-
-
         .PARAMETER VerboseDiagnostics
         Emit additional diagnostics during extraction.
 
@@ -99,6 +101,10 @@ function New-Keytab {
         .EXAMPLE
         New-Keytab -SamAccountName user1 -IncludeEtype 18,17 -ExcludeEtype 23 -OutputPath .\user1.keytab -FixedTimestampUtc (Get-Date '2020-01-01Z')
         Create a deterministic user keytab with AES types only.
+
+        .EXAMPLE
+        New-Keytab -SamAccountName web01$ -Type Computer -ModernCrypto -OutputPath .\web01-modern.keytab -Summary
+        Create a computer keytab with modern AES-SHA2 encryption types and write a summary JSON.
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
     param(
@@ -137,7 +143,8 @@ function New-Keytab {
         # Quick settings
         [switch]$IncludeLegacyRC4,
         [switch]$AESOnly,
-        [switch]$AllowDeadCiphers
+        [switch]$AllowDeadCiphers,
+        [switch]$ModernCrypto  # Include AES-SHA2 types (19,20)
     )
 
     begin {
@@ -146,7 +153,10 @@ function New-Keytab {
             throw "-AESOnly cannot be defined with -IncludeLegacyRC4 or -AllowDeadCiphers."
         }
 
-        # Then, compose policy intent for replication path; orchestration can use it to resolve final etypes (BigBrother)
+        # Handle modern crypto convenience parameter
+        if ($ModernCrypto.IsPresent -and -not $PSBoundParameters.ContainsKey('IncludeEtype')) {
+            $IncludeEtype = @(17,18,19,20)  # All AES types
+        }        # Then, compose policy intent for replication path; orchestration can use it to resolve final etypes (BigBrother)
         try {
             $script:__nk_policy = Get-PolicyIntent -IncludeEtype $IncludeEtype -ExcludeEtype $ExcludeEtype -AESOnly:$AESOnly `
                                                   -IncludeLegacyRC4:$IncludeLegacyRC4 -AllowDeadCiphers:$AllowDeadCiphers -PathKind 'Replication'

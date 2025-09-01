@@ -14,13 +14,14 @@
 
 ## Introduction
 
-**STKeytab** is a security-focused PowerShell module that creates and manages MIT Kerberos keytab files (format 0x0502) Active Directory accounts. The module supports two primary workflows:
+**STKeytab** (V0.6.0) is a security-focused PowerShell module that creates and manages MIT Kerberos keytab files (format 0x0502) Active Directory accounts. The module supports two primary workflows:
 
 1. Replication-based extraction: Extract Kerberos keys from Active Directory using DCSync-equivalent permissions via the DSInternals module
-2. Password-based derivation: Generate keytabs from passwords using AES string-to-key (PBKDF2-HMACSHA1) with MIT/Heimdal/Windows salt policies
+2. Password-based derivation: Generate keytabs from passwords using AES string-to-key (PBKDF2-HMAC-SHA1/SHA256/SHA384) with MIT/Heimdal/Windows salt policies
 
 **Key Features**
 - Safe defaults: AES-only encryption (AES256, AES128) by default; RC4 requires explicit opt-in
+- Modern crypto: AES-SHA2 support (etypes 19/20) ahead of Windows tooling via RFC 8009 implementation
 - Deterministic output: Optional fixed timestamps for byte-identical results across runs
 - DPAPI protection: Encrypt keytabs at rest with Windows Data Protection API
 - Canonical comparison: Compare keytabs with timestamp-insensitive and key-byte options
@@ -64,17 +65,17 @@ New-Keytab -SamAccountName WEB01$ -Domain contoso.com -IncludeEtype AES256_CTS_H
 New-Keytab -SamAccountName WEB01$ -Domain contoso.com -FixedTimestampUtc (Get-Date '2024-01-01Z')
 ```
 
-- **New-KeytabFromPassword**: Generate keytabs from passwords using AES S2K (PBKDF2-HMACSHA1)
+- **New-KeytabFromPassword**: Generate keytabs from passwords using AES S2K (PBKDF2-HMAC-SHA1/SHA256/SHA384)
 
 ```powershell
-# User principal with AES S2K derivation
+# User principal with AES S2K derivation (SHA1)
 $sec = ConvertTo-SecureString 'P@ssw0rd!' -AsPlainText -Force
 New-KeytabFromPassword -SamAccountName user1 -Realm EXAMPLE.COM -Password $sec -Kvno 3 -Iterations 4096 `
   -OutputPath .\user1.keytab -Force -FixedTimestampUtc (Get-Date '2024-01-01Z') -Summary -PassThru
 
-# Service principal with Windows-compatible salt handling
+# Service principal with modern AES-SHA2 encryption (etype 19)
 New-KeytabFromPassword -Principal 'HTTP/web01.example.com@EXAMPLE.COM' -Realm EXAMPLE.COM -Password $sec `
-  -Compatibility Windows -IncludeEtype 18 -OutputPath .\http-web01.keytab -Force
+  -Compatibility Windows -IncludeEtype 19 -OutputPath .\http-web01.keytab -Force
 ```
 
 
@@ -184,6 +185,15 @@ When using fixed timestamps, the writer applies a stable entry ordering algorith
 - Test & Sign workflow runs Pester, PSScriptAnalyzer, optional signing, packaging, and signed import verification. See .github/workflows/test_sign.yml and CI/Test-Sign/Test-Sign.ps1.
 
 ## Changelog
+
+### [0.6.0] - 2025-09-01
+#### Added
+- **AES-SHA2 Support**: RFC 8009 implementation for modern encryption types
+  - AES128-CTS-HMAC-SHA256-128 (etype 19) and AES256-CTS-HMAC-SHA384-192 (etype 20)
+  - Enhanced `New-KeytabFromPassword` with PBKDF2-HMAC-SHA256/SHA384 support
+- **Crypto Infrastructure**: Generalized PBKDF2 implementation supporting multiple hash algorithms
+  - Unified `Invoke-PBKDF2Hmac` function with pluggable HMAC algorithms
+  - Extended `Derive-AesKeyWithPbkdf2` supporting etypes 17,18,19,20
 
 ### [0.5.0] - 2025-08-28
 #### Added

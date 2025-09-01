@@ -10,7 +10,7 @@ function New-KeytabFromPassword {
     Generate a keytab from a password using MIT/Heimdal/Windows salt policies (AES only).
 
     .DESCRIPTION
-    Derives AES keys (etype 17/18) via PBKDF2-HMACSHA1 and writes a MIT v0x0502 keytab. Supports two
+    Derives AES keys via PBKDF2-HMAC-SHA1 (Etype 17/18) or PBKDF2-HMAC-SHA256/SHA384 (Etype 19/20) and writes a MIT v0x0502 keytab. Supports two
     identity parameter sets (User via -SamAccountName, or service via -Principal). Defaults to AES-only
     selection and deterministic outputs when -FixedTimestampUtc is provided. This path does not use
     replication; the caller controls KVNO. Ensure KVNO matches the account’s actual key version when using
@@ -42,6 +42,15 @@ function New-KeytabFromPassword {
 
     .PARAMETER IncludeLegacyRC4
     Includes the RC4 encryption type (23).
+
+    .PARAMETER AllowDeadCiphers
+    Allow the use of deprecated or weak encryption types (other than 17,18,19,20,23). No support guaranteed.
+
+    .PARAMETER AESOnly
+    Restrict to AES encryption types only (18,17).
+
+    .PARAMETER ModernCrypto
+    Include modern AES-SHA2 encryption types (19,20) in addition to defaults. Requires newer Kerberos implementations.
 
     .PARAMETER OutputPath
     Path to write the generated keytab.
@@ -83,6 +92,10 @@ function New-KeytabFromPassword {
     .EXAMPLE
     New-KeytabFromPassword -Realm CONTOSO.COM -Principal http/web01.contoso.com@CONTOSO.COM -Credential (Get-Credential) -IncludeEtype 18 -Kvno 3 -OutputPath .\http.keytab
     Generate a service keytab with AES-256 only and KVNO 3.
+
+    .EXAMPLE
+    New-KeytabFromPassword -Realm CONTOSO.COM -SamAccountName user1 -Password (Read-Host -AsSecureString) -ModernCrypto -OutputPath .\user1-modern.keytab
+    Generate a user keytab with modern AES-SHA2 encryption types (17,18,19,20).
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'User', ConfirmImpact='Medium')]
     param(
@@ -118,7 +131,8 @@ function New-KeytabFromPassword {
         # Quick settings
         [switch]$IncludeLegacyRC4,
         [switch]$AESOnly,
-        [switch]$AllowDeadCiphers
+        [switch]$AllowDeadCiphers,
+        [switch]$ModernCrypto  # Include AES-SHA2 types (19,20)
     )
 
     begin {
@@ -128,6 +142,11 @@ function New-KeytabFromPassword {
         }
         if (-not $PSBoundParameters.ContainsKey('Password') -and -not $PSBoundParameters.ContainsKey('Credential')) {
             throw "-Password and -Credential cannot be specified together."
+        }
+
+        # Handle modern crypto convenience parameter
+        if ($ModernCrypto.IsPresent -and -not $PSBoundParameters.ContainsKey('IncludeEtype')) {
+            $IncludeEtype = @(17,18,19,20)  # All AES types
         }
 
         # Then, build policy intent with single source of truth (BigBrother)
@@ -184,7 +203,7 @@ function New-KeytabFromPassword {
 
         # Enforce password-path compatibility and resolve selection once
         Validate-PasswordPathCompatibility -Policy $policy
-        $available = @(17,18) # password path supports AES only today
+        $available = @(17,18,19,20)
         $selection = Resolve-EtypeSelection -AvailableIds $available -Policy $policy
         if ($selection.Selected.Count -eq 0) { throw "No Encryption types selected."}
         if ($selection.UnknownInclude.Count -gt 0) { Write-Warning "Unknown IncludeEtype: " + ($selection.UnknownInclude -join ', ')}
@@ -198,7 +217,7 @@ function New-KeytabFromPassword {
             $saltBytes = Get-DefaultSalt -Compatibility $Compatibility -PrincipalDescriptor $princDesc
             $keys = @{}
             foreach ($etype in $selection.Selected) {
-                if ($etype -notin 17,18) { throw "Only AES etypes (17,18) supported in this path."}
+                if ($etype -notin 17,18,19,20) { throw "Only AES etypes (17,18,19,20) supported in this path."}
                 $key = Derive-AesKeyWithPbkdf2 -Etype $etype -PasswordPlain $plain -SaltBytes $saltBytes -Iterations $Iterations
                 $keys[$etype] = $key
             }
@@ -247,7 +266,15 @@ function New-KeytabFromPassword {
 
             if ($summary -or $PassThru) {
                 if (-not $SummaryPath) { $SummaryPath = [IO.Path]::ChangeExtension($final,'.json') }
-                $etypeNames = @($selection.Selected | ForEach-Object { if ($_ -eq 17) { 'AES128_CTS_HMAC_SHA1_96' } elseif ($_ -eq 18) { 'AES256_CTS_HMAC_SHA1_96' } else { "ETYPE_$_" } })
+                $etypeNames = @($selection.Selected | ForEach-Object {
+                    switch ($_) {
+                        17 { 'AES128_CTS_HMAC_SHA1_96' }
+                        18 { 'AES256_CTS_HMAC_SHA1_96' }
+                        19 { 'AES128_CTS_HMAC_SHA256_128' }
+                        20 { 'AES256_CTS_HMAC_SHA384_192' }
+                        default { "ETYPE_$_" }
+                    }
+                })
                 $summaryObj = [ordered]@{
                     Principal       = $princDesc.Display
                     Realm           = $princDesc.Realm

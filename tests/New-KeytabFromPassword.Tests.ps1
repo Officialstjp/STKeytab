@@ -30,9 +30,18 @@ Describe 'New-KeytabFromPassword - PBKDF2 custom vs Rfc2898DeriveBytes' {
             $salt = [Text.Encoding]::UTF8.GetBytes('EXAMPLE.COMuser') # MIT-style salt for user@example.com
             $iter = 4096
 
+            $passBytes1 = [Text.Encoding]::UTF8.GetBytes($passwd)
+            $passBytes2 = [Text.Encoding]::UTF8.GetBytes($passwd)
+
+            $hmac = [System.Security.Cryptography.HMACSHA1]::New()
+            $hmac.Key = $passBytes1
+
+            $hmac2 = [System.Security.Cryptography.HMACSHA1]::New()
+            $hmac2.Key = $passBytes2
+
             # custom
-            $key128 = Invoke-PBKDF2HmacSha1 -PasswordBytes ([Text.Encoding]::UTF8.GetBytes($passwd)) -SaltBytes $salt -Iterations $iter -DerivedKeyLength 16
-            $key256 = Invoke-PBKDF2HmacSha1 -PasswordBytes ([Text.Encoding]::UTF8.GetBytes($passwd)) -SaltBytes $salt -Iterations $iter -DerivedKeyLength 32
+            $key128Sha1 = Invoke-PBKDF2Hmac -PasswordBytes $passBytes1 -SaltBytes $salt -Iterations $iter -DerivedKeyLength 16 -HmacAlgorithm $hmac
+            $key256Sha1 = Invoke-PBKDF2Hmac -PasswordBytes $passBytes2 -SaltBytes $salt -Iterations $iter -DerivedKeyLength 32 -HmacAlgorithm $hmac2
 
             # Rfc2898DeriveBytes
             $p1 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes ($passwd, $salt, $iter, [System.Security.Cryptography.HashAlgorithmName]::SHA1)
@@ -41,8 +50,37 @@ Describe 'New-KeytabFromPassword - PBKDF2 custom vs Rfc2898DeriveBytes' {
             $ref256 = $p1.GetBytes(32)
 
             # Validate
-            ($key128 -join ',') | Should -BeExactly ($ref128 -join ',')
-            ($key256 -join ',') | Should -BeExactly ($ref256 -join ',')
+            ($key128Sha1 -join ',') | Should -BeExactly ($ref128 -join ',')
+            ($key256Sha1 -join ',') | Should -BeExactly ($ref256 -join ',')
+        }
+    }
+    InModuleScope $ModuleName {
+        It 'matches Rfc8009 for AES-SHA2' {
+            $passwd = 'Pr4t3rSt*rn'
+            $salt = [Text.Encoding]::UTF8.GetBytes('EXAMPLE.COMuser') # MIT-style salt for user@example.com
+            $iter = 32768
+
+            $passBytes1 = [System.Text.Encoding]::UTF8.GetBytes($passwd)
+            $passBytes2 = [System.Text.Encoding]::UTF8.GetBytes($passwd)
+
+            $hmac = [System.Security.Cryptography.HMACSHA256]::New()
+            $hmac.Key = $passBytes1
+
+            $hmac2 = [System.Security.Cryptography.HMACSHA384]::New()
+            $hmac2.Key = $passBytes2
+
+            # custom
+            $key256Sha2 = Invoke-PBKDF2Hmac -PasswordBytes $passBytes1 -SaltBytes $salt -Iterations $iter -DerivedKeyLength 16 -HmacAlgorithm $hmac
+            $key384Sha2 = Invoke-PBKDF2Hmac -PasswordBytes $passBytes2 -SaltBytes $salt -Iterations $iter -DerivedKeyLength 32 -HmacAlgorithm $hmac2
+
+            $pS1 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes ($passwd, $salt, $iter, [System.Security.Cryptography.HashAlgorithmName]::SHA256)
+            $ref256Sha2 = $pS1.GetBytes(16)
+            $pS1 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes ($passwd, $salt, $iter, [System.Security.Cryptography.HashAlgorithmName]::SHA384)
+            $ref384Sha2 = $pS1.GetBytes(32)
+
+            # Validate
+            ($key256Sha2 -join ',') | Should -BeExactly ($ref256Sha2 -join ',')
+            ($key384Sha2 -join ',') | Should -BeExactly ($ref384Sha2 -join ',')
         }
     }
 }
@@ -65,6 +103,8 @@ Describe 'New-KeytabFromPassword - salt policy' {
 Describe 'New-KeytabFromPassword -write/read determinism' {
     InModuleScope $ModuleName {
         It 'produces a readably keytab with fixed timestamp' {
+            $TestOutDir = Join-Path $PSScriptRoot 'output'
+            if (-not (Test-Path $TestOutDir)) { New-Item -ItemType Directory -Path $TestOutDir -Force | Out-Null }
             $out = Join-Path $TestOutDir 'passwd-user.keytab'
             Remove-Item -LiteralPath $out -Force -ErrorAction SilentlyContinue
             $fixed = [datetime]::Parse('2020-01-01T00:00:00Z')

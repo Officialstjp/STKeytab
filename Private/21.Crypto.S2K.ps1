@@ -58,22 +58,6 @@ function Get-DefaultSalt {
     [Text.Encoding]::UTF8.GetBytes($saltStr)
 }
 
-function Get-AesKeyLengthForEtype {
-    <#
-    .SYNOPSIS
-    Get the AES key length for a given encryption type (Etype).
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][int]$Etype
-    )
-    switch ($Etype) {
-        17 { 16 } # AES128_CTS_HMAC_SHA1_96
-        18 { 32 } # AES256_CTS_HMAC_SHA1_96
-        default { throw "Unsupported Etype: $Etype"}
-    }
-}
-
 function ConvertTo-BigEndianUint32Bytes {
     <#
     .SYNOPSIS
@@ -89,7 +73,7 @@ function ConvertTo-BigEndianUint32Bytes {
     $bytes
 }
 
-function Invoke-PBKDF2HmacSha1 {
+function Invoke-PBKDF2Hmac {
     <#
     .SYNOPSIS
     Invoke PBKDF2-HMAC-SHA1 key derivation.
@@ -99,42 +83,44 @@ function Invoke-PBKDF2HmacSha1 {
         [Parameter(Mandatory)][byte[]]$PasswordBytes,
         [Parameter(Mandatory)][byte[]]$SaltBytes,
         [Parameter(Mandatory)][int]$Iterations,
-        [Parameter(Mandatory)][int]$DerivedKeyLength
+        [Parameter(Mandatory)][int]$DerivedKeyLength,
+        [Parameter(Mandatory)][System.Security.Cryptography.HMAC]$HmacAlgorithm
     )
 
     if ($Iterations -lt 1) { throw "PDKDF2 iterations must be >= 1" }
 
-    $hashlength     = 20
+    $hashlength     = $HmacAlgorithm.HashSize / 8 # bits to bytes
     $blocks         = [math]::Ceiling($DerivedKeyLength / [double]$hashlength)
     $derivedKey     = New-Object byte[]($DerivedKeyLength)
     $offset         = 0
-    $hmac           = [System.Security.Cryptography.HMACSHA1]::new($PasswordBytes)
+
     try {
         for ($i = 1; $i -le $blocks; $i++) {                                # for every block
             $iterBytes = ConvertTo-BigEndianUint32Bytes -Value $i           # Block index (1-based)
             $msg = New-Object byte[] ($SaltBytes.Length +4)                 # Salt + Block index
             [Array]::Copy($SaltBytes, 0, $msg, 0, $SaltBytes.Length)        # Copy SaltBytes to <msg>
             [Array]::Copy($iterBytes, 0, $msg, $SaltBytes.Length, 4)        # Copy Block index to <msg>
-            $curIter = $hmac.ComputeHash($msg)                              # Compute initial hash
+
+            $curIter = $HmacAlgorithm.ComputeHash($msg)                     # Compute initial hash
             $curIterHash = [byte[]]$curIter.Clone()                         # Clone initial hash
+
             for ($j = 2; $j -le $Iterations; $j++) {                        # for each iteration
-                $curIter = $hmac.ComputeHash($curIter)                      # Compute subsequent hash
+                $curIter = $HmacAlgorithm.ComputeHash($curIter)             # Compute subsequent hash
                 for ($k = 0; $k -lt $curIterHash.Length; $k++) {            # for each byte in the hash
                     $curIterHash[$k] = $curIterHash[$k] -bxor $curIter[$k]  # XOR with current iteration
                 }
             }
+
             $cpyBytes = [Math]::Min($hashLength, $DerivedKeyLength - $offset)   # copy bytes of current block
             [Array]::Copy($curIterHash, 0, $derivedKey, $offset, $cpyBytes)     # to <derivedKey>
             $offset += $cpyBytes
+
             [Array]::Clear($msg, 0, $msg.Length)                                # Clear message buffer
             [Array]::Clear($iterBytes, 0, $iterBytes.Length)                    # Clear iteration bytes
             [Array]::Clear($curIterHash, 0, $curIterHash.Length)                # Clear current iteration hash
             [Array]::Clear($curIter, 0, $curIter.Length)                        # Clear current iteration
         }
-    } finally { try { $hmac.Dispose() } catch {
-        Write-Verbose "Failed to dispose HMAC object."
-    } }
-    [Array]::Clear($PasswordBytes, 0, $PasswordBytes.Length)
+    } finally { }
     $derivedKey
 }
 
@@ -163,17 +149,43 @@ function Derive-AesKeyWithPbkdf2 {
         [Parameter(Mandatory)][int]$Etype,
         [Parameter(Mandatory)][string]$PasswordPlain,
         [Parameter(Mandatory)][byte[]]$SaltBytes,
-        [int]$Iterations = 4096
+        [int]$Iterations
     )
 
-    $keyLength = Get-AesKeyLengthForEtype -Etype $Etype
+    switch ($Etype) {
+        17 { # AES-128_CTS_HMAC_SHA1_96
+            $keyLength = 16
+            $hmac = [System.Security.Cryptography.HMACSHA1]::New()
+            if (-not $Iterations) { $Iterations = 4096 } # RFC 2898
+        }
+        18 { # AES-256_CTS_HMAC_SHA1_96
+            $keyLength = 32
+            $hmac = [System.Security.Cryptography.HMACSHA1]::New()
+            if (-not $Iterations) { $Iterations = 4096 } # RFC 2898
+        }
+        19 { # AES-128_CTS_HMAC_SHA256_128
+            $keyLength = 16
+            $hmac = [System.Security.Cryptography.HMACSHA256]::New()
+            if (-not $Iterations) { $Iterations = 32768 } # RFC 8009
+        }
+        20 { # AES-256_CTS_HMAC_SHA384_192
+            $keyLength = 32
+            $hmac = [System.Security.Cryptography.HMACSHA384]::New()
+            if (-not $Iterations) { $Iterations = 32768 } # RFC 8009
+        }
+        default { throw "Unsupported Etype: $Etype" }
+    }
+
     $passBytes = [Text.Encoding]::UTF8.GetBytes($PasswordPlain)
     $saltLocal = [byte[]]$SaltBytes.Clone()
 
+    $hmac.Key = $passBytes
+
     try {
-        Invoke-PBKDF2HmacSha1 -PasswordBytes $passBytes -SaltBytes $saltLocal -Iterations $Iterations -DerivedKeyLength $keyLength
+        return Invoke-PBKDF2Hmac -PasswordBytes $passBytes -SaltBytes $saltLocal -Iterations $Iterations -DerivedKeyLength $keyLength -HmacAlgorithm $hmac
     }
     finally {
+        if ($hmac) { $hmac.Dispose() }
         if ($saltLocal) { [Array]::Clear($saltLocal, 0, $saltLocal.Length) }
         if ($passBytes) { [Array]::Clear($passBytes, 0, $passBytes.Length)}
     }

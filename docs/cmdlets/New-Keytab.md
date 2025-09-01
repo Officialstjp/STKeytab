@@ -8,7 +8,7 @@ schema: 2.0.0
 # New-Keytab
 
 ## SYNOPSIS
-Create a keytab for an AD user, computer, or krbtgt using replication-safe extraction.
+Create a keytab for an AD user, computer, or krbtgt using replication-safe key extraction.
 
 ## SYNTAX
 
@@ -18,15 +18,18 @@ New-Keytab [-SamAccountName] <String> [[-Type] <String>] [[-Domain] <String>] [[
  [[-Justification] <String>] [[-Credential] <PSCredential>] [[-EnvFile] <String>] [-RestrictAcl] [-Force]
  [-PassThru] [-Summary] [-AcknowledgeRisk] [-VerboseDiagnostics] [-SuppressWarnings]
  [[-FixedTimestampUtc] <DateTime>] [-IncludeShortHost] [[-AdditionalSpn] <String[]>] [-IncludeLegacyRC4]
- [-AESOnly] [-AllowDeadCiphers] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
+ [-AESOnly] [-AllowDeadCiphers] [-ModernCrypto] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Front-door cmdlet that discovers principal type, selects safe encryption types by default (AES),
-and writes a deterministic keytab when -FixedTimestampUtc is provided.
-Supports summary JSON and
-pass-thru.
-Use -AcknowledgeRisk for krbtgt extractions.
+Front-door cmdlet that discovers principal type and extracts Kerberos keys via directory replication.
+Defaults to AES-only encryption types.
+Deterministic output is available when -FixedTimestampUtc is
+provided.
+Supports JSON summaries and PassThru.
+krbtgt extractions are gated and require -AcknowledgeRisk
+with a documented justification.
 
 ## EXAMPLES
 
@@ -42,10 +45,16 @@ New-Keytab -SamAccountName user1 -IncludeEtype 18,17 -ExcludeEtype 23 -OutputPat
 Create a deterministic user keytab with AES types only.
 ```
 
+### EXAMPLE 3
+```
+New-Keytab -SamAccountName web01$ -Type Computer -ModernCrypto -OutputPath .\web01-modern.keytab -Summary
+Create a computer keytab with modern AES-SHA2 encryption types and write a summary JSON.
+```
+
 ## PARAMETERS
 
 ### -SamAccountName
-The account's sAMAccountName (user, computer$, or krbtgt) (Pos 1).
+The account's sAMAccountName (user, computer$, or krbtgt).
 
 ```yaml
 Type: System.String
@@ -61,7 +70,8 @@ Accept wildcard characters: False
 
 ### -Type
 Principal type.
-Auto infers from name; User, Computer, or Krbtgt can be forced.
+Auto infers from name; User or Computer can be forced.
+krbtgt is detected automatically.
 
 ```yaml
 Type: System.String
@@ -77,7 +87,7 @@ Accept wildcard characters: False
 
 ### -Domain
 Domain NetBIOS or FQDN.
-When omitted, attempts discovery (Pos 2).
+When omitted, attempts discovery.
 
 ```yaml
 Type: System.String
@@ -93,7 +103,9 @@ Accept wildcard characters: False
 
 ### -IncludeEtype
 Encryption type IDs to include.
-Default: 18,17,23 (AES-256, AES-128, RC4 opt-in) (Pos 3).
+Default: 18,17 (AES-256, AES-128).
+RC4 (23) is not included by default and
+must be explicitly opted-in when legacy compatibility is required.
 
 ```yaml
 Type: System.Object[]
@@ -102,14 +114,13 @@ Aliases:
 
 Required: False
 Position: 4
-Default value: @(18,17,23)
+Default value: @(18,17)
 Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
 ### -ExcludeEtype
 Encryption type IDs to exclude.
-(Pos 4).
 
 ```yaml
 Type: System.Object[]
@@ -124,7 +135,7 @@ Accept wildcard characters: False
 ```
 
 ### -OutputPath
-Path to write the keytab file (Pos 5).
+Path to write the keytab file.
 
 ```yaml
 Type: System.String
@@ -139,7 +150,8 @@ Accept wildcard characters: False
 ```
 
 ### -SummaryPath
-{{ Fill SummaryPath Description }}
+Optional path to write a JSON summary.
+Defaults next to OutputPath when summaries are requested.
 
 ```yaml
 Type: System.String
@@ -154,7 +166,7 @@ Accept wildcard characters: False
 ```
 
 ### -Server
-Domain Controller to target for replication (optional) (Pos 7).
+Domain Controller to target for replication (optional).
 
 ```yaml
 Type: System.String
@@ -169,7 +181,7 @@ Accept wildcard characters: False
 ```
 
 ### -Justification
-Free-text justification string for auditing high-risk operations (Pos 8).
+Free-text justification string for auditing high-risk operations.
 
 ```yaml
 Type: System.String
@@ -184,7 +196,7 @@ Accept wildcard characters: False
 ```
 
 ### -Credential
-Alternate credentials to access AD/replication (Pos 9).
+Alternate credentials to access AD/replication.
 
 ```yaml
 Type: System.Management.Automation.PSCredential
@@ -199,7 +211,7 @@ Accept wildcard characters: False
 ```
 
 ### -EnvFile
-Optional .env file to load credentials from (Pos 10).
+Optional .env file to load credentials from.
 
 ```yaml
 Type: System.String
@@ -274,7 +286,7 @@ Accept wildcard characters: False
 ```
 
 ### -AcknowledgeRisk
-Required for krbtgt extraction.
+{{ Fill AcknowledgeRisk Description }}
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -320,6 +332,7 @@ Accept wildcard characters: False
 
 ### -FixedTimestampUtc
 Use a fixed timestamp for deterministic output.
+Determinism is opt-in and not auto-populated.
 
 ```yaml
 Type: System.DateTime
@@ -379,7 +392,7 @@ Accept wildcard characters: False
 ```
 
 ### -AESOnly
-{{ Fill AESOnly Description }}
+Restrict to AES encryption types only (18,17).
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -394,7 +407,24 @@ Accept wildcard characters: False
 ```
 
 ### -AllowDeadCiphers
-{{ Fill AllowDeadCiphers Description }}
+Allow the use of deprecated or weak encryption types (other than 17,18,19,20,23).
+No support guaranteed.
+
+```yaml
+Type: System.Management.Automation.SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ModernCrypto
+Include modern AES-SHA2 encryption types (19,20) in addition to defaults.
+Requires newer Kerberos implementations.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter

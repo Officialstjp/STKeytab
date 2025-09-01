@@ -44,11 +44,13 @@ $script:etypeMap = [ordered]@{
 $script:ReverseEtypeMap = @{}
 foreach ($kv in $script:etypeMap.GetEnumerator()) { $script:ReverseEtypeMap[[int]$kv.Value] = $kv.Key }
 
-$script:SupportedEtypes = @(17,18,23)
+$script:SupportedEtypes = @(17,18,19,20,23)
 
 # Categorization helpers
-$script:AesEtypes  = @(17,18)
-$script:DeadEtypes = @(1,2,3,5,6,7,8,9,10,11,12,13,14,15,16,20,21,22,24,25,26,27,28,29,30)
+$script:AesEtypes       = @(17,18)      # Traditional AES-SHA1 (compatible)
+$script:ModernAesEtypes = @(17,18,19,20) # All AES including SHA2 (modern)
+$script:AllAesEtypes    = @(17,18,19,20) # Alias for convenience
+$script:DeadEtypes = @(1,2,3,5,6,7,8,9,10,11,12,13,14,15,16,21,22,24,25,26,27,28,29,30)
 
 function Get-EtypeIdFromInput {
     <#
@@ -246,7 +248,7 @@ function Validate-PasswordPathCompatibility {
     if ($Policy.PathKind -ne 'Password') { return }
 
     # Any non-AES in IncludeIds is invalid for S2K at present
-    $nonAes = @($Policy.IncludeIds | Where-Object { $_ -notin $script:AesEtypes })
+    $nonAes = @($Policy.IncludeIds | Where-Object { $_ -notin $script:AllAesEtypes })
     if ($nonAes.Count -gt 0 -or $Policy.IncludeLegacyRC4 -or $Policy.AllowDeadCiphers) {
         try {
             Write-SecurityWarning -RiskLevel 'High' -SamAccountName 'Password-S2K' -Suppress:$SuppressWarnings.IsPresent | Out-Null
@@ -254,7 +256,7 @@ function Validate-PasswordPathCompatibility {
             Write-Error "Failed to write security warning: $_"
         }
         $names = ($nonAes | ForEach-Object { Get-EtypeNameFromId $_ }) -join ', '
-        $hint  = 'Password derivation supports AES only (17,18).' +
+        $hint  = 'Password derivation supports AES only (17,18,19,20).' +
                  ' Remove legacy etypes or use the replication path if you must include RC4/DES.'
         if ([string]::IsNullOrWhiteSpace($names)) { throw "EtypeUnsupportedForPath: Non-AES requested. $hint" }
         throw "EtypeUnsupportedForPath: Non-AES requested (${names}). $hint"

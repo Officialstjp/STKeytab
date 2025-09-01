@@ -12,15 +12,20 @@ LONG DESCRIPTION
 
     - AES256-CTS-HMAC-SHA1-96 (etype 18): Primary encryption type
     - AES128-CTS-HMAC-SHA1-96 (etype 17): Secondary encryption type
+    - AES256-CTS-HMAC-SHA384-192 (etype 20): Modern encryption type (RFC 8009)
+    - AES128-CTS-HMAC-SHA256-128 (etype 19): Modern encryption type (RFC 8009)
     - RC4-HMAC (etype 23): Excluded by default, requires explicit opt-in
 
     RC4 encryption is considered legacy and cryptographically weak. It is only included when explicitly requested via -IncludeLegacyRC4 switch or -IncludeEtype parameter to support legacy interoperability scenarios.
 
+    AES-SHA2 encryption types (19/20) provide enhanced security through stronger hash algorithms (SHA-256/SHA-384) and higher iteration counts per RFC 8009.
+
     Centralized Policy (BigBrother)
     - Etype selection is enforced by a centralized policy layer to keep behavior consistent and secure across cmdlets.
-    - Defaults include AES256 (18) and AES128 (17); obsolete/"dead" ciphers are excluded unless explicitly overridden with -AllowDeadCiphers.
+    - Defaults include AES256 (18) and AES128 (17); AES-SHA2 types (19/20) available via explicit selection.
+    - Obsolete/"dead" ciphers are excluded unless explicitly overridden with -AllowDeadCiphers.
     - Replication path: RC4 (23) may be included via -IncludeLegacyRC4 when legacy interop is unavoidable.
-    - Password derivation (S2K) path: AES-only. Requests for non-AES etypes will show a security banner and hard-fail. Use replication if RC4 is absolutely required.
+    - Password derivation (S2K) path: Supports AES-SHA1 (17/18) and AES-SHA2 (19/20). Requests for non-AES etypes will show a security banner and hard-fail. Use replication if RC4 is absolutely required.
 
     Sensitive Operation Controls
     Several operations handle sensitive data or have high security impact:
