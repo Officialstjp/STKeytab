@@ -51,6 +51,8 @@ Import-Module "$PWD\STKeytab.psd1" -Force
 
 ## Commands
 
+**Always test in safe environment first!**
+
 ### Core keytab operations:
 - **New-Keytab**: Create keytabs for AD principals via replication with AES-only defaults, RC4 available through explicit policy flags
 
