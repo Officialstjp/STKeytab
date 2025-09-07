@@ -284,7 +284,11 @@ function New-KeytabFromPassword {
                     Etypes          = $selection.Selected
                     EncryptionTypes = $etypeNames
                     OutputPath      = (Resolve-Path -LiteralPath $final).Path
-                    GeneratedAtUtc  = ( ($tsArg.FixedTimestampUtc) ? $tsArg.FixedTimestampUtc.ToUniversalTime().ToString('o') : (Get-Date).ToUniversalTime().ToString('o') )
+                    GeneratedAtUtc  = if ($tsArg.FixedTimestampUtc) {
+                                        $tsArg.FixedTimestampUtc.ToUniversalTime().ToString('o')
+                                    } else {
+                                        (Get-Date).ToUniversalTime().ToString('o')
+                                    }
                 }
                 $summaryObj | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $SummaryPath -Encoding UTF8
                 if ($RestrictAcl) {

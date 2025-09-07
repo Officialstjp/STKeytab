@@ -313,13 +313,10 @@ function Get-KerberosKeyMaterialFromAccount {
         PrincipalType  = $principalType
         KeySets        = $finalSets
         Diagnostics    = $diag
-        RiskLevel      = (
-            ($SamAccountName.ToUpperInvariant() -eq 'KRBTGT') ? 'krbtgt' : (
-                ($principalType -eq 'Computer' -and $isDC) ? 'High' : (
-                    ($principalType -eq 'User' -and $isPrivileged) ? 'High' : 'Medium'
-                )
-            )
-        )
+        RiskLevel      = if ($SamAccountName.ToUpperInvariant() -eq 'KRBTGT') { 'Critical' }
+                        elseif ($principalType -eq 'Computer' -and $isDC) { 'High' }
+                        elseif ($principalType -eq 'User' -and $isPrivileged) { 'High' }
+                        else { 'Medium' }
     }
 }
 
@@ -357,7 +354,7 @@ function Test-IsPrivilegedUser {
 
     $highNames = @('Domain Admins','Enterprise Admins','Schema Admins','Administrators')
     foreach ($g in $groups) {
-        $name = ($g.SamAccountName ?? $g.Name)
+        $name = if ($null -ne $g.SamAccountName) { $g.SamAccountName } else { $g.Name }
         if ($name -and ($name -in $highNames)) { return $true }
         # also check some well-known RIDs where possible
         if ($g.ObjectSID) {

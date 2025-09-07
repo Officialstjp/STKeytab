@@ -221,8 +221,8 @@ function New-Keytab {
                 if ($PSCmdlet.ShouldProcess($compName,"Create computer keytab")) {
                     $extra = @{}
                     if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { $extra.FixedTimestampUtc = $FixedTimestampUtc }
-                    $inc = ($script:__nk_policy ? $script:__nk_policy.IncludeIds : $IncludeEtype)
-                    $exc = ($script:__nk_policy ? $script:__nk_policy.ExcludeIds : $ExcludeEtype)
+                    $inc = if ($script:__nk_policy) { $script:__nk_policy.IncludeIds } else { $IncludeEtype }
+                    $exc = if ($script:__nk_policy) { $script:__nk_policy.ExcludeIds } else { $ExcludeEtype }
                     $result = New-PrincipalKeytabInternal -SamAccountName ("{0}$" -f $compName) -Domain $domainFqdn -Server $Server -Credential $Credential `
                                                     -OutputPath $out -IncludeEtype $inc -ExcludeEtype $exc -Policy $script:__nk_policy -RestrictAcl:$RestrictAcl -Force:$Force `
                                                     -JsonSummaryPath $SummaryPath -PassThru:$PassThru -Summary:$Summary -Justification $Justification -AcknowledgeRisk:$AcknowledgeRisk `
@@ -235,8 +235,8 @@ function New-Keytab {
                 if ($PSCmdlet.ShouldProcess($userName,"Create user keytab")) {
                     $extra = @{}
                     if ($PSBoundParameters.ContainsKey('FixedTimestampUtc') -and $FixedTimestampUtc) { $extra.FixedTimestampUtc = $FixedTimestampUtc }
-                    $inc = ($script:__nk_policy ? $script:__nk_policy.IncludeIds : $IncludeEtype)
-                    $exc = ($script:__nk_policy ? $script:__nk_policy.ExcludeIds : $ExcludeEtype)
+                    $inc = if ($script:__nk_policy) { $script:__nk_policy.IncludeIds } else { $IncludeEtype }
+                    $exc = if ($script:__nk_policy) { $script:__nk_policy.ExcludeIds } else { $ExcludeEtype }
                     $result = New-PrincipalKeytabInternal -SamAccountName $userName -Domain $Domain -Server $Server -Credential $Credential `
                                                     -OutputPath $out -IncludeEtype $inc -ExcludeEtype $exc -Policy $script:__nk_policy `
                                                     -RestrictAcl:$RestrictAcl -Force:$Force -JsonSummaryPath $SummaryPath -PassThru:$PassThru -AcknowledgeRisk:$AcknowledgeRisk `

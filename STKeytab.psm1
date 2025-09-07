@@ -24,6 +24,18 @@ if (!$here) {
     }
 }
 
+try {
+    $moduleFiles = @(
+        Get-ChildItem -Path $here -Include '*.ps1', '*.psm1', '*.psd1' -Recurse -File |
+        Where-Object { $_.FullName -like "$here*" }  # Ensure we only unblock files within this module
+    )
+
+    if ($moduleFiles.Count -gt 0) {
+        $moduleFiles | Unblock-File -ErrorAction SilentlyContinue
+    }
+} catch {
+    # Silently continue if unblock fails
+}
 
 
 # Private first (sorted; allow 00., 10., … prefixes)

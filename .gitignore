@@ -17,6 +17,7 @@ temp/
 
 # artifacts for now
 artifacts/
+package/
 
 docs/private/
 
