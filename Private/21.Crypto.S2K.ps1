@@ -89,6 +89,9 @@ function Invoke-PBKDF2Hmac {
 
     if ($Iterations -lt 1) { throw "PDKDF2 iterations must be >= 1" }
 
+    # Set HMAC key from password bytes
+    $HmacAlgorithm.Key = $PasswordBytes
+
     $hashlength     = $HmacAlgorithm.HashSize / 8 # bits to bytes
     $blocks         = [math]::Ceiling($DerivedKeyLength / [double]$hashlength)
     $derivedKey     = New-Object byte[]($DerivedKeyLength)
@@ -178,8 +181,6 @@ function Derive-AesKeyWithPbkdf2 {
 
     $passBytes = [Text.Encoding]::UTF8.GetBytes($PasswordPlain)
     $saltLocal = [byte[]]$SaltBytes.Clone()
-
-    $hmac.Key = $passBytes
 
     try {
         return Invoke-PBKDF2Hmac -PasswordBytes $passBytes -SaltBytes $saltLocal -Iterations $Iterations -DerivedKeyLength $keyLength -HmacAlgorithm $hmac
