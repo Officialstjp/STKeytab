@@ -196,7 +196,7 @@ function New-Keytab {
 
         $type = $Type
         if ($type -eq 'Auto') {
-            $norm = $SamAccountName.ToUpperInvariant()
+            # Auto-detect based on trailing '$' (computer accounts)
             if ($SamAccountName -match '\$$') { $type = 'Computer' } else { $type = 'User' }
         }
     }

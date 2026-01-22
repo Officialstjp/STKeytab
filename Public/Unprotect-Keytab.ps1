@@ -67,7 +67,7 @@ function Unprotect-Keytab {
         if ($OutputPath) {
             $out = Resolve-PathUniversal -Path $OutputPath -Purpose Output
         } else {
-            if ($base -like '*.dpapi') { $ext = $null; $baseName = $base.Substring(0, $base.Length - 6) }
+            $baseName = if ($base -like '*.dpapi') { $base.Substring(0, $base.Length - 6) } else { $base }
             $out = Resolve-OutputPath -InputPath $in -BaseName $baseName -CreateDirectory
         }
         $plain = $null

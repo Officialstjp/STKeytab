@@ -114,6 +114,7 @@ try {
         -OutputFolder $Artifacts | Out-Null
 
     # Create HelpInfo.xml for Update-Help
+    # Uses stable 'help' release tag - assets are updated on each module release
     $helpInfoPath = Join-Path $Artifacts "STKeytab_$($manifest.GUID.ToString())_HelpInfo.xml"
     $helpInfo = @"
 <?xml version="1.0" encoding="utf-8"?>

@@ -24,17 +24,19 @@ if (!$here) {
     }
 }
 
+# Unblock module files (useful when downloaded from internet)
 try {
     $moduleFiles = @(
         Get-ChildItem -Path $here -Include '*.ps1', '*.psm1', '*.psd1' -Recurse -File |
-        Where-Object { $_.FullName -like "$here*" }  # Ensure we only unblock files within this module
+        Where-Object { $_.FullName -like "$here*" }
     )
 
     if ($moduleFiles.Count -gt 0) {
         $moduleFiles | Unblock-File -ErrorAction SilentlyContinue
     }
 } catch {
-    # Silently continue if unblock fails
+    # Unblock-File may fail on non-Windows or restricted environments; safe to ignore
+    Write-Verbose "Unblock-File skipped: $($_.Exception.Message)"
 }
 
 

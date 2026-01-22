@@ -81,8 +81,7 @@ function ConvertTo-NetBIOSIfFqdn {
         $ad = Get-ADDomain -Identity $Domain -ErrorAction Stop
         if ($ad.NetBIOSName) { return $ad.NetBIOSName }
     } catch {
-        Write-Verbose "Failed to resolve NetBIOS name; using FQDN."
-        $d = $Domain
+        Write-Verbose "Failed to resolve NetBIOS name for '$Domain'; using FQDN."
     }
     return ($Domain.Split('.')[0]).ToUpperInvariant()
 }

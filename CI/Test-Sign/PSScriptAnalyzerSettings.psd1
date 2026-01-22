@@ -5,38 +5,43 @@ Copyright (c) 2025 Stefan Ploch
 
 @{
     # PSScriptAnalyzer settings for the STKeytab module
+    # Ref: https://github.com/PowerShell/PSScriptAnalyzer/blob/master/docs/Cmdlets/Invoke-ScriptAnalyzer.md
 
     IncludeDefaultRules = $true
+
     ExcludeRules = @(
-        # === Test File Suppressions ===
-        'PSAvoidGlobalVars',                        # Test files legitimately use global test variables
-        'PSUseDeclaredVarsMoreThanAssignments',     # Test variables used in assertions, not traditional assignments
+        # === Intentional Design Decisions ===
+        'PSAvoidUsingWriteHost'                         # Used for security banners and user feedback (colored output)
+        'PSAvoidUsingPlainTextForPassword'              # Internal crypto functions need plaintext for S2K derivation
+        'PSAvoidUsingConvertToSecureStringWithPlainText' # Test helpers and password utilities (acceptable in context)
 
-        # === Security Module Suppressions ===
-        'PSAvoidUsingWriteHost',                    # Acceptable for security warnings and user feedback
-        'PSAvoidUsingPlainTextForPassword',         # Required for cryptographic string-to-key functions
+        # === Naming Conventions (Intentional) ===
+        'PSUseApprovedVerbs'                            # Internal helpers use descriptive verbs (Normalize, Derive)
+        'PSUseSingularNouns'                            # Some concepts are inherently plural (Etypes, Descriptors, Bytes)
 
-        # === Helper Function Suppressions ===
-        'PSUseApprovedVerbs',                       # Internal helper functions use descriptive verbs (Sanitize, Normalize, Derive)
-        'PSUseSingularNouns',                       # Some concepts are inherently plural (Etypes, Descriptors)
+        # === Cross-Platform / Encoding ===
+        'PSUseBOMForUnicodeEncodedFile'                 # BOM causes issues with cross-platform tooling
 
-        # === Cross-Platform Suppressions ===
-        'PSUseBOMForUnicodeEncodedFile',           # BOM conflicts with cross-platform compatibility
+        # === Architecture (Handled at Public Layer) ===
+        'PSUseShouldProcessForStateChangingFunctions'   # Internal New-* functions don't need ShouldProcess
+        'PSUseProcessBlockForPipelineCommand'           # Some cmdlets do batch processing
 
-        # === Architecture Suppressions ===
-        'PSUseShouldProcessForStateChangingFunctions', # Many internal functions don't need ShouldProcess (handled at public layer)
-        'PSUseProcessBlockForPipelineCommand'          # Some cmdlets handle pipeline differently (batch processing)
+        # === Test File Patterns ===
+        'PSAvoidGlobalVars'                             # Test files use $global:TestOutDir legitimately
+        'PSUseDeclaredVarsMoreThanAssignments'          # Test variables assigned for pipeline assertions
+
+        # === CI Scripts ===
+        'PSAvoidOverwritingBuiltInCmdlets'              # Write-Log helper in CI scripts is intentional
     )
 
-    # Custom rule configurations
     Rules = @{
-        # Only enforce empty catch blocks in Public functions
-        PSAvoidUsingEmptyCatchBlock = @{
+        # Review but don't fail on unused parameters (some are for future use or API consistency)
+        PSReviewUnusedParameter = @{
             Enable = $true
         }
 
-        # Review unused parameters but don't fail build
-        PSReviewUnusedParameter = @{
+        # Empty catch blocks should still be flagged in new code
+        PSAvoidUsingEmptyCatchBlock = @{
             Enable = $true
         }
     }

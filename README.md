@@ -1,57 +1,68 @@
-## Table of contents
-- Introduction
-- Quick start
-- Commands
-- Documentation (PlatyPS)
-- Security model
-- Determinism and reproducibility
-- Troubleshooting
-- Features & Roadmap
-- CI/CD
-- Changelog
-- Acceptable Use & Legal
-- License
+# STKeytab
 
-## Introduction
+[![PowerShell 5.1+](https://img.shields.io/badge/PowerShell-5.1%2B-blue.svg)](https://docs.microsoft.com/powershell/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
+[![CI](https://github.com/Officialstjp/STKeytab/actions/workflows/test_sign.yml/badge.svg)](https://github.com/Officialstjp/STKeytab/actions)
 
-**STKeytab** (V0.6.0) is a security-focused PowerShell module that creates and manages MIT Kerberos keytab files (format 0x0502) Active Directory accounts. The module supports two primary workflows:
+A PowerShell module for creating and managing MIT Kerberos keytab files from Active Directory — the modern alternative to `ktpass.exe` that Microsoft forgot to write.
 
-1. Replication-based extraction: Extract Kerberos keys from Active Directory using DCSync-equivalent permissions via the DSInternals module
-2. Password-based derivation: Generate keytabs from passwords using AES string-to-key (PBKDF2-HMAC-SHA1/SHA256/SHA384) with MIT/Heimdal/Windows salt policies
+---
 
-**Key Features**
-- Safe defaults: AES-only encryption (AES256, AES128) by default; RC4 requires explicit opt-in
-- Modern crypto: AES-SHA2 support (etypes 19/20) ahead of Windows tooling via RFC 8009 implementation
-- Deterministic output: Optional fixed timestamps for byte-identical results across runs
-- DPAPI protection: Encrypt keytabs at rest with Windows Data Protection API
-- Canonical comparison: Compare keytabs with timestamp-insensitive and key-byte options
-- JSON interop: Export/import canonical JSON format for debugging and scripting
+## What is this?
 
-The idea behind this module is a bridge between Windows AD's strengths and modern Kerberos standards, filling the gap that Microsoft hasn't addressed in 20+ years of ktpass stagnation.
+STKeytab lets you generate keytabs for AD accounts in two ways:
 
-## Quick start
+1. **Replication-based extraction** — Pull existing Kerberos keys from AD via DCSync (DSInternals). No password resets, no service interruption.
+2. **Password-based derivation** — Generate keytabs from passwords using proper AES string-to-key (PBKDF2) with MIT/Heimdal/Windows salt conventions.
 
-**Prerequisites:**
-- Windows PowerShell 5.1 for Active Directory and DSInternals scenarios, with PowerShell 7+ supported for non-AD workflows
-- RSAT Active Directory tools (available through Windows Features) to enable the ActiveDirectory module
-- DSInternals module for replication-based key extraction
+**Why not just use ktpass?**
 
-**Install required modules:**
+| ktpass.exe | STKeytab |
+|------------|----------|
+| Resets passwords by default | Extracts existing keys (replication) |
+| RC4 defaults | AES-only by default |
+| No AES-SHA2 support | RFC 8009 etypes 19/20 ✓ |
+| Minimal output control | Deterministic, reproducible builds |
+| No at-rest protection | DPAPI encryption optional |
+| "Good luck debugging" | JSON export, comparison tools |
+
+## Features
+
+- **Safe defaults** — AES256/AES128 only; RC4 requires explicit opt-in
+- **Modern crypto** — AES-SHA2 (etypes 19/20) via RFC 8009, ahead of Windows tooling
+- **Deterministic output** — Fixed timestamps for byte-identical builds across runs
+- **DPAPI protection** — Encrypt keytabs at rest with user-scoped ACLs
+- **Comparison & merge** — Diff keytabs, merge with deduplication, JSON round-trips
+- **AD lifecycle tools** — Password rotation with atomic keytab generation, SPN management with conflict detection
+
+---
+
+## Installation
+
 ```powershell
-# Windows PowerShell recommended for AD scenarios
-Install-Module DSInternals -Scope CurrentUser -Force
-Import-Module ActiveDirectory -ErrorAction Stop
+# From PSGallery (when published)
+Install-Module STKeytab -Scope CurrentUser
+
+# For AD replication scenarios, also install DSInternals
+Install-Module DSInternals -Scope CurrentUser
 ```
 
-**Import STKeytab from source:**
+**Or from source:**
 ```powershell
-# From the repository root directory
-Import-Module "$PWD\STKeytab.psd1" -Force
+git clone https://github.com/Officialstjp/STKeytab.git
+Import-Module .\STKeytab\STKeytab.psd1 -Force
 ```
 
-## Commands
+**Requirements:**
+- PowerShell 5.1 (Windows PowerShell) or PowerShell 7+
+- RSAT AD tools for AD scenarios
+- DSInternals module for replication-based extraction
 
-**Always test in safe environment first!**
+---
+
+## Quick Start
+
+**⚠️ Test in a safe environment first!**
 
 ### Core keytab operations:
 - **New-Keytab**: Create keytabs for AD principals via replication with AES-only defaults, RC4 available through explicit policy flags
@@ -129,142 +140,58 @@ Unprotect-Keytab -Path .\web01.keytab.dpapi -RestrictAcl
 
 ## Documentation
 
-This moduke includes comprehensive documentation authored in Markdown and maintained through PlatyPS:
+This module includes comprehensive help maintained through PlatyPS:
 
-- **Get help**: Use `Get-Help New-Keytab -Full` for detailed cmdlet documentation, or `Get-Help about_STKeytab` for conceptual topics
-- **External help system**: Pre-compiled MAML XML provides 10x faster help loading compared to comment-based alternatives
-- **Automated maintenance**: CI pipeline validates documentation drift on pull requests and automatically updates help on push commits
+- **Get help**: `Get-Help New-Keytab -Full` or `Get-Help about_STKeytab`
+- **External help**: Pre-compiled MAML XML for fast loading
+- **About topics**: Security, Determinism, Interop, KVNO, DPAPI concepts in `docs/about/`
 
 ---
 
-## Security model
+## Security Model
 
-STKeytab implements AES-only defaults and explicit controls for legacy compatibility. The module uses a centralized policy system that composes encryption preferences through parameter combinations.
+- **AES-only by default** — RC4 requires `-IncludeLegacyRC4`; dead ciphers require `-AllowDeadCiphers`
+- **Gated sensitive ops** — `-RevealKeys` for key material, `-AcknowledgeRisk` + `-Justification` for high-impact actions
+- **DPAPI at rest** — `Protect-Keytab` encrypts with CurrentUser or LocalMachine scope
+- **No telemetry** — This module collects nothing
 
-**Parameter-based policy control:**
-- `-AESOnly`: Enforces AES encryption only, rejecting all legacy cipher requests (default behavior)
-- `-IncludeLegacyRC4`: Adds RC4 support when legacy interoperability is required
-- `-AllowDeadCiphers`: Permits obsolete encryption types for compatibility with older systems
-- `-IncludeEtype` / `-ExcludeEtype`: Fine-grained control over specific encryption types
-- Internal orchestration resolves the final encryption type selection based on available keys and policy settings
-
-**Sensitive operation controls:**
-- `-RevealKeys` flag required for exposing key material, with automatic security warnings to prevent accidental disclosure
-- `-AcknowledgeRisk` and `-Justification` parameters mandatory for high-impact operations
-- Comprehensive audit trails with operator attribution and timestamp logging for compliance requirements
-
-**Data protection:**
-- DPAPI integration supporting both CurrentUser and LocalMachine scopes for at-rest encryption
-- Optional entropy with SecureString support for enhanced protection (LocalMachine scope not portable across systems)
-- Automatic ACL restriction to current user for keytab files when using protection feature
-
-Treat krbtgt keytab creation as a last‑resort, auditable, one-time emergency action.
-
-This module does **not** collect any telemetry or usage data.
+Treat krbtgt keytab creation as a last-resort, auditable emergency action.
 
 
-## Determinism and reproducibility
+---
 
-STKeytab provides deterministic keytab generation through the `-FixedTimestampUtc` parameter, ensuring byte-identical outputs across different runs and machines when given identical inputs.
+## Determinism
 
-When using fixed timestamps, the writer applies a stable entry ordering algorithm and uses the specified UTC timestamp consistently throughout the keytab structure. Given identical inputs including keys, KVNOs, encryption types, and SPNs, outputs will be completely reproducible.
+Use `-FixedTimestampUtc` for byte-identical outputs across runs — useful for CI/CD, testing, and reproducible builds.
+
+---
 
 ## Troubleshooting
 
-**Active Directory connectivity:**
-- **RODC target warnings**: New-Keytab warns when `-Server` points to a read-only domain controller; redirect operations to a writable DC for proper functionality
-- **Permission errors**: Ensure appropriate domain privileges (DCSync) for replication-based extraction and lifecycle management operations
+- **RODC warnings** — `New-Keytab` warns if `-Server` points to a read-only DC; use a writable DC
+- **Permission errors** — Replication-based extraction requires DCSync-equivalent permissions
 
-
-## Development roadmap
-
-**Next release priorities:**
-- Enhanced interoperability with MIT and Heimdal toolchains for cross-platform integration
-- Service account discovery and management helpers
-
-## CI/CD
-- Docs workflow builds/validates PlatyPS help; auto-commits on push with [skip ci]. See .github/workflows/docs.yml and CI/Build-Docs.ps1.
-- Test & Sign workflow runs Pester, PSScriptAnalyzer, optional signing, packaging, and signed import verification. See .github/workflows/test_sign.yml and CI/Test-Sign/Test-Sign.ps1.
-
-## Changelog
-
-### [0.6.0] - 2025-09-01
-#### Added
-- **AES-SHA2 Support**: RFC 8009 implementation for modern encryption types
-  - AES128-CTS-HMAC-SHA256-128 (etype 19) and AES256-CTS-HMAC-SHA384-192 (etype 20)
-  - Enhanced `New-KeytabFromPassword` with PBKDF2-HMAC-SHA256/SHA384 support
-- **Crypto Infrastructure**: Generalized PBKDF2 implementation supporting multiple hash algorithms
-  - Unified `Invoke-PBKDF2Hmac` function with pluggable HMAC algorithms
-  - Extended `Derive-AesKeyWithPbkdf2` supporting etypes 17,18,19,20
-
-### [0.5.0] - 2025-08-28
-#### Added
-- **Reset-AccountPasswordWithKeytab**: AD lifecycle management with atomic password reset and keytab generation
-  - Mandatory risk acknowledgment and justification for audit trails
-  - Dry-run capability with detailed operation planning (`-WhatIfOnly`)
-  - Random password generation with cryptographic entropy
-  - Rollback guidance
-- **Set-AccountSpn**: Transactional SPN management with conflict detection
-  - SPN conflict detection across the domain before operations
-  - Atomic add/remove operations with automatic rollback on failure
-  - Detailed operation planning and impact assessment
-- **Enhanced Security Integration**: Centralized security policy enforcement across all cmdlets
-  - AES-only enforcement on password derivation paths with hard guardrails
-  - Policy composition and validation for consistent security posture
-
-
-### [0.4.0] - 2025-08-26
-#### Added
-- **External Help System**: Complete PlatyPS integration with external help (MAML XML) generation
-  - Cmdlet documentation in `docs/cmdlets/` with comprehensive examples and parameter descriptions
-  - About topics in `docs/about/` covering Security, Determinism, Interop, KVNO, and DPAPI concepts
-  - External help XML in `en-US/` for fast help loading (10x faster than comment-based help)
-  - CI pipeline validates help drift and auto-updates documentation
-- **Help Publishing Infrastructure**: `CI/Publish-Help.ps1` for future Update-Help support (CAB hosting)
-
-#### Changed
-- **Refactored CI/CD**: Consolidated test, analyze, sign, and package operations into single wrapper
-
-### [0.3.1] - 2025-08-17
-#### Added
-- **Structured Function Design**: Begin-Process-End blocks and standardized comment-based help across all public functions
-- **Enhanced Parameter Descriptions**: Help for all parameters with examples
-
-
-### [0.3.0] - 2025-08-17
-#### Added
-- **Compare-Keytab**: Canonical diff with timestamp-insensitive comparison and optional key-byte validation
-- **ConvertTo-KeytabJson**: Export keytabs to canonical JSON (keys masked by default, `-RevealKeys` to include)
-- **ConvertFrom-KeytabJson**: Import keytabs from JSON with deterministic output support
-- **JSON Interoperability**: Stable sorting, timestamp controls, and secure key handling
-
-### [0.2.0] - 2025-08-16
-#### Added
-- **New-Keytab**: Front-door cmdlet with auto-detection of principal type (user/computer/krbtgt)
-- **New-KeytabFromPassword**: Password-based keytab generation using AES S2K (PBKDF2-HMACSHA1)
-- **Read-Keytab**: Robust keytab parser with keys masked by default, optional `-RevealKeys`
-- **Test-Keytab**: Validation and unknown encryption type reporting
-- **Merge-Keytab**: De-duplication across multiple keytabs with guardrails for high-risk operations
-- **Protect-Keytab / Unprotect-Keytab**: DPAPI protection for at-rest keytabs (CurrentUser/LocalMachine)
-- **Comprehensive Architecture**: Modular Private/ functions supporting orchestration, crypto, I/O
-
-
-### [0.1.0] - 2025-08-10
-#### Added
-- **Initial Implementation**: Core keytab generation and parsing functionality
-- **MIT Keytab Format**: Support for keytab version 0x0502 with robust I/O
-- **Active Directory Integration**: Basic user and computer account key extraction
-- **Testing Foundation**: Initial Pester test suite covering core scenarios
 
 ---
 
-## Acceptable Use & Legal
-This tool is intended for authorized system administration, interoperability testing, and defensive research in environments where you have explicit permission.
+## Roadmap
 
-Do not use this software to access, extract, or manipulate data without authorization. Doing so may violate computer misuse laws or your employer’s policies.
+- MIT/Heimdal interop helpers (ktutil script generation, Wireshark env writer)
+- Service account discovery and management
 
-This project is not affiliated with or endorsed by Microsoft, the MIT Kerberos project, or any other vendor. All trademarks are the property of their respective owners.
+---
 
-## License
-This tool is licensed under the Apache License, Version 2.0. See LICENSE and NOTICE for details. All source files carry SPDX-License-Identifiers.
+## Contributing
+
+See [CHANGELOG.md](CHANGELOG.md) for version history. PRs welcome!
+
+---
+
+## Legal
+
+**Acceptable Use:** This tool is for authorized system administration and defensive research only. Unauthorized access to systems or data may violate computer misuse laws.
+
+**Trademarks:** Not affiliated with Microsoft or MIT Kerberos project.
+
+**License:** [Apache 2.0](LICENSE) — see [NOTICE](NOTICE) for attributions.
 
