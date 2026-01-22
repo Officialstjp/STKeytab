@@ -16,7 +16,7 @@ on:
 
 jobs:
   test-and-release:
-    runs-on: self-hosted
+    runs-on: windows-latest
     permissions:
       contents: write
 
@@ -78,8 +78,13 @@ jobs:
         env:
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
         run: |
+          if (-not (Get-Module Microsoft.PowerShell.PSResourceGet -ListAvailable)) {
+              Install-Module Microsoft.PowerShell.PSResourceGet -Force -Scope CurrentUser -AllowClobber
+          }
+          Import-Module Microsoft.PowerShell.PSResourceGet
+
           $publishDir = 'publish/STKeytab'
-          Publish-Module -Path $publishDir -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose
+          Publish-PSResource -Path $publishDir -ApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
 
       - name: Create ZIP for release
         shell: pwsh
