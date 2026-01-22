@@ -78,11 +78,19 @@ jobs:
         env:
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
         run: |
-          Install-Module PowerShellGet -Force -AllowClobber -Scope CurrentUser -ErrorAction SilentlyContinue
-          Import-Module PowerShellGet -Force
+          if (-not (Get-Module Microsoft.PowerShell.PSResourceGet -ListAvailable)) {
+              Install-Module Microsoft.PowerShell.PSResourceGet -Force -Scope CurrentUser -AllowClobber
+          }
+          Import-Module Microsoft.PowerShell.PSResourceGet -Force
+
+          # Register PSGallery if not already registered (creates the repository store)
+          $repo = Get-PSResourceRepository -Name PSGallery -ErrorAction SilentlyContinue
+          if (-not $repo) {
+              Register-PSResourceRepository -PSGallery -Trusted
+          }
 
           $publishDir = 'publish/STKeytab'
-          Publish-Module -Path $publishDir -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose
+          Publish-PSResource -Path $publishDir -ApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
 
       - name: Create ZIP for release
         shell: pwsh
