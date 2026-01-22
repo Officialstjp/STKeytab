@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **PSGallery Release Infrastructure**: Complete publishing workflow
   - `release.yml` workflow for manual PSGallery publishing with version input
-  - `ci.yml` lightweight workflow for GitHub-hosted runners
   - Automatic help artifact (CAB) publishing to stable `help` release tag
 - **CHANGELOG.md**: Standalone changelog following Keep a Changelog format
 - **Update-Help Support**: Enabled `HelpInfoURI` with automatic CAB hosting on GitHub Releases

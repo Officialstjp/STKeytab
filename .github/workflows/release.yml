@@ -146,7 +146,7 @@ jobs:
               gh release upload $helpTag $_.FullName --clobber
           }
 
-          Write-Host "Help published!
+          Write-Host "Help published! Users can run: Update-Help -Module STKeytab"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
